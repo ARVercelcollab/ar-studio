@@ -179,7 +179,7 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
             {/* Primeros 5 elementos siempre visibles */}
             <dt className="datos__bold" id="espacio">ESPACIO</dt><dd className="datos__normal">89 m2</dd>
             <dt className="datos__bold">TECHO</dt><dd className="datos__normal">3,5 m</dd>
-            <dt className="datos__bold">CICLORAMA</dt><dd className="datos__normal">4×3 m</dd>
+            {/* <dt className="datos__bold">CICLORAMA</dt><dd className="datos__normal">4×3 m</dd> */}
             <dt className="datos__bold">EQUIPO ILUMINACIÓN</dt>
             <dd className="datos__normal">GODOX MS300 (x2)<br />NANLINE Forza 150w</dd>
             <dt className="datos__bold">ACCESORIOS ILUMINACIÓN</dt>
