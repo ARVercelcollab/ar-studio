@@ -189,7 +189,7 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
             {verMas && (
               <>
                 <dt className="datos__bold">KIT PODCAST</dt>
-                <dd className="datos__normal">Micrófonos Rode, soportes, grabadora y tarjeta de sonido / 2 unidades</dd>
+                <dd className="datos__normal">Micrófonos Rode,<br></br>soportes, grabadora<br></br>y tarjeta de sonido /<br></br>2 unidades</dd>
                 <dt className="datos__bold">PROYECTOR BLUETOOTH</dt><dd className="datos__normal"></dd>
                 <dt className="datos__bold">TELEPROMPTER</dt><dd className="datos__normal"></dd>
                 <dt className="datos__bold">TRÍPODE</dt><dd className="datos__normal"></dd>
@@ -233,7 +233,7 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
 
           <div className="instagram__grid">
 
-            <Image className="datos__portada" src="/media/col5.jpg" alt="Ciclorama y focos Godox en Studio AR en Valencia" loading="lazy" decoding="async" width={600} height={600}></Image>
+            <Image className="datos__portada" src="/media/col9.jpg" alt="Fotografía de mujer embarazada haciendo una sesión de fotos premamá en Studio AR en Valencia" loading="lazy" decoding="async" width={600} height={600}></Image>
 
             <Image className="datos__portada" src="/media/col2.jpg" alt="Interior y mobiliario de Studio AR en Valencia" loading="lazy" decoding="async" width={600} height={600}></Image>
 
