@@ -13,7 +13,7 @@ export default function Condiciones() {
       <ul className="condiciones__lista">
 
         <li><strong>No ofrecemos asistencia para la configuración de flashes.</strong> En el apartado de &quot;Equipo&quot;, encontrarás información detallada sobre los flashes y receptores disponibles. Te recomendamos revisar esta información con antelación y tomar las previsiones necesarias.</li>
-        <li>Durante la reserva <strong>es obligatorio el uso del suelo PVC transparente</strong> en el fondo, en caso de no querer usarlo se debe abonar la cantidad de 20€ + IVA por metro usado.</li>
+        <li>Si al hacer la reserva elegiste usar alguno de los fondos que tenemos disponibles deberás tener en cuenta varias cosas: tendrás que montar y desmontar tu mismo la estructura de trípodes para montar el fondo. Y deberás abonar 20€ + IVA por metro pisado de los fondos.</li>
         <li><strong>Está prohibido subirse a las mesas o sofás</strong> con tacones, zapatos o incluso descalzo. La penalización por incumplir esta norma será de 30€ + IVA. Si la mesa principal llega a sufrir rayones, quemaduras u otros daños, se deberá cubrir el coste total de la reparación o sustitución por una mesa nueva.</li>
         <li>Se permite el desplazamiento de todo el mobiliario, pero <strong>en ningún caso deberá ser arrastrado</strong>. El incumplimiento de esta condición implicará una penalización de 20€ + IVA.</li>
         <li><strong>En caso de utilizar las plantas, estas deben ser manipuladas con extremo cuidado</strong> y está completamente prohibido arrastrarlas. El incumplimiento de esta condición supondrá una penalización de 20€ + IVA.</li>
