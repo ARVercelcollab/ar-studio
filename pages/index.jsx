@@ -239,7 +239,7 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
 
             <Image className="datos__portada" src="/media/col3.jpg" alt="Actividad de yoga en el espacio de AR Studio" loading="lazy" decoding="async" width={600} height={600}></Image>
 
-            <Image className="datos__portada" src="/media/col4.jpg" alt="Modelo posando para venta de producto deportivo" loading="lazy" decoding="async" width={600} height={600}></Image>
+            <a href="https://www.instagram.com/p/DIbKlP1tx8Y/?igsh=YjA5Z3ZwdjNieWJ3"><Image className="datos__portada" src="/media/col4.jpg" alt="Modelo posando para venta de producto deportivo" loading="lazy" decoding="async" width={600} height={600}></Image></a>
 
           </div>
 
