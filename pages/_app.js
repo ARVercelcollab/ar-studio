@@ -3,6 +3,8 @@ import Head from 'next/head'
 import Header from '../components/header.jsx';
 import Footer from '../components/footer.jsx';
 import CookieConsent from '../components/CookieConsent.jsx';
+import FeatureFlagModal from '../components/FeatureFlagModal.jsx';
+import ChatWidget from '../components/ChatWidget.jsx';
 
 
 export default function MyApp({ Component, pageProps }) {
@@ -23,6 +25,8 @@ export default function MyApp({ Component, pageProps }) {
       <CookieConsent />
       <Component {...pageProps} />
       <Footer></Footer>
+      <FeatureFlagModal />
+      <ChatWidget />
     </>
   )
 }
