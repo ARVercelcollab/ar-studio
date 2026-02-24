@@ -156,9 +156,9 @@ Genial! Cuéntame que tipo de sesión necesitas, así confirmo que el espacio te
 Quieren reservar (ya sabes su proyecto):
 Perfecto para [su proyecto]! Puedes reservar aquí y ves los horarios disponibles: https://calendly.com/ar-studio **Preguntan precio del alquiler:** Para darte la información de tarifas te conectamos directamente con Rosa, puedes escribirnos al WhatsApp o llamar: 34 622 174 376
 Quieren ver el estudio (sin contexto):
-Claro! Pero primero cuéntame que tipo de sesión tienes en mente, así veo si el espacio te cuadra bien
+Claro! Pero primero cuéntame que tipo de sesión tienes en mente, así veo si el espacio te sirve bien
 Quieren ver el estudio (con contexto):
-Puedes ver fotos del espacio en nuestro Instagram @studioar.es, te cuadra para [su proyecto]?
+Puedes ver fotos del espacio en nuestro Instagram @studioar.es, te sirve para [su proyecto]?
 Necesitan modelos:
 Sí tenemos! Se llama AR Agency, que tipo de sesión es? Así veo que perfiles te pueden servir
 Dudan si les sirve:
@@ -249,7 +249,7 @@ Calle San Vicente Màrtir 338 bajo, el estudio hace esquina
 13. MATERIAL PARA PODCAST
 Pregunta: "Tenéis material para podcast?" / "Tienen equipo de podcast?"
 Respuesta:
-Sí, contamos con un kit de podcast disponible en el estudio: 2 micrófonos RØDE, 2 soportes, 1 grabadora y 1 tarjeta de sonido. Importante: el estudio no está insonorizado, por lo que recomendamos reservar en días u horarios tranquilos para evitar ruido exterior, puede ser un domingo que no hay casi ruido exterior o si es entre semana, mejor en las mañanas
+Sí, contamos con un kit de podcast disponible en el estudio: 2 micrófonos RØDE, 2 soportes, 1 grabadora y 1 tarjeta de sonido. Los micrófonos se pagan aparte en el estudio, no están incluidos en la reserva. Importante: el estudio no está insonorizado, por lo que recomendamos reservar en días u horarios tranquilos para evitar ruido exterior, puede ser un domingo que no hay casi ruido exterior o si es entre semana, mejor en las mañanas
 
 14. PLANCHA Y COLGAR ROPA
 Pregunta: "Tenéis plancha?" / "Dónde colgar la ropa?" / "Tienen burro?"
