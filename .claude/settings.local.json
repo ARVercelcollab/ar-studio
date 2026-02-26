@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npm run dev)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(git add components/ChatWidget.jsx)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nActualizar prompt del agente Alex con lenguaje neutro y clarificación de micrófonos\n\n- Reemplazar \"te cuadra\" por \"te sirve\" para usar español más neutro\n- Aclarar que los micrófonos del kit de podcast se pagan aparte y no están incluidos en la reserva\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push origin main)",
+      "Bash(curl -X POST http://localhost:3000/api/chat )"
     ],
     "deny": [],
     "ask": []
