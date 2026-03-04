@@ -17,7 +17,8 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nFix token limit error: reduce max_tokens and limit conversation history\n\n- Reduce max_tokens from 1150 to 500 to prevent context overflow\n- Limit conversation history to last 6 messages (3 exchanges)\n- Prevents \"maximum context length exceeded\" error\n- ALEX_CONTEXT (8042 tokens) + 6 messages + 500 completion = ~8600 tokens (safe)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git add .claude/settings.local.json)",
       "Bash(git commit --amend --no-edit)",
-      "Bash(git commit -m \"Further reduce conversation history to 4 messages to fix token limit\")"
+      "Bash(git commit -m \"Further reduce conversation history to 4 messages to fix token limit\")",
+      "Bash(git commit -m \"Switch to gpt-4o: 128k context window solves token limit issues\")"
     ],
     "deny": [],
     "ask": []
