@@ -6,7 +6,11 @@
       "Bash(git add components/ChatWidget.jsx)",
       "Bash(git commit -m \"$(cat <<''EOF''\nActualizar prompt del agente Alex con lenguaje neutro y clarificación de micrófonos\n\n- Reemplazar \"te cuadra\" por \"te sirve\" para usar español más neutro\n- Aclarar que los micrófonos del kit de podcast se pagan aparte y no están incluidos en la reserva\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push origin main)",
-      "Bash(curl -X POST http://localhost:3000/api/chat )"
+      "Bash(curl -X POST http://localhost:3000/api/chat )",
+      "Bash(npm run build)",
+      "Bash(npm test)",
+      "Bash(npm run lint)",
+      "Bash(git add -A)"
     ],
     "deny": [],
     "ask": []

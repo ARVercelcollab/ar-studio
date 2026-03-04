@@ -618,23 +618,8 @@ export default function ChatWidget() {
       }
     }
 
-    // Verificar si el flag está activo
-    const checkFlag = () => {
-      const isEnabled = localStorage.getItem('AGENT_CHAT') === 'true';
-      setIsVisible(isEnabled);
-    };
-
-    checkFlag();
-
-    // Escuchar cambios en el flag
-    const handleToggle = () => checkFlag();
-    window.addEventListener('agentChatToggled', handleToggle);
-    window.addEventListener('storage', handleToggle);
-
-    return () => {
-      window.removeEventListener('agentChatToggled', handleToggle);
-      window.removeEventListener('storage', handleToggle);
-    };
+    // Chatbot visible por defecto en producción
+    setIsVisible(true);
   }, []);
 
   const saveMessages = (newMessages) => {
@@ -684,6 +669,14 @@ export default function ChatWidget() {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+
+        // Handle rate limiting
+        if (response.status === 429) {
+          const waitTime = errorData.retryAfter || 60;
+          throw new Error(`Demasiadas solicitudes. Por favor espera ${waitTime} segundos.`);
+        }
+
         throw new Error(`API Error: ${response.status}`);
       }
 

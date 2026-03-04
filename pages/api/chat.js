@@ -1,9 +1,22 @@
 // API endpoint para chat con OpenAI - AR Studio
 import { sendErrorNotification } from '../../lib/email';
+import { checkRateLimit, getClientIP } from '../../lib/rateLimit';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limiting: 10 requests per minute per IP
+  const clientIP = getClientIP(req);
+  const rateLimitResult = checkRateLimit(clientIP, 10, 60000);
+
+  if (!rateLimitResult.success) {
+    const waitTime = Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000);
+    return res.status(429).json({
+      error: 'Too many requests. Please try again later.',
+      retryAfter: waitTime,
+    });
   }
 
   try {
