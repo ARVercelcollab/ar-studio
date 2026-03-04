@@ -36,7 +36,7 @@ export default async function handler(req, res) {
         model: 'gpt-4',
         messages: messages,
         temperature: 0,
-        max_tokens: 1150,
+        max_tokens: 500,
       }),
     });
 

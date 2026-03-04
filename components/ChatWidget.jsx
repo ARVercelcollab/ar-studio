@@ -646,13 +646,17 @@ export default function ChatWidget() {
     setIsLoading(true);
 
     try {
+      // Limitar historial de conversación para evitar exceder límite de tokens
+      // Mantener solo los últimos 6 mensajes (3 intercambios) + sistema
+      const recentMessages = newMessages.slice(-6);
+
       // Preparar los mensajes para la API
       const apiMessages = [
         {
           role: 'system',
           content: ALEX_CONTEXT,
         },
-        ...newMessages.map((msg) => ({
+        ...recentMessages.map((msg) => ({
           role: msg.role,
           content: msg.content,
         })),

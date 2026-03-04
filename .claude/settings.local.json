@@ -10,7 +10,13 @@
       "Bash(npm run build)",
       "Bash(npm test)",
       "Bash(npm run lint)",
-      "Bash(git add -A)"
+      "Bash(git add -A)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nPreparar chatbot para producción: rate limiting, visibilidad y env vars\n\n- Remover feature flag: chatbot ahora visible por defecto\n- Agregar rate limiting (10 req/min por IP) para prevenir abuso\n- Crear documentación de deployment con env vars requeridas\n- Agregar .env.example para referencia\n- Mejorar manejo de errores de rate limiting en frontend\n- Remover FeatureFlagModal (ya no necesario)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(chmod +x test-key.sh)",
+      "Bash(./test-key.sh)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix token limit error: reduce max_tokens and limit conversation history\n\n- Reduce max_tokens from 1150 to 500 to prevent context overflow\n- Limit conversation history to last 6 messages (3 exchanges)\n- Prevents \"maximum context length exceeded\" error\n- ALEX_CONTEXT (8042 tokens) + 6 messages + 500 completion = ~8600 tokens (safe)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git add .claude/settings.local.json)",
+      "Bash(git commit --amend --no-edit)"
     ],
     "deny": [],
     "ask": []
