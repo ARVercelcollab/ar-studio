@@ -647,8 +647,8 @@ export default function ChatWidget() {
 
     try {
       // Limitar historial de conversación para evitar exceder límite de tokens
-      // Mantener solo los últimos 6 mensajes (3 intercambios) + sistema
-      const recentMessages = newMessages.slice(-6);
+      // Mantener solo los últimos 4 mensajes (2 intercambios) + sistema
+      const recentMessages = newMessages.slice(-4);
 
       // Preparar los mensajes para la API
       const apiMessages = [
