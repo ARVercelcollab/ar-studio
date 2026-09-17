@@ -1,9 +1,9 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import Script from 'next/script'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ButtonArrow from '../components/button'
-import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoBadge, textoPlazasPlan } from '../lib/plazas'
+import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
 
 const WA = 'https://wa.me/34613395533?text='
 const wa = (texto) => WA + encodeURIComponent(texto)
@@ -14,7 +14,7 @@ const waPro = wa('Hola, quiero la plaza Pro')
 const mailto = 'mailto:arstudiospain@gmail.com?subject=' + encodeURIComponent('Plan mensual AR Studio')
 
 // Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
-const POSTS_IG = ['DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
+const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
 
 // Material incluido: 5 categorías, 3 ítems visibles y el resto desplegable
 const MATERIAL = [
@@ -26,8 +26,9 @@ const MATERIAL = [
 ]
 
 export default function PlanMensual() {
-  const badge = textoBadge()
   const [verTodo, setVerTodo] = useState(false)
+  const igRef = useRef(null)
+  const deslizarIg = (dir) => igRef.current?.scrollBy({ left: dir * igRef.current.clientWidth * 0.8, behavior: 'smooth' })
 
   // Si embed.js ya estaba cargado (navegación interna), procesar los embeds al montar
   useEffect(() => {
@@ -62,12 +63,11 @@ export default function PlanMensual() {
 
         {/* HERO */}
         <section className="planmensual__hero">
-          <span className="planmensual__badge">{badge}</span>
           <h1>Crea contenido para tu marca y trabaja con clientes en un espacio profesional <span className="planmensual__acento">por 13,90€/hora.</span></h1>
           <p className="planmensual__sub">Deja de pagar más por horas sueltas. Acceso fijo al estudio, con todo el material profesional incluido, por una cuota mensual cerrada.</p>
           <div className="planmensual__ctas">
             <ButtonArrow texto="VER PLANES" href="#planes" />
-            <ButtonArrow texto="PEDIR PLAZA" href={waGeneral} />
+            <ButtonArrow texto="SOLICITAR PLAZA" href={waGeneral} />
           </div>
         </section>
 
@@ -134,7 +134,7 @@ export default function PlanMensual() {
               <figcaption>Fotografía de producto</figcaption>
             </figure>
             <figure>
-              <Image className="planmensual__foto" src="/media/col9.jpg" alt="Retrato premamá con luz natural en AR Studio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
+              <Image className="planmensual__foto" src="/media/retrato-luz-natural.jpg" alt="Retrato premamá con luz natural junto a la ventana de AR Studio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
               <figcaption>Retrato con luz natural</figcaption>
             </figure>
             <figure>
@@ -240,7 +240,6 @@ export default function PlanMensual() {
 
         {/* CIERRE */}
         <section className="planmensual__contacto" id="unirte">
-          <span className="planmensual__badge">{badge}</span>
           <h2>Da el paso</h2>
           <p>Escríbenos por WhatsApp indicando qué plan te interesa y te contamos los siguientes pasos para reservar tu plaza. Cuando se completen las {PLAZAS_TOTALES} plazas, abrimos lista de espera.</p>
           <a className="planmensual__whatsapp" href={waGeneral} target="_blank" rel="noopener noreferrer">
@@ -256,7 +255,7 @@ export default function PlanMensual() {
         <section className="planmensual__ig">
           <span className="planmensual__label">En Instagram</span>
           <h2>Lo que pasa<br />en el estudio.</h2>
-          <div className="planmensual__ig_grid">
+          <div className="planmensual__ig_grid" ref={igRef}>
             {POSTS_IG.map((code) => (
               <blockquote
                 key={code}
@@ -269,7 +268,9 @@ export default function PlanMensual() {
             ))}
           </div>
           <div className="planmensual__ig_more">
+            <button className="planmensual__ig_flecha" aria-label="Anterior" onClick={() => deslizarIg(-1)}>←</button>
             <ButtonArrow texto="VER @STUDIOAR.ES" href="https://www.instagram.com/studioar.es/" />
+            <button className="planmensual__ig_flecha" aria-label="Siguiente" onClick={() => deslizarIg(1)}>→</button>
           </div>
           <Script
             src="https://www.instagram.com/embed.js"

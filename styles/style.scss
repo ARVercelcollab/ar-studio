@@ -1832,28 +1832,37 @@ strong{
         margin-top: 100px;
       }
 
+    // Carrusel horizontal: una fila que se desliza (dedo en móvil, flechas en escritorio)
     .planmensual__ig_grid{
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      display: flex;
       gap: 1rem;
-      align-items: start;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 4px;
 
-        @include media1000px {
-          grid-template-columns: 1fr;
-          max-width: 540px;
-          margin-left: auto;
-          margin-right: auto;
-        }
+      &::-webkit-scrollbar{
+        display: none;
+      }
 
-      // Instagram sustituye el blockquote por un iframe; evitamos márgenes y anchos fijos que rompan la rejilla
+      // Instagram sustituye el blockquote por un iframe con anchos propios; los fijamos para que la fila no se rompa
       .instagram-media{
+        flex: 0 0 328px;
+        scroll-snap-align: start;
         margin: 0 !important;
         min-width: 0 !important;
-        max-width: 100% !important;
-        width: 100% !important;
+        max-width: 328px !important;
+        width: 328px !important;
         border: 1px solid $beige !important;
         box-shadow: none !important;
         border-radius: 0 !important;
+
+          @include media500px {
+            flex-basis: 84vw;
+            width: 84vw !important;
+            max-width: 84vw !important;
+          }
       }
 
       a{
@@ -1869,7 +1878,28 @@ strong{
     .planmensual__ig_more{
       display: flex;
       justify-content: center;
+      align-items: center;
+      gap: 10px;
       margin-top: 2rem;
+    }
+
+    .planmensual__ig_flecha{
+      font-family: $aktiv;
+      background-color: $beige;
+      color: $brown;
+      width: 44px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 200;
+      transition: 0.3s ease-in-out;
+
+      &:hover{
+        background-color: $brown;
+        color: $white;
+      }
     }
   }
 
