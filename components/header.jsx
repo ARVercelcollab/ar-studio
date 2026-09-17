@@ -20,7 +20,8 @@ export default function Header() {
       <Link href="/"><Image  width={400} height={50} className="header__logo" src="/assets/AR_Studio.svg" alt="AR Studio" /></Link>
 
       <nav className="header__nav">
-        <Link href="#espacio">ESPACIO</Link>
+        <Link href="/#espacio">ESPACIO</Link>
+        <Link href="/membresias">PLAN MENSUAL</Link>
         <a href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
         <a href="https://calendly.com/ar-studio">RESERVAR</a>
       </nav>

@@ -132,7 +132,10 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
             Tu navegador no soporta el vídeo.
           </video>
 
-          <ButtonArrow texto="RESERVAR" onClick={abrirCalendly} />
+          <div className="hero__buttons">
+            <ButtonArrow texto="RESERVAR" onClick={abrirCalendly} />
+            <ButtonArrow texto="PLAN MENSUAL" href="/membresias" />
+          </div>
 
         </section>
 

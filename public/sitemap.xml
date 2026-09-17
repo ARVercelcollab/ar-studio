@@ -7,6 +7,12 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://www.studioar.es/membresias</loc>
+    <lastmod>2026-09-17T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://www.studioar.es/condiciones</loc>
     <lastmod>2025-05-26T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
