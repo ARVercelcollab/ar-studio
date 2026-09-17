@@ -110,7 +110,7 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
                 "postalCode": "46007",
                 "streetAddress": "C/ de Sant Vicent Màrtir, 338, Jesús"
               },
-              "telephone": "+34661855612",
+              "telephone": "+34613395533",
               "priceRange": "€€"
             })
           }}
@@ -132,7 +132,10 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
             Tu navegador no soporta el vídeo.
           </video>
 
-          <ButtonArrow texto="RESERVAR" onClick={abrirCalendly} />
+          <div className="hero__buttons">
+            <ButtonArrow texto="RESERVAR" onClick={abrirCalendly} />
+            <ButtonArrow texto="PLAN MENSUAL" href="/planmensual" />
+          </div>
 
         </section>
 

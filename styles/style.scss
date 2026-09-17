@@ -111,7 +111,7 @@ strong{
 
   .header__nav{
     display: grid;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: repeat(4, auto);
     gap: 3rem;
 
      @include media900px {
@@ -248,11 +248,26 @@ strong{
 		}
   }
 
-  .button{
+  .hero__buttons{
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: max-content;
+    max-width: 90vw;
+
+    // Segundo botón en beige, igual que "Ver espacio" en la sección de info
+    > :nth-child(2){
+      background-color: $beige;
+
+      &:hover{
+        background-color: $brown;
+      }
+    }
   }
 }
 
@@ -1043,5 +1058,1091 @@ strong{
         }
 
     }
+  }
+}
+
+
+
+
+
+
+
+//PLAN MENSUAL
+
+.planmensual__master{
+  padding-left: 3vw;
+  padding-right: 3vw;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+
+  // Tipografía base (misma que el resto del sitio, con tamaños reducidos en móvil)
+  h1{
+    font-family: $aktiv;
+    color: $brown;
+    font-size: 3.2rem;
+    letter-spacing: -3px;
+    font-weight: 200;
+    text-transform: uppercase;
+    line-height: 3.5rem;
+    max-width: 1000px;
+    margin-bottom: 2rem;
+
+      @include media900px {
+        font-size: 2.4rem;
+        letter-spacing: -2px;
+        line-height: 2.7rem;
+      }
+
+      @include media500px {
+        font-size: 1.75rem;
+        letter-spacing: -1.2px;
+        line-height: 2.05rem;
+        margin-bottom: 1.5rem;
+      }
+  }
+
+  .planmensual__acento{
+    // Beige un punto más oscuro que el botón secundario, mismo grosor que el resto del titular
+    color: $beige-oscuro;
+    font-weight: 200;
+    // Es un span dentro del h1: debe heredar el tamaño del titular, no el de los textos
+    font-size: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+  }
+
+  h2{
+    text-align: center;
+    font-family: $aktiv;
+    color: $brown;
+    font-size: 2.5rem;
+    letter-spacing: -3px;
+    font-weight: 200;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+    line-height: 3rem;
+
+      @include media500px {
+        font-size: 1.6rem;
+        letter-spacing: -1.5px;
+        line-height: 1.9rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+  }
+
+  h3{
+    font-family: $aktiv;
+    color: $brown;
+    font-size: 1.3rem;
+    letter-spacing: -1px;
+    font-weight: 200;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+
+      @include media500px {
+        font-size: 1.1rem;
+        letter-spacing: -0.5px;
+      }
+  }
+
+  h4{
+    font-family: $aktiv;
+    color: $brown;
+    font-size: 0.9rem;
+    letter-spacing: -0.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  p, li, dd, td, th, span, summary, figcaption, small{
+    font-family: $aktiv;
+    color: $brown;
+    font-size: 0.9rem;
+    letter-spacing: -0.5px;
+    font-weight: 200;
+    line-height: 1.2rem;
+    text-transform: uppercase;
+
+      @include media500px {
+        font-size: 0.8rem;
+        letter-spacing: -0.3px;
+        line-height: 1.1rem;
+      }
+  }
+
+  p{
+    margin-bottom: 1rem;
+    text-align: justify;
+
+      @include media500px {
+        text-align: left;
+      }
+  }
+
+  strong{
+    font-weight: 500;
+  }
+
+  ul{
+    li{
+      margin-bottom: 8px;
+      padding-left: 14px;
+      position: relative;
+      text-align: left;
+
+      &::before{
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.5rem;
+        width: 5px;
+        height: 1px;
+        background-color: $brown;
+      }
+    }
+  }
+
+  // Botones: ancho automático para textos largos; el span hereda el color del botón
+  .button{
+    width: auto;
+    min-width: 160px;
+    gap: 24px;
+    box-sizing: border-box;
+
+    span{
+      color: inherit;
+      letter-spacing: 0px;
+      line-height: normal;
+      font-size: 1rem;
+    }
+  }
+
+  .planmensual__label{
+    display: block;
+    text-align: center;
+    font-family: $aktiv;
+    color: $beige;
+    font-size: 0.9rem;
+    letter-spacing: 0px;
+    font-weight: 200;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .planmensual__badge{
+    display: inline-block;
+    background-color: $beige;
+    color: $brown;
+    font-family: $aktiv;
+    font-size: 0.8rem;
+    letter-spacing: 0px;
+    font-weight: 200;
+    text-transform: uppercase;
+    padding: 8px 12px 5px 12px;
+    margin-bottom: 2rem;
+  }
+
+  .planmensual__nota{
+    color: $beige;
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    text-align: left;
+  }
+
+  // Fotos: todas cuadradas y recortadas salvo la vertical del espacio
+  .planmensual__foto{
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+
+    &.planmensual__foto--alta{
+      aspect-ratio: 3 / 4;
+    }
+  }
+
+
+  // HERO
+
+  .planmensual__hero{
+    margin-top: 100px;
+    text-align: center;
+
+      @include media900px {
+        margin-top: 60px;
+      }
+
+      @include media500px {
+        margin-top: 40px;
+      }
+
+    h1{
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .planmensual__sub{
+      max-width: 620px;
+      margin-bottom: 2.5rem;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+  }
+
+  .planmensual__ctas{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    > :nth-child(2){
+      background-color: $beige;
+
+      &:hover{
+        background-color: $brown;
+      }
+    }
+  }
+
+
+  // STRIP
+
+  .planmensual__strip{
+    background-color: $beige;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 30px;
+    padding: 15px 30px;
+    margin-top: 90px;
+
+      @include media600px {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        text-align: center;
+        margin-top: 60px;
+      }
+
+    span{
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+    }
+  }
+
+
+  // ESPACIO
+
+  .planmensual__espacio{
+    margin-top: 120px;
+
+      @include media900px {
+        margin-top: 80px;
+      }
+
+    .planmensual__foto--ancha{
+      aspect-ratio: 3 / 2;
+      margin-bottom: 60px;
+
+        @include media700px {
+          aspect-ratio: 4 / 3;
+          margin-bottom: 40px;
+        }
+    }
+
+    .planmensual__espacio_content{
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+
+      p{
+        text-align: center;
+      }
+    }
+  }
+
+  .planmensual__stats{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem 1rem;
+    margin-top: 3rem;
+    text-align: center;
+
+      @include media500px {
+        gap: 1rem 0.5rem;
+        margin-top: 2rem;
+      }
+
+    dt{
+      font-family: $aktiv;
+      color: $brown;
+      font-size: 2.5rem;
+      letter-spacing: -2px;
+      font-weight: 200;
+      line-height: 2.5rem;
+
+        @include media500px {
+          font-size: 1.5rem;
+          letter-spacing: -1px;
+          line-height: 1.6rem;
+        }
+    }
+
+    dd{
+      color: $beige;
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+      margin-top: 4px;
+
+        @include media500px {
+          font-size: 0.65rem;
+        }
+    }
+  }
+
+
+  // MATERIAL
+
+  .planmensual__material{
+    margin-top: 120px;
+    display: flex;
+    gap: 3rem;
+    align-items: flex-start;
+
+      @include media900px {
+        display: block;
+        margin-top: 100px;
+      }
+
+    .planmensual__material_foto{
+      width: 38%;
+      flex-shrink: 0;
+      position: sticky;
+      top: 30px;
+
+        @include media900px {
+          width: 100%;
+          position: static;
+          margin-bottom: 40px;
+          aspect-ratio: 4 / 3;
+        }
+    }
+
+    .planmensual__material_content{
+      flex-grow: 1;
+
+      h2, .planmensual__label{
+        text-align: left;
+
+          @include media900px {
+            text-align: center;
+          }
+      }
+    }
+
+    .planmensual__lead{
+      max-width: 600px;
+      margin-bottom: 2.5rem;
+    }
+
+    .planmensual__material_grid{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem 2rem;
+
+        @include media500px {
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+        }
+
+      > div{
+        border-top: 1px solid $beige;
+        padding-top: 1.2rem;
+      }
+    }
+
+    .planmensual__material_ctas{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+
+        @include media500px {
+          justify-content: center;
+        }
+    }
+
+    // Mismo botón que "Ver más" en la home
+    .planmensual__vertodo{
+      font-family: $aktiv;
+      text-transform: uppercase;
+      background-color: $beige;
+      color: $brown;
+      font-size: 0.9rem;
+      letter-spacing: 0px;
+      font-weight: 200;
+      padding: 10px 15px 7px 15px;
+      transition: 0.3s ease-in-out;
+
+      &:hover{
+        background-color: $brown;
+        color: $white;
+      }
+    }
+  }
+
+
+  // SESIONES DE FOTOS (carrusel)
+
+  .planmensual__fotos{
+    margin-top: 120px;
+
+      @include media700px {
+        margin-top: 80px;
+      }
+
+    figure{
+      width: 330px;
+      margin: 0;
+
+        @include media500px {
+          width: 84vw;
+        }
+    }
+
+    .planmensual__foto--vertical{
+      aspect-ratio: 4 / 5;
+    }
+
+    figcaption{
+      color: $beige;
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+      margin-top: 10px;
+    }
+  }
+
+
+  // PLANES
+
+  .planmensual__planes{
+    margin-top: 120px;
+
+      @include media700px {
+        margin-top: 80px;
+      }
+
+    .planmensual__planes_head{
+      p{
+        max-width: 600px;
+        margin-bottom: 3rem;
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
+  }
+
+  .planmensual__cards{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    align-items: stretch;
+
+      @include media1000px {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+  }
+
+  .planmensual__card{
+    border: 1px solid $beige;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: 0.3s ease-in-out;
+
+      @include media500px {
+        padding: 6vw;
+      }
+
+    h3{
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .planmensual__card_for{
+      min-height: 2.4rem;
+      text-align: left;
+    }
+
+    .planmensual__price{
+      font-family: $aktiv;
+      font-size: 3.5rem;
+      letter-spacing: -3px;
+      font-weight: 200;
+      line-height: 3.5rem;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      text-align: left;
+
+        @include media500px {
+          font-size: 2.8rem;
+          line-height: 2.8rem;
+        }
+
+      small{
+        font-size: 1rem;
+        letter-spacing: 0px;
+        margin-left: 4px;
+      }
+    }
+
+    .planmensual__hora{
+      color: $beige;
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+      text-align: left;
+      margin-bottom: 2rem;
+    }
+
+    ul{
+      flex-grow: 1;
+      margin-bottom: 2rem;
+    }
+
+    .planmensual__ahorro{
+      background-color: $beige;
+      padding: 12px 14px 9px 14px;
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .planmensual__plazas{
+      color: $beige;
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+      margin-top: 1rem;
+      margin-bottom: 0;
+      text-align: left;
+    }
+
+    // Plan destacado: mismo tratamiento que el cubo de "Detalles" en la home
+    &.planmensual__card--destacada{
+      background-color: $brown;
+      border-color: $brown;
+
+      h3, p, li, .planmensual__price{
+        color: $white;
+      }
+
+      li::before{
+        background-color: $white;
+      }
+
+      .planmensual__hora, .planmensual__plazas{
+        color: $beige;
+      }
+
+      .planmensual__ahorro{
+        background-color: $white;
+        color: $brown;
+
+        strong{
+          color: $brown;
+        }
+      }
+
+      .button{
+        background-color: $beige;
+        color: $brown;
+
+        .button__arrow{
+          filter: brightness(0.3);
+        }
+
+        &:hover{
+          background-color: $white;
+          color: $brown;
+        }
+      }
+
+      .planmensual__ribbon{
+        position: absolute;
+        top: -12px;
+        left: 30px;
+        background-color: $destacado;
+        color: $brown;
+        font-size: 0.75rem;
+        letter-spacing: 0px;
+        padding: 6px 10px 3px 10px;
+
+          @include media500px {
+            left: 6vw;
+          }
+      }
+    }
+  }
+
+
+  // COMPARATIVA
+
+  .planmensual__compara{
+    margin-top: 120px;
+
+      @include media700px {
+        margin-top: 80px;
+      }
+  }
+
+  .planmensual__tabla_scroll{
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .planmensual__tabla{
+    width: 100%;
+    min-width: 520px;
+    border-collapse: collapse;
+
+    th, td{
+      text-align: left;
+      padding: 12px 12px 9px 12px;
+      border-bottom: 1px solid $beige;
+      white-space: nowrap;
+    }
+
+    th{
+      font-weight: 500;
+      border-bottom: 1px solid $brown;
+    }
+
+    .destacada{
+      background-color: $beige;
+    }
+  }
+
+
+  // CIERRE
+
+  .planmensual__contacto{
+    margin-top: 120px;
+    text-align: center;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+
+      @include media700px {
+        margin-top: 80px;
+      }
+
+    h2{
+      text-align: center;
+    }
+
+    p{
+      text-align: center;
+    }
+
+    .planmensual__cierre_cta{
+      display: flex;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+  }
+
+
+  // FRANJA con llamada a los planes (entre las sesiones de fotos e Instagram)
+
+  .planmensual__banda{
+    background-color: $beige;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 20px 30px;
+    margin-top: 80px;
+
+      @include media700px {
+        display: block;
+        text-align: center;
+        margin-top: 60px;
+      }
+
+    p{
+      margin-bottom: 0;
+      text-align: center;
+      max-width: 700px;
+
+        @include media700px {
+          margin-bottom: 1rem;
+        }
+    }
+
+    .button{
+      flex-shrink: 0;
+      background-color: $brown;
+
+        @include media700px {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+      &:hover{
+        background-color: $white;
+        color: $brown;
+
+        .button__arrow{
+          filter: brightness(0.3);
+        }
+      }
+    }
+  }
+
+
+  // CARRUSELES (fotos, Instagram y YouTube): una fila que se desliza (dedo en móvil, flechas en escritorio)
+
+  .planmensual__slider{
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+
+    &::-webkit-scrollbar{
+      display: none;
+    }
+
+    > *{
+      scroll-snap-align: start;
+      flex-shrink: 0;
+    }
+  }
+
+  .planmensual__slider_nav{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2rem;
+  }
+
+  .planmensual__flecha{
+    font-family: $aktiv;
+    background-color: $beige;
+    color: $brown;
+    width: 44px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 200;
+    transition: 0.3s ease-in-out;
+
+    &:hover{
+      background-color: $brown;
+      color: $white;
+    }
+  }
+
+
+  // INSTAGRAM
+
+  .planmensual__ig{
+    margin-top: 120px;
+
+      @include media700px {
+        margin-top: 80px;
+      }
+
+    // Los marcos se estiran todos a la altura del más alto, así los bordes quedan alineados
+    // aunque Instagram dé a cada embed una altura distinta (los reels son más altos que las fotos)
+    .planmensual__ig_grid{
+      align-items: stretch;
+    }
+
+    .planmensual__ig_item{
+      width: 328px;
+      border: 1px solid $beige;
+      background-color: $white;
+
+        @include media500px {
+          width: 84vw;
+        }
+    }
+
+    // Instagram sustituye el blockquote por un iframe con estilos propios; los neutralizamos
+    .instagram-media{
+      margin: 0 !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      display: block;
+    }
+
+    .planmensual__ig_grid a{
+      font-family: $aktiv;
+      color: $brown;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      display: block;
+      padding: 30px;
+    }
+  }
+
+
+  // YOUTUBE
+
+  .planmensual__yt{
+    margin-top: 120px;
+
+      @include media700px {
+        margin-top: 80px;
+      }
+
+    .youtube__card{
+      width: 420px;
+      margin: 0;
+
+        @include media500px {
+          width: 84vw;
+        }
+    }
+
+    .youtube__marco{
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background-color: $beige;
+      overflow: hidden;
+
+      iframe{
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+    }
+
+    .youtube__play{
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: relative;
+
+      img{
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: 0.3s ease-in-out;
+      }
+
+      &:hover img{
+        transform: scale(1.03);
+      }
+
+      &:hover .youtube__boton{
+        background-color: $beige;
+        color: $brown;
+      }
+    }
+
+    // Botón de play centrado, en los colores de la marca
+    .youtube__boton{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 64px;
+      height: 64px;
+      background-color: $brown;
+      color: $white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.3s ease-in-out;
+
+      svg{
+        margin-left: 3px;
+      }
+    }
+
+    figcaption{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 10px;
+      text-transform: none;
+    }
+
+    .youtube__titulo{
+      color: $brown;
+      font-size: 0.85rem;
+      letter-spacing: -0.3px;
+      text-transform: none;
+      line-height: 1.1rem;
+    }
+
+    .youtube__autor{
+      color: $beige;
+      font-size: 0.75rem;
+      letter-spacing: 0px;
+    }
+  }
+
+
+  // CONDICIONES (acordeón, después del cierre)
+
+  .planmensual__condiciones{
+    margin-top: 120px;
+    border-top: 1px solid $beige;
+    border-bottom: 1px solid $beige;
+
+      @include media700px {
+        margin-top: 80px;
+      }
+
+    details{
+      padding: 10px 0;
+    }
+
+    summary{
+      cursor: pointer;
+      list-style: none;
+      padding: 20px 0;
+      font-size: 1rem;
+      letter-spacing: 0px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.3s ease-in-out;
+
+      &::-webkit-details-marker{
+        display: none;
+      }
+
+      &::after{
+        content: '+';
+        font-size: 1.4rem;
+        font-weight: 200;
+        color: $beige;
+        transition: 0.3s ease-in-out;
+      }
+
+      &:hover{
+        letter-spacing: 1px;
+      }
+    }
+
+    details[open] summary::after{
+      content: '–';
+    }
+
+    .planmensual__cond_grid{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem 2rem;
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+
+        @include media900px {
+          grid-template-columns: 1fr;
+        }
+
+      > div{
+        border-top: 1px solid $beige;
+        padding-top: 1.5rem;
+      }
+
+      .planmensual__cond_wide{
+        grid-column: 1 / -1;
+
+        > p{
+          max-width: 700px;
+        }
+      }
+    }
+
+    .planmensual__excepciones{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      margin-top: 1.5rem;
+
+        @include media700px {
+          grid-template-columns: 1fr;
+        }
+
+      > div{
+        background-color: $beige;
+        padding: 20px;
+
+        p{
+          margin-bottom: 0;
+        }
+      }
+    }
+
+    .planmensual__nota{
+      padding-bottom: 1.5rem;
+      margin-top: 1rem;
+    }
+  }
+}
+
+
+// CTA fijo contextual: oculto en el hero y mientras los planes o el cierre están en pantalla.
+// Centrado abajo. Visible también en móvil.
+
+.planmensual__sticky{
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  z-index: 9000;
+  background-color: $brown;
+  color: $white;
+  font-family: $aktiv;
+  text-transform: uppercase;
+  font-weight: 200;
+  font-size: 0.9rem;
+  letter-spacing: 0px;
+  padding: 12px 28px 9px 28px;
+  min-width: 240px;
+  box-sizing: border-box;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 20px);
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
+
+  &.visible{
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+  }
+
+  &:hover{
+    background-color: $beige;
+    color: $brown;
   }
 }
