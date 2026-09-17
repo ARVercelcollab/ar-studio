@@ -65,6 +65,34 @@ export default function PlanMensual() {
     if (window.instgrm?.Embeds) window.instgrm.Embeds.process()
   }, [])
 
+  // Botón fijo contextual: oculto en el hero, "Ver planes" hasta llegar a los planes,
+  // oculto mientras los planes o el cierre están en pantalla, "Solicitar plaza" después.
+  const [fijo, setFijo] = useState('oculto')
+  useEffect(() => {
+    const hero = document.querySelector('.planmensual__hero')
+    const planes = document.querySelector('.planmensual__planes')
+    const cierre = document.querySelector('.planmensual__contacto')
+    if (!hero || !planes || !cierre || !('IntersectionObserver' in window)) return
+    const visible = { hero: true, planes: false, cierre: false }
+    const aplicar = () => {
+      if (visible.hero || visible.planes || visible.cierre) return setFijo('oculto')
+      // Se mira en vivo si los planes quedaron arriba, no un valor cacheado
+      setFijo(planes.getBoundingClientRect().top < 0 ? 'solicitar' : 'planes')
+    }
+    const io = new IntersectionObserver((entradas) => {
+      for (const e of entradas) {
+        if (e.target === hero) visible.hero = e.isIntersecting
+        if (e.target === cierre) visible.cierre = e.isIntersecting
+        if (e.target === planes) visible.planes = e.isIntersecting
+      }
+      aplicar()
+    }, { rootMargin: '-15% 0px -15% 0px' })
+    io.observe(hero)
+    io.observe(planes)
+    io.observe(cierre)
+    return () => io.disconnect()
+  }, [])
+
   return (
     <>
       <Head>
@@ -97,7 +125,6 @@ export default function PlanMensual() {
           <p className="planmensual__sub">Deja de pagar más por horas sueltas. Acceso fijo al estudio, con todo el material profesional incluido, por una cuota mensual cerrada.</p>
           <div className="planmensual__ctas">
             <ButtonArrow texto="VER PLANES" href="#planes" />
-            <ButtonArrow texto="SOLICITAR PLAZA" href={waGeneral} />
           </div>
         </section>
 
@@ -149,9 +176,12 @@ export default function PlanMensual() {
               ))}
             </div>
 
-            <button className="planmensual__vertodo" onClick={() => setVerTodo(!verTodo)}>
-              {verTodo ? 'Ver menos' : 'Ver todo el material'}
-            </button>
+            <div className="planmensual__material_ctas">
+              <ButtonArrow texto="VER PLANES" href="#planes" />
+              <button className="planmensual__vertodo" onClick={() => setVerTodo(!verTodo)}>
+                {verTodo ? 'Ver menos' : 'Ver todo el material'}
+              </button>
+            </div>
             <p className="planmensual__nota">*Fondos de color: único coste extra, 20€ + IVA por metro pisado.</p>
           </div>
         </section>
@@ -173,6 +203,11 @@ export default function PlanMensual() {
             <button className="planmensual__flecha" aria-label="Siguiente" onClick={() => deslizar(fotosRef, 1)}>→</button>
           </div>
         </section>
+
+        <div className="planmensual__banda">
+          <p>Tu hueco fijo cada semana, con todo esto incluido, desde 149€/mes.</p>
+          <ButtonArrow texto="VER PLANES" href="#planes" />
+        </div>
 
         {/* INSTAGRAM */}
         <section className="planmensual__ig">
@@ -305,9 +340,9 @@ export default function PlanMensual() {
         <section className="planmensual__contacto" id="unirte">
           <h2>Da el paso</h2>
           <p>Escríbenos por WhatsApp indicando qué plan te interesa y te contamos los siguientes pasos para reservar tu plaza.</p>
-          <a className="planmensual__whatsapp" href={waGeneral} target="_blank" rel="noopener noreferrer">
-            <span>Reservar mi plaza por WhatsApp</span>
-          </a>
+          <div className="planmensual__cierre_cta">
+            <ButtonArrow texto="SOLICITAR PLAZA" href={waGeneral} />
+          </div>
         </section>
 
         {/* CONDICIONES (plegadas, después del cierre) */}
@@ -360,7 +395,11 @@ export default function PlanMensual() {
 
       </main>
 
-      <a className="planmensual__sticky" href={waGeneral} target="_blank" rel="noopener noreferrer">Reservar mi plaza</a>
+      {fijo === 'solicitar' ? (
+        <a className="planmensual__sticky visible" href={waGeneral} target="_blank" rel="noopener noreferrer">Solicitar plaza</a>
+      ) : (
+        <a className={`planmensual__sticky ${fijo === 'planes' ? 'visible' : ''}`} href="#planes">Ver planes</a>
+      )}
     </>
   )
 }

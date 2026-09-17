@@ -1476,6 +1476,18 @@ strong{
       }
     }
 
+    .planmensual__material_ctas{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+
+        @include media500px {
+          justify-content: center;
+        }
+    }
+
     // Mismo botón que "Ver más" en la home
     .planmensual__vertodo{
       font-family: $aktiv;
@@ -1486,19 +1498,12 @@ strong{
       letter-spacing: 0px;
       font-weight: 200;
       padding: 10px 15px 7px 15px;
-      margin-top: 2rem;
       transition: 0.3s ease-in-out;
 
       &:hover{
         background-color: $brown;
         color: $white;
       }
-
-        @include media500px {
-          display: block;
-          margin-left: auto;
-          margin-right: auto;
-        }
     }
   }
 
@@ -1763,41 +1768,64 @@ strong{
       text-align: center;
     }
 
-    .planmensual__whatsapp{
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      background-color: $brown;
-      padding: 18px 32px 14px 32px;
+    .planmensual__cierre_cta{
+      display: flex;
+      justify-content: center;
       margin-top: 1.5rem;
-      transition: 0.3s ease-in-out;
-
-      span{
-        color: $white;
-        font-size: 1.1rem;
-        letter-spacing: 0px;
-      }
-
-      &:hover{
-        background-color: $beige;
-
-        span{
-          color: $brown;
-        }
-      }
-
-        @include media500px {
-          display: flex;
-          width: 100%;
-          box-sizing: border-box;
-        }
     }
-
   }
 
 
-  // CARRUSELES (Instagram y YouTube): una fila que se desliza (dedo en móvil, flechas en escritorio)
+  // FRANJA con llamada a los planes (entre las sesiones de fotos e Instagram)
+
+  .planmensual__banda{
+    background-color: $beige;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    padding: 20px 30px;
+    margin-top: 100px;
+
+      @include media700px {
+        display: block;
+        text-align: center;
+        margin-top: 60px;
+      }
+
+    p{
+      margin-bottom: 0;
+      text-align: left;
+      max-width: 700px;
+
+        @include media700px {
+          text-align: center;
+          margin-bottom: 1rem;
+        }
+    }
+
+    .button{
+      flex-shrink: 0;
+      background-color: $brown;
+
+        @include media700px {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+      &:hover{
+        background-color: $white;
+        color: $brown;
+
+        .button__arrow{
+          filter: brightness(0.3);
+        }
+      }
+    }
+  }
+
+
+  // CARRUSELES (fotos, Instagram y YouTube): una fila que se desliza (dedo en móvil, flechas en escritorio)
 
   .planmensual__slider{
     display: flex;
@@ -2095,8 +2123,8 @@ strong{
 }
 
 
-// CTA fijo: solo en escritorio, abajo a la izquierda (el chat va a la derecha).
-// En móvil se oculta para que no tape los botones del hero ni el contenido.
+// CTA fijo contextual: oculto en el hero y mientras los planes o el cierre están en pantalla.
+// Abajo a la izquierda, dejando libre la esquina del chat. Visible también en móvil.
 
 .planmensual__sticky{
   position: fixed;
@@ -2111,13 +2139,20 @@ strong{
   font-size: 0.9rem;
   letter-spacing: 0px;
   padding: 10px 16px 7px 16px;
-  transition: 0.3s ease-in-out;
+  max-width: calc(100vw - 120px);
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
+
+  &.visible{
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
 
   &:hover{
     background-color: $beige;
+    color: $brown;
   }
-
-    @include media900px {
-      display: none;
-    }
 }

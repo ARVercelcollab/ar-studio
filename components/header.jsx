@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/router';
 
 export default function Header() {
+  // En la página del plan mensual el enlace del menú baja directamente a los planes
+  const { pathname } = useRouter()
+  const hrefPlan = pathname === '/planmensual' ? '#planes' : '/planmensual'
 
   
 
@@ -21,7 +25,7 @@ export default function Header() {
 
       <nav className="header__nav">
         <Link href="/#espacio">ESPACIO</Link>
-        <Link href="/planmensual">PLAN MENSUAL</Link>
+        <Link href={hrefPlan}>PLAN MENSUAL</Link>
         <a href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
         <a href="https://calendly.com/ar-studio">RESERVAR</a>
       </nav>
