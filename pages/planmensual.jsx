@@ -18,12 +18,12 @@ export default function PlanMensual({ plazas, mes }) {
     <>
       <Head>
         <title>Plan mensual | AR Studio, estudio de fotografía en Valencia</title>
-        <meta name="description" content="El primer estudio de Valencia con acceso mensual para creadores y fotógrafos. Solo 10 plazas. Todo el material profesional incluido en una cuota mensual cerrada." />
+        <meta name="description" content="Un espacio profesional en Valencia para crear tu contenido y trabajar con tus clientes, por una cuota fija al mes. Luz natural, ciclorama y todo el equipo incluido. Plazas limitadas." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://studioar.es/planmensual" />
 
         <meta property="og:title" content="Plan mensual | AR Studio" />
-        <meta property="og:description" content="Acceso fijo al estudio con todo el material profesional incluido, por una cuota mensual cerrada. Solo 10 plazas." />
+        <meta property="og:description" content="Tu estudio fijo en Valencia por una cuota cerrada al mes: luz natural, ciclorama y todo el equipo profesional incluido. Plazas limitadas." />
         <meta property="og:url" content="https://studioar.es/planmensual" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://studioar.es/seo/meta-1200x630.jpg" />
@@ -32,7 +32,7 @@ export default function PlanMensual({ plazas, mes }) {
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Plan mensual | AR Studio" />
-        <meta name="twitter:description" content="Acceso fijo al estudio con todo el material profesional incluido. Solo 10 plazas." />
+        <meta name="twitter:description" content="Tu estudio fijo en Valencia por una cuota cerrada al mes. Todo el equipo incluido. Plazas limitadas." />
         <meta name="twitter:image" content="https://studioar.es/seo/twitter-1200x600.jpg" />
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -43,21 +43,21 @@ export default function PlanMensual({ plazas, mes }) {
         {/* HERO */}
         <section className="planmensual__hero">
           <span className="planmensual__badge">{badge}</span>
-          <h1>El primer estudio de Valencia con acceso mensual para creadores y fotógrafos.</h1>
+          <h1>Un espacio profesional para crear tu contenido y trabajar con tus clientes. Por una cuota fija al mes.</h1>
           <div className="planmensual__hero_text">
-            <p>Deja de pagar por horas sueltas. Deja de mirar el reloj mientras creas. Deja de improvisar el espacio donde construyes tu marca o trabajas con tus clientes.</p>
-            <p>Acceso fijo al estudio, con todo el material profesional incluido, por una cuota mensual cerrada. Sin sorpresas, sin costes por hora, sin límites artificiales.</p>
+            <p>Tienes ideas y tienes clientes. Lo que no tienes es un sitio adecuado, o lo tienes a un precio que se come tu margen cada vez que lo usas.</p>
+            <p>Con el plan mensual tienes tu estudio fijo en Valencia por una cuota cerrada: luz natural, ciclorama y todo el equipo profesional, listos cada semana. El coste del estudio deja de ser una sorpresa en cada sesión.</p>
           </div>
           <div className="planmensual__ctas">
             <ButtonArrow texto="VER PLANES" href="#planes" />
-            <ButtonArrow texto="ESCRÍBENOS" href={waGeneral} />
+            <ButtonArrow texto="PEDIR PLAZA" href={waGeneral} />
           </div>
         </section>
 
         <div className="planmensual__strip">
-          <span>89 m² · techo 3,5 m</span>
-          <span>Todo el material incluido</span>
-          <span>Cuota mensual cerrada</span>
+          <span>Desde 149€/mes</span>
+          <span>Todo el equipo incluido</span>
+          <span>Tu hueco fijo semanal</span>
         </div>
 
         {/* INTRO */}
