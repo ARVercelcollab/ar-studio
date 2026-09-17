@@ -183,7 +183,6 @@ export default function PlanMensual() {
           <div className="planmensual__slider planmensual__ig_grid" ref={igRef} dangerouslySetInnerHTML={HTML_IG_PROP} />
           <div className="planmensual__slider_nav">
             <button className="planmensual__flecha" aria-label="Anterior" onClick={() => deslizar(igRef, -1)}>←</button>
-            <ButtonArrow texto="VER @STUDIOAR.ES" href="https://www.instagram.com/studioar.es/" />
             <button className="planmensual__flecha" aria-label="Siguiente" onClick={() => deslizar(igRef, 1)}>→</button>
           </div>
           <Script
