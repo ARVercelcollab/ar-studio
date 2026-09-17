@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Script from 'next/script'
 import { useEffect, useRef, useState } from 'react'
 import ButtonArrow from '../components/button'
+import YoutubeCard from '../components/YoutubeCard'
 import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
 
 const WA = 'https://wa.me/34613395533?text='
@@ -21,6 +22,18 @@ const HTML_IG = POSTS_IG.map((code) => {
 // Objeto con identidad fija: si se creara en cada render, React volvería a escribir el HTML y borraría los iframes
 const HTML_IG_PROP = { __html: HTML_IG }
 
+// Vídeos grabados en el estudio (YouTube). "inicio" es el segundo en el que arranca.
+const VIDEOS_YT = [
+  { id: 'U9Gn1jmGw3A', inicio: 7, autor: 'Arianny Rivas', titulo: 'Tutorial: aprende a posar como una modelo profesional en 5 minutos' },
+  { id: 'M5yvR_AKbUo', inicio: 7, autor: 'Arianny Rivas', titulo: 'Errores que te hacen perder un casting (y cómo evitarlos)' },
+  { id: 'T2HYZRgie4Q', inicio: 95, autor: 'Carlos Correa', titulo: 'El negocio online nº1 en 2025 (aunque empieces desde cero)' },
+  { id: 'pGJ-HgohR-8', inicio: 0, autor: 'Arianny Rivas', titulo: 'Reprogramar tu mente también es parte del modelaje' },
+  { id: 'MpedQPQ9k-c', inicio: 6, autor: 'Carlos Correa', titulo: 'Cómo vender (cualquier cosa) con tu marca personal' },
+  { id: 'oXrZwDEh2Q4', inicio: 0, autor: 'Arianny Rivas', titulo: 'Si quieres modelar para Zara, primero necesitas ver esta clase' },
+  { id: 'wLG1lFQOxz0', inicio: 0, autor: 'Arianny Rivas', titulo: 'Ep. 2: Djabu Balde, modelo, actriz, madre y empresaria. ¿Se puede tener todo?' },
+  { id: 'VDL-ba8TzuA', inicio: 0, autor: 'Carlos Correa', titulo: 'El error que hará que tu curso online venda 0€' },
+]
+
 // Material incluido: 5 categorías, 3 ítems visibles y el resto desplegable
 const MATERIAL = [
   { titulo: 'Iluminación', items: ['GODOX MS300 (×2)', 'NANLITE Forza 150W', 'Softbox GODOX (×2)', 'GODOX X2T-S para Sony', 'GODOX X2T-C para Canon', 'Paraguas de luz'] },
@@ -33,7 +46,8 @@ const MATERIAL = [
 export default function PlanMensual() {
   const [verTodo, setVerTodo] = useState(false)
   const igRef = useRef(null)
-  const deslizarIg = (dir) => igRef.current?.scrollBy({ left: dir * igRef.current.clientWidth * 0.8, behavior: 'smooth' })
+  const ytRef = useRef(null)
+  const deslizar = (ref, dir) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: 'smooth' })
 
   // Si embed.js ya estaba cargado (navegación interna), procesar los embeds al montar
   useEffect(() => {
@@ -151,6 +165,40 @@ export default function PlanMensual() {
           </div>
         </section>
 
+        {/* INSTAGRAM */}
+        <section className="planmensual__ig">
+          <span className="planmensual__label">Instagram</span>
+          <h2>Lo que pasa<br />en el estudio.</h2>
+          {/* embed.js de Instagram reemplaza estos nodos por iframes; se inyectan como HTML
+              opaco para que React no intente reconciliarlos (si no, rompe al re-renderizar) */}
+          <div className="planmensual__slider planmensual__ig_grid" ref={igRef} dangerouslySetInnerHTML={HTML_IG_PROP} />
+          <div className="planmensual__slider_nav">
+            <button className="planmensual__flecha" aria-label="Anterior" onClick={() => deslizar(igRef, -1)}>←</button>
+            <ButtonArrow texto="VER @STUDIOAR.ES" href="https://www.instagram.com/studioar.es/" />
+            <button className="planmensual__flecha" aria-label="Siguiente" onClick={() => deslizar(igRef, 1)}>→</button>
+          </div>
+          <Script
+            src="https://www.instagram.com/embed.js"
+            strategy="lazyOnload"
+            onLoad={() => window.instgrm?.Embeds?.process()}
+          />
+        </section>
+
+        {/* YOUTUBE */}
+        <section className="planmensual__yt">
+          <span className="planmensual__label">YouTube</span>
+          <h2>Grabado<br />en el estudio.</h2>
+          <div className="planmensual__slider planmensual__yt_grid" ref={ytRef}>
+            {VIDEOS_YT.map((v) => (
+              <YoutubeCard key={v.id} {...v} />
+            ))}
+          </div>
+          <div className="planmensual__slider_nav">
+            <button className="planmensual__flecha" aria-label="Anterior" onClick={() => deslizar(ytRef, -1)}>←</button>
+            <button className="planmensual__flecha" aria-label="Siguiente" onClick={() => deslizar(ytRef, 1)}>→</button>
+          </div>
+        </section>
+
         {/* PLANES */}
         <section className="planmensual__planes" id="planes">
           <div className="planmensual__planes_head">
@@ -252,25 +300,6 @@ export default function PlanMensual() {
           <a className="planmensual__whatsapp" href={waGeneral} target="_blank" rel="noopener noreferrer">
             <span>Reservar mi plaza por WhatsApp</span>
           </a>
-        </section>
-
-        {/* INSTAGRAM */}
-        <section className="planmensual__ig">
-          <span className="planmensual__label">En Instagram</span>
-          <h2>Lo que pasa<br />en el estudio.</h2>
-          {/* embed.js de Instagram reemplaza estos nodos por iframes; se inyectan como HTML
-              opaco para que React no intente reconciliarlos (si no, rompe al re-renderizar) */}
-          <div className="planmensual__ig_grid" ref={igRef} dangerouslySetInnerHTML={HTML_IG_PROP} />
-          <div className="planmensual__ig_more">
-            <button className="planmensual__ig_flecha" aria-label="Anterior" onClick={() => deslizarIg(-1)}>←</button>
-            <ButtonArrow texto="VER @STUDIOAR.ES" href="https://www.instagram.com/studioar.es/" />
-            <button className="planmensual__ig_flecha" aria-label="Siguiente" onClick={() => deslizarIg(1)}>→</button>
-          </div>
-          <Script
-            src="https://www.instagram.com/embed.js"
-            strategy="lazyOnload"
-            onLoad={() => window.instgrm?.Embeds?.process()}
-          />
         </section>
 
         {/* CONDICIONES (plegadas, después del cierre) */}
