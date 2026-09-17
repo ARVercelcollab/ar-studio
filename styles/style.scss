@@ -1067,9 +1067,9 @@ strong{
 
 
 
-//MEMBRESIAS
+//PLAN MENSUAL
 
-.membresias__master{
+.planmensual__master{
   padding-left: 3vw;
   padding-right: 3vw;
   max-width: 1400px;
@@ -1187,7 +1187,7 @@ strong{
     }
   }
 
-  .membresias__label{
+  .planmensual__label{
     display: block;
     font-family: $aktiv;
     color: $beige;
@@ -1198,7 +1198,7 @@ strong{
     margin-bottom: 1rem;
   }
 
-  .membresias__badge{
+  .planmensual__badge{
     display: inline-block;
     background-color: $beige;
     color: $brown;
@@ -1211,7 +1211,7 @@ strong{
     margin-bottom: 2rem;
   }
 
-  .membresias__nota{
+  .planmensual__nota{
     color: $beige;
     font-size: 0.8rem;
     margin-top: 2rem;
@@ -1221,14 +1221,14 @@ strong{
 
   // HERO
 
-  .membresias__hero{
+  .planmensual__hero{
     margin-top: 100px;
 
       @include media900px {
         margin-top: 60px;
       }
 
-    .membresias__hero_text{
+    .planmensual__hero_text{
       display: flex;
       gap: 3rem;
       margin-bottom: 3rem;
@@ -1248,7 +1248,7 @@ strong{
     }
   }
 
-  .membresias__ctas{
+  .planmensual__ctas{
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
@@ -1265,7 +1265,7 @@ strong{
 
   // STRIP
 
-  .membresias__strip{
+  .planmensual__strip{
     background-color: $beige;
     display: flex;
     justify-content: space-between;
@@ -1289,7 +1289,7 @@ strong{
 
   // INTRO
 
-  .membresias__intro{
+  .planmensual__intro{
     margin-top: 150px;
     display: flex;
     justify-content: space-between;
@@ -1305,7 +1305,7 @@ strong{
       flex-shrink: 0;
     }
 
-    .membresias__intro_text{
+    .planmensual__intro_text{
       max-width: 420px;
 
         @include media900px {
@@ -1313,7 +1313,7 @@ strong{
         }
     }
 
-    .membresias__lista{
+    .planmensual__lista{
       margin-top: 2rem;
     }
   }
@@ -1321,7 +1321,7 @@ strong{
 
   // ESPACIO
 
-  .membresias__espacio{
+  .planmensual__espacio{
     margin-top: 200px;
     display: flex;
     justify-content: space-between;
@@ -1332,7 +1332,7 @@ strong{
         margin-top: 100px;
       }
 
-    .membresias__portada{
+    .planmensual__portada{
       width: 48%;
       height: 550px;
       object-fit: cover;
@@ -1345,7 +1345,7 @@ strong{
         }
     }
 
-    .membresias__espacio_content{
+    .planmensual__espacio_content{
       max-width: 480px;
 
         @include media700px {
@@ -1354,7 +1354,7 @@ strong{
     }
   }
 
-  .membresias__stats{
+  .planmensual__stats{
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem 1rem;
@@ -1380,19 +1380,19 @@ strong{
 
   // MATERIAL
 
-  .membresias__material{
+  .planmensual__material{
     margin-top: 200px;
 
       @include media700px {
         margin-top: 100px;
       }
 
-    .membresias__lead{
+    .planmensual__lead{
       max-width: 600px;
       margin-bottom: 3rem;
     }
 
-    .membresias__material_grid{
+    .planmensual__material_grid{
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 3rem 2rem;
@@ -1415,14 +1415,14 @@ strong{
 
   // PLANES
 
-  .membresias__planes{
+  .planmensual__planes{
     margin-top: 200px;
 
       @include media700px {
         margin-top: 100px;
       }
 
-    .membresias__planes_head{
+    .planmensual__planes_head{
       p{
         max-width: 600px;
         margin-bottom: 3rem;
@@ -1430,7 +1430,7 @@ strong{
     }
   }
 
-  .membresias__cards{
+  .planmensual__cards{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
@@ -1442,7 +1442,7 @@ strong{
       }
   }
 
-  .membresias__card{
+  .planmensual__card{
     border: 1px solid $beige;
     padding: 30px;
     display: flex;
@@ -1459,12 +1459,12 @@ strong{
       margin-bottom: 0.5rem;
     }
 
-    .membresias__card_for{
+    .planmensual__card_for{
       min-height: 3.6rem;
       text-align: left;
     }
 
-    .membresias__price{
+    .planmensual__price{
       font-family: $aktiv;
       font-size: 3.5rem;
       letter-spacing: -3px;
@@ -1481,7 +1481,7 @@ strong{
       }
     }
 
-    .membresias__hora{
+    .planmensual__hora{
       color: $beige;
       font-size: 0.8rem;
       letter-spacing: 0px;
@@ -1494,7 +1494,7 @@ strong{
       margin-bottom: 2rem;
     }
 
-    .membresias__ahorro{
+    .planmensual__ahorro{
       background-color: $beige;
       padding: 12px 14px 9px 14px;
       font-size: 0.8rem;
@@ -1503,7 +1503,7 @@ strong{
       margin-bottom: 1.5rem;
     }
 
-    .membresias__plazas{
+    .planmensual__plazas{
       color: $beige;
       font-size: 0.8rem;
       letter-spacing: 0px;
@@ -1513,11 +1513,11 @@ strong{
     }
 
     // Plan destacado: mismo tratamiento que el cubo de "Detalles"
-    &.membresias__card--destacada{
+    &.planmensual__card--destacada{
       background-color: $brown;
       border-color: $brown;
 
-      h3, p, li, .membresias__price{
+      h3, p, li, .planmensual__price{
         color: $white;
       }
 
@@ -1525,11 +1525,11 @@ strong{
         background-color: $white;
       }
 
-      .membresias__hora, .membresias__plazas{
+      .planmensual__hora, .planmensual__plazas{
         color: $beige;
       }
 
-      .membresias__ahorro{
+      .planmensual__ahorro{
         background-color: $white;
         color: $brown;
 
@@ -1553,7 +1553,7 @@ strong{
         }
       }
 
-      .membresias__ribbon{
+      .planmensual__ribbon{
         position: absolute;
         top: -12px;
         left: 30px;
@@ -1570,7 +1570,7 @@ strong{
     }
   }
 
-  .membresias__fundador{
+  .planmensual__fundador{
     background-color: $beige;
     display: flex;
     gap: 3rem;
@@ -1601,7 +1601,7 @@ strong{
 
   // COMPARATIVA
 
-  .membresias__compara{
+  .planmensual__compara{
     margin-top: 200px;
 
       @include media700px {
@@ -1609,12 +1609,12 @@ strong{
       }
   }
 
-  .membresias__tabla_scroll{
+  .planmensual__tabla_scroll{
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  .membresias__tabla{
+  .planmensual__tabla{
     width: 100%;
     min-width: 560px;
     border-collapse: collapse;
@@ -1643,14 +1643,14 @@ strong{
 
   // CONDICIONES
 
-  .membresias__condiciones{
+  .planmensual__condiciones{
     margin-top: 200px;
 
       @include media700px {
         margin-top: 100px;
       }
 
-    .membresias__cond_grid{
+    .planmensual__cond_grid{
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 3rem 2rem;
@@ -1664,7 +1664,7 @@ strong{
         padding-top: 1.5rem;
       }
 
-      .membresias__cond_wide{
+      .planmensual__cond_wide{
         grid-column: 1 / -1;
 
         > p{
@@ -1673,7 +1673,7 @@ strong{
       }
     }
 
-    .membresias__excepciones{
+    .planmensual__excepciones{
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 2rem;
@@ -1697,14 +1697,14 @@ strong{
 
   // CONTACTO
 
-  .membresias__contacto{
+  .planmensual__contacto{
     margin-top: 200px;
 
       @include media700px {
         margin-top: 100px;
       }
 
-    .membresias__contacto_text{
+    .planmensual__contacto_text{
       display: flex;
       gap: 3rem;
       margin-bottom: 3rem;
@@ -1723,7 +1723,7 @@ strong{
     }
   }
 
-  .membresias__canales{
+  .planmensual__canales{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
@@ -1733,7 +1733,7 @@ strong{
       }
   }
 
-  .membresias__canal{
+  .planmensual__canal{
     border: 1px solid $beige;
     padding: 30px;
     display: flex;
@@ -1754,7 +1754,7 @@ strong{
       background-color: $beige;
     }
 
-    &.membresias__canal--destacado{
+    &.planmensual__canal--destacado{
       background-color: $brown;
       border-color: $brown;
 
@@ -1776,7 +1776,7 @@ strong{
 
 // CTA fijo (abajo a la izquierda para no tapar el chat, que va a la derecha)
 
-.membresias__sticky{
+.planmensual__sticky{
   position: fixed;
   bottom: 20px;
   left: 3vw;
