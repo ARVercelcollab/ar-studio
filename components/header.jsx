@@ -21,7 +21,7 @@ export default function Header() {
 
       <nav className="header__nav">
         <Link href="/#espacio">ESPACIO</Link>
-        <Link href="/membresias">PLAN MENSUAL</Link>
+        <Link href="/planmensual">PLAN MENSUAL</Link>
         <a href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
         <a href="https://calendly.com/ar-studio">RESERVAR</a>
       </nav>

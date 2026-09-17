@@ -17,11 +17,11 @@ export default function Membresias() {
         <title>Plan mensual | Membresías de AR Studio en Valencia</title>
         <meta name="description" content="El primer estudio de Valencia con acceso mensual para creadores y fotógrafos. Solo 10 plazas. Todo el material profesional incluido en una cuota mensual cerrada." />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://studioar.es/membresias" />
+        <link rel="canonical" href="https://studioar.es/planmensual" />
 
         <meta property="og:title" content="Plan mensual | Membresías de AR Studio" />
         <meta property="og:description" content="Acceso fijo al estudio con todo el material profesional incluido, por una cuota mensual cerrada. Solo 10 plazas." />
-        <meta property="og:url" content="https://studioar.es/membresias" />
+        <meta property="og:url" content="https://studioar.es/planmensual" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://studioar.es/seo/meta-1200x630.jpg" />
         <meta property="og:site_name" content="AR Studio" />
