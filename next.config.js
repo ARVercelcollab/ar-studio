@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Sin el indicador "N" de herramientas de desarrollo en la esquina
+  devIndicators: false,
   images: {
     // Miniaturas de YouTube en la página del plan mensual
     remotePatterns: [{ protocol: 'https', hostname: 'i.ytimg.com' }],

@@ -3,7 +3,7 @@ import Head from 'next/head'
 import Header from '../components/header.jsx';
 import Footer from '../components/footer.jsx';
 import CookieConsent from '../components/CookieConsent.jsx';
-import ChatWidget from '../components/ChatWidget.jsx';
+// Chat desactivado de momento: import ChatWidget from '../components/ChatWidget.jsx';
 
 
 export default function MyApp({ Component, pageProps }) {
@@ -24,7 +24,7 @@ export default function MyApp({ Component, pageProps }) {
       <CookieConsent />
       <Component {...pageProps} />
       <Footer></Footer>
-      <ChatWidget />
+      {/* <ChatWidget /> — desactivado de momento */}
     </>
   )
 }

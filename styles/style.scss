@@ -2124,12 +2124,12 @@ strong{
 
 
 // CTA fijo contextual: oculto en el hero y mientras los planes o el cierre están en pantalla.
-// Abajo a la izquierda, dejando libre la esquina del chat. Visible también en móvil.
+// Centrado abajo. Visible también en móvil.
 
 .planmensual__sticky{
   position: fixed;
   bottom: 20px;
-  left: 3vw;
+  left: 50%;
   z-index: 9000;
   background-color: $brown;
   color: $white;
@@ -2138,16 +2138,19 @@ strong{
   font-weight: 200;
   font-size: 0.9rem;
   letter-spacing: 0px;
-  padding: 10px 16px 7px 16px;
-  max-width: calc(100vw - 120px);
+  padding: 12px 28px 9px 28px;
+  min-width: 240px;
+  box-sizing: border-box;
+  text-align: center;
+  white-space: nowrap;
   opacity: 0;
-  transform: translateY(20px);
+  transform: translate(-50%, 20px);
   pointer-events: none;
   transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
 
   &.visible{
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, 0);
     pointer-events: auto;
   }
 
