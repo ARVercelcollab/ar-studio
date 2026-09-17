@@ -1,24 +1,44 @@
 import Head from 'next/head'
 import Image from 'next/image'
+import Script from 'next/script'
+import { useEffect, useState } from 'react'
 import ButtonArrow from '../components/button'
-import { plazasDelMes, textoPlazas } from '../lib/plazas'
+import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoBadge, textoPlazasPlan } from '../lib/plazas'
 
 const WA = 'https://wa.me/34613395533?text='
-const waGeneral = WA + encodeURIComponent('Hola, me interesa el plan mensual de AR Studio. ¿Me contáis los siguientes pasos?')
-const waStarter = WA + encodeURIComponent('Hola, me interesa el plan STARTER de AR Studio. ¿Me contáis los siguientes pasos?')
-const waCreator = WA + encodeURIComponent('Hola, me interesa el plan CREATOR de AR Studio. ¿Me contáis los siguientes pasos para reservar mi plaza?')
-const waPro = WA + encodeURIComponent('Hola, me interesa el plan PRO de AR Studio. ¿Me contáis los siguientes pasos?')
-const mailto = 'mailto:arstudiospain@gmail.com?subject=' + encodeURIComponent('Plan mensual AR Studio') + '&body=' + encodeURIComponent('Hola, me interesa el plan (Starter / Creator / Pro) de AR Studio. ¿Me contáis los siguientes pasos?')
+const wa = (texto) => WA + encodeURIComponent(texto)
+const waGeneral = wa('Hola, quiero una plaza del plan mensual')
+const waStarter = wa('Hola, quiero la plaza Starter')
+const waCreator = wa('Hola, quiero la plaza Creator')
+const waPro = wa('Hola, quiero la plaza Pro')
+const mailto = 'mailto:arstudiospain@gmail.com?subject=' + encodeURIComponent('Plan mensual AR Studio')
 
-export default function PlanMensual({ plazas, mes }) {
-  const badge = textoPlazas(plazas, mes)
+// Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
+const POSTS_IG = ['DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
 
+// Material incluido: 5 categorías, 3 ítems visibles y el resto desplegable
+const MATERIAL = [
+  { titulo: 'Iluminación', items: ['GODOX MS300 (×2)', 'NANLITE Forza 150W', 'Softbox GODOX (×2)', 'GODOX X2T-S para Sony', 'GODOX X2T-C para Canon', 'Paraguas de luz'] },
+  { titulo: 'Vídeo y podcast', items: ['Micrófonos Rode (×2)', 'Teleprompter', 'Trípode para cámara y móvil', 'Grabadora y tarjeta de sonido (×2)', 'Proyector Bluetooth', 'Arco de colores RGB con mando'] },
+  { titulo: 'Ciclorama y fondos', items: ['Ciclorama blanco profesional', 'Fondos de color disponibles*', 'Luz natural todo el año'] },
+  { titulo: 'Mobiliario y atrezzo', items: ['Mesa blanca larga 220×115 cm', 'Sillones nórdicos (×2)', 'Espejo grande 180×180 cm', 'Mesa blanca pequeña (×2)', 'Sillas plegables (×15)', 'Burro portátil con perchas', 'Plantas reales', 'Silla profesional de maquillador'] },
+  { titulo: 'Comodidades', items: ['Aire acondicionado', 'WiFi de alta velocidad', 'Cafetera y agua', 'Plancha a vapor para vestuario', 'Estudio siempre limpio y preparado'] },
+]
+
+export default function PlanMensual() {
+  const badge = textoBadge()
+  const [verTodo, setVerTodo] = useState(false)
+
+  // Si embed.js ya estaba cargado (navegación interna), procesar los embeds al montar
+  useEffect(() => {
+    if (window.instgrm?.Embeds) window.instgrm.Embeds.process()
+  }, [])
 
   return (
     <>
       <Head>
         <title>Plan mensual | AR Studio, estudio de fotografía en Valencia</title>
-        <meta name="description" content="Un espacio profesional en Valencia para crear tu contenido y trabajar con tus clientes, por una cuota fija al mes. Luz natural, ciclorama y todo el equipo incluido. Plazas limitadas." />
+        <meta name="description" content="Crea contenido para tu marca y trabaja con clientes en un estudio profesional de Valencia por 13,90€/hora. Acceso fijo, todo el material incluido, cuota mensual cerrada." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://studioar.es/planmensual" />
 
@@ -43,11 +63,8 @@ export default function PlanMensual({ plazas, mes }) {
         {/* HERO */}
         <section className="planmensual__hero">
           <span className="planmensual__badge">{badge}</span>
-          <h1>Un espacio profesional para crear tu contenido y trabajar con tus clientes. Por una cuota fija al mes.</h1>
-          <div className="planmensual__hero_text">
-            <p>Tienes ideas y tienes clientes. Lo que no tienes es un sitio adecuado, o lo tienes a un precio que se come tu margen cada vez que lo usas.</p>
-            <p>Con el plan mensual tienes tu estudio fijo en Valencia por una cuota cerrada: luz natural, ciclorama y todo el equipo profesional, listos cada semana. El coste del estudio deja de ser una sorpresa en cada sesión.</p>
-          </div>
+          <h1>Crea contenido para tu marca y trabaja con clientes en un espacio profesional <span className="planmensual__acento">por 13,90€/hora.</span></h1>
+          <p className="planmensual__sub">Deja de pagar más por horas sueltas. Acceso fijo al estudio, con todo el material profesional incluido, por una cuota mensual cerrada.</p>
           <div className="planmensual__ctas">
             <ButtonArrow texto="VER PLANES" href="#planes" />
             <ButtonArrow texto="PEDIR PLAZA" href={waGeneral} />
@@ -60,102 +77,71 @@ export default function PlanMensual({ plazas, mes }) {
           <span>Tu hueco fijo semanal</span>
         </div>
 
-        {/* INTRO */}
-        <section className="planmensual__intro">
-          <h2>Un espacio pensado para lo que no se improvisa.</h2>
-          <div className="planmensual__intro_text">
-            <p>AR Studio Valencia abre <strong>por primera vez</strong> un número limitado de plazas de plan mensual, pensadas para quien produce con constancia: contenido de marca personal, fotografía con clientes, podcast y producción de producto.</p>
-            <ul className="planmensual__lista">
-              <li>Tu hueco fijo cada semana, sin negociar disponibilidad.</li>
-              <li>Todo el equipo profesional incluido en la cuota.</li>
-              <li>Solo un miembro usa el estudio a la vez: tu sesión es tuya.</li>
-              <li>Estudio siempre limpio y preparado al llegar.</li>
-            </ul>
-          </div>
-        </section>
-
         {/* ESPACIO */}
         <section className="planmensual__espacio" id="espacio">
-          <Image className="planmensual__portada" src="/media/col2.jpg" alt="Interior y mobiliario de AR Studio en Valencia" loading="lazy" decoding="async" width={600} height={600} />
+          <div className="planmensual__espacio_fotos">
+            <Image className="planmensual__foto planmensual__foto--alta" src="/media/studio-2.jpg" alt="Estudio vacío de AR Studio en Valencia: ciclorama blanco, 3,5 metros de techo y dos focos Godox" loading="lazy" decoding="async" width={900} height={1250} sizes="(max-width: 700px) 100vw, 40vw" />
+            <Image className="planmensual__foto" src="/media/col2.jpg" alt="El estudio montado con sillón, mesa de madera y plantas junto a la ventana" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 30vw" />
+          </div>
           <div className="planmensual__espacio_content">
             <span className="planmensual__label">El espacio</span>
             <h2>Luz natural.<br />Fondo neutro.<br />Minimalismo.</h2>
-            <p>Un estudio profesional con luz natural y ciclorama blanco, diseñado para fotografía, vídeo, contenido de marca personal, podcast y producción de producto.</p>
+            <p>89 m² con luz natural y ciclorama blanco, listos para fotografía, vídeo, contenido de marca personal, podcast y sesiones con clientes.</p>
             <dl className="planmensual__stats">
               <div><dt>89 m²</dt><dd>Superficie</dd></div>
               <div><dt>3,5 m</dt><dd>Altura de techo</dd></div>
               <div><dt>1</dt><dd>Miembro a la vez</dd></div>
-              <div><dt>10</dt><dd>Plazas totales</dd></div>
+              <div><dt>{PLAZAS_TOTALES}</dt><dd>Plazas totales</dd></div>
             </dl>
           </div>
         </section>
 
         {/* MATERIAL */}
         <section className="planmensual__material">
-          <span className="planmensual__label">Incluido en todos los planes</span>
-          <h2>Todo el material,<br />sin coste adicional.</h2>
-          <p className="planmensual__lead">Esto es lo que hace diferente a AR Studio. <strong>No alquilas solo un espacio:</strong> tienes acceso a todo el equipo profesional, sin coste adicional, en todos los planes.</p>
+          <Image className="planmensual__foto planmensual__material_foto" src="/media/col5.jpg" alt="Focos Godox con softbox montados en el estudio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 900px) 100vw, 40vw" />
+          <div className="planmensual__material_content">
+            <span className="planmensual__label">Incluido en todos los planes</span>
+            <h2>Todo el material,<br />sin coste adicional.</h2>
+            <p className="planmensual__lead">No alquilas solo un espacio: tienes acceso a todo el equipo profesional, sin coste adicional, en todos los planes.</p>
 
-          <div className="planmensual__material_grid">
-            <div>
-              <h3>Iluminación</h3>
-              <ul>
-                <li>GODOX MS300 (×2)</li>
-                <li>NANLITE Forza 150W</li>
-                <li>GODOX X2T-S para Sony</li>
-                <li>GODOX X2T-C para Canon</li>
-                <li>Softbox GODOX (×2)</li>
-                <li>Paraguas de luz</li>
-              </ul>
+            <div className={`planmensual__material_grid ${verTodo ? 'abierto' : ''}`}>
+              {MATERIAL.map((cat) => (
+                <div key={cat.titulo}>
+                  <h3>{cat.titulo}</h3>
+                  <ul>
+                    {(verTodo ? cat.items : cat.items.slice(0, 3)).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
-            <div>
-              <h3>Kit de podcast</h3>
-              <ul>
-                <li>Micrófonos Rode (×2)</li>
-                <li>Grabadora y tarjeta de sonido (×2)</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Vídeo y captación</h3>
-              <ul>
-                <li>Proyector Bluetooth</li>
-                <li>Teleprompter</li>
-                <li>Trípode para cámara y móvil</li>
-                <li>Arco de colores RGB con mando</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Ciclorama y fondos</h3>
-              <ul>
-                <li>Ciclorama blanco profesional</li>
-                <li>Fondos de color disponibles*</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Mobiliario y atrezzo</h3>
-              <ul>
-                <li>Mesa blanca larga 220×115 cm</li>
-                <li>Mesa blanca pequeña (×2)</li>
-                <li>Sillas plegables (×15)</li>
-                <li>Burro portátil con perchas</li>
-                <li>Sillones nórdicos (×2)</li>
-                <li>Espejo grande 180×180 cm</li>
-                <li>Plantas reales</li>
-                <li>Silla profesional de maquillador</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Comodidades</h3>
-              <ul>
-                <li>Plancha a vapor para vestuario</li>
-                <li>Cafetera y agua</li>
-                <li>Aire acondicionado</li>
-                <li>WiFi de alta velocidad</li>
-                <li>Estudio siempre limpio y preparado</li>
-              </ul>
-            </div>
+
+            <button className="planmensual__vertodo" onClick={() => setVerTodo(!verTodo)}>
+              {verTodo ? 'Ver menos' : 'Ver todo el material'}
+            </button>
+            <p className="planmensual__nota">*Fondos de color: único coste extra, 20€ + IVA por metro pisado.</p>
           </div>
-          <p className="planmensual__nota">*Fondos de color: único coste extra, 20€ + IVA por metro pisado.</p>
+        </section>
+
+        {/* RESULTADOS */}
+        <section className="planmensual__resultados">
+          <span className="planmensual__label">Hecho aquí</span>
+          <h2>Lo que sale<br />del estudio.</h2>
+          <div className="planmensual__resultados_grid">
+            <figure>
+              <Image className="planmensual__foto" src="/media/col4.jpg" alt="Fotografía de producto deportivo con modelo en AR Studio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
+              <figcaption>Fotografía de producto</figcaption>
+            </figure>
+            <figure>
+              <Image className="planmensual__foto" src="/media/col9.jpg" alt="Retrato premamá con luz natural en AR Studio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
+              <figcaption>Retrato con luz natural</figcaption>
+            </figure>
+            <figure>
+              <Image className="planmensual__foto" src="/media/col3.jpg" alt="Taller de yoga con varias personas en el estudio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
+              <figcaption>Talleres y sesiones con clientes</figcaption>
+            </figure>
+          </div>
         </section>
 
         {/* PLANES */}
@@ -163,16 +149,16 @@ export default function PlanMensual({ plazas, mes }) {
           <div className="planmensual__planes_head">
             <span className="planmensual__label">Plan mensual 2026</span>
             <h2>Los tres planes</h2>
-            <p>Tres niveles de acceso pensados para distintos ritmos de trabajo. Desde el creador que produce una vez por semana hasta el fotógrafo profesional que trabaja el estudio cada día.</p>
+            <p>Tres niveles de acceso pensados para distintos ritmos de trabajo. Desde quien produce una vez por semana hasta el profesional que trabaja el estudio cada día.</p>
           </div>
 
           <div className="planmensual__cards">
 
             <div className="planmensual__card">
               <h3>Starter</h3>
-              <p className="planmensual__card_for">Para el creador que empieza a producir con constancia.</p>
+              <p className="planmensual__card_for">Para empezar a crear contenido con constancia.</p>
               <p className="planmensual__price">149€<small>/mes</small></p>
-              <p className="planmensual__hora">8 horas al mes · sale a 18,6€/hora</p>
+              <p className="planmensual__hora">8 horas al mes</p>
               <ul>
                 <li>1 sesión por semana de 2 horas</li>
                 <li>Acceso de 14:00 a 20:00, L–V</li>
@@ -181,13 +167,13 @@ export default function PlanMensual({ plazas, mes }) {
               </ul>
               <p className="planmensual__ahorro">A tarifa normal: 392€/mes. <strong>Ahorras 243€ cada mes.</strong></p>
               <ButtonArrow texto="QUIERO STARTER" href={waStarter} />
-              <p className="planmensual__plazas">6 plazas</p>
+              <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.starter)}</p>
             </div>
 
             <div className="planmensual__card planmensual__card--destacada">
-              <span className="planmensual__ribbon">El más elegido</span>
+              <span className="planmensual__ribbon">Recomendado</span>
               <h3>Creator</h3>
-              <p className="planmensual__card_for">Para el creador o fotógrafo que trabaja el estudio como parte de su negocio.</p>
+              <p className="planmensual__card_for">Para quien graba y atiende clientes cada semana.</p>
               <p className="planmensual__price">249€<small>/mes</small></p>
               <p className="planmensual__hora">16 horas al mes · sale a 15,6€/hora</p>
               <ul>
@@ -199,12 +185,12 @@ export default function PlanMensual({ plazas, mes }) {
               </ul>
               <p className="planmensual__ahorro">A tarifa normal: 784€/mes. <strong>Ahorras 535€ cada mes.</strong></p>
               <ButtonArrow texto="QUIERO CREATOR" href={waCreator} />
-              <p className="planmensual__plazas">3 plazas</p>
+              <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.creator)}</p>
             </div>
 
             <div className="planmensual__card">
               <h3>Pro</h3>
-              <p className="planmensual__card_for">Para el fotógrafo profesional que trabaja con clientes y necesita máxima flexibilidad.</p>
+              <p className="planmensual__card_for">Para el profesional que vive del estudio y necesita máxima flexibilidad.</p>
               <p className="planmensual__price">499€<small>/mes</small></p>
               <p className="planmensual__hora">36 horas al mes · sale a 13,9€/hora</p>
               <ul>
@@ -216,11 +202,10 @@ export default function PlanMensual({ plazas, mes }) {
               </ul>
               <p className="planmensual__ahorro">A tarifa normal: más de 1.760€/mes. <strong>Ahorras más de 1.250€.</strong></p>
               <ButtonArrow texto="QUIERO PRO" href={waPro} />
-              <p className="planmensual__plazas">1 plaza</p>
+              <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.pro)}</p>
             </div>
 
           </div>
-
         </section>
 
         {/* COMPARATIVA */}
@@ -242,101 +227,108 @@ export default function PlanMensual({ plazas, mes }) {
                 <tr><td>Sesiones por semana</td><td>1</td><td className="destacada">2</td><td>3</td></tr>
                 <tr><td>Horas por sesión</td><td>2h</td><td className="destacada">2h</td><td>3h</td></tr>
                 <tr><td>Horas al mes</td><td>8h</td><td className="destacada">16h</td><td>36h</td></tr>
-                <tr><td>Precio por hora</td><td>18,6€</td><td className="destacada">15,6€</td><td>13,9€</td></tr>
                 <tr><td>Franja horaria</td><td>14–20h</td><td className="destacada">14–20h</td><td>9–20h</td></tr>
                 <tr><td>Acceso a mañanas</td><td>No</td><td className="destacada">No</td><td>Sí</td></tr>
                 <tr><td>Sábado incluido</td><td>No</td><td className="destacada">No</td><td>1 al mes</td></tr>
                 <tr><td>Antelación de reserva</td><td>72h</td><td className="destacada">48h</td><td>24h</td></tr>
                 <tr><td>Material incluido</td><td>Todo</td><td className="destacada">Todo</td><td>Todo</td></tr>
-                <tr><td>Plazas</td><td>6</td><td className="destacada">3</td><td>1</td></tr>
+                <tr><td>Plazas libres</td><td>{PLAZAS_LIBRES.starter}</td><td className="destacada">{PLAZAS_LIBRES.creator}</td><td>{PLAZAS_LIBRES.pro}</td></tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        {/* CONDICIONES */}
-        <section className="planmensual__condiciones">
-          <span className="planmensual__label">Claro y por escrito</span>
-          <h2>Condiciones<br />del plan mensual</h2>
-          <div className="planmensual__cond_grid">
-            <div>
-              <h3>Compromiso y pago</h3>
-              <ul>
-                <li>Permanencia mínima de 3 meses.</li>
-                <li>Pago mensual. Sin pagos por adelantado de varios meses.</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Depósito de garantía</h3>
-              <ul>
-                <li>Starter y Creator: 100€. Pro: 150€.</li>
-                <li>Reembolsable al finalizar si el espacio y el equipo quedan en buen estado.</li>
-                <li>La baja antes de los 3 meses implica la pérdida del depósito.</li>
-              </ul>
-            </div>
-            <div>
-              <h3>Uso del estudio</h3>
-              <ul>
-                <li>Plan personal e intransferible. Puedes traer clientes o modelos a tus sesiones.</li>
-                <li>Solo un miembro usa el estudio a la vez: tu sesión es tuya.</li>
-                <li>Toda sesión se reserva por el sistema con la antelación de tu plan.</li>
-                <li>Cancelación con menos de 24h: la sesión cuenta como usada.</li>
-              </ul>
-            </div>
-            <div className="planmensual__cond_wide">
-              <h3>Horas y sesiones</h3>
-              <p>Las horas de cada semana <strong>no son acumulables</strong>: si no las usas dentro de la semana, se pierden. Así garantizamos disponibilidad real del estudio para todos los miembros. Con dos excepciones según tu plan:</p>
-              <div className="planmensual__excepciones">
-                <div>
-                  <h4>Creator</h4>
-                  <p>Puedes juntar tus 2 sesiones de la semana en <strong>un solo día</strong>: tus 4 horas semanales en una única sesión de 4h, en lugar de dos sesiones de 2h en días distintos.</p>
-                </div>
-                <div>
-                  <h4>Pro</h4>
-                  <p>Las horas que no uses durante la semana de tu sábado mensual puedes gastarlas <strong>ese mismo sábado</strong>, con un <strong>mínimo de 4 horas</strong> y un <strong>máximo de 9 horas</strong> en el día (tu asignación semanal completa).</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="planmensual__nota">La franja de mañana (9–14h) es exclusiva del plan Pro. Sábados disponibles a tarifa normal (mínimo 4h), salvo el sábado mensual del plan Pro. Domingos no incluidos.</p>
-        </section>
-
-        {/* CONTACTO */}
+        {/* CIERRE */}
         <section className="planmensual__contacto" id="unirte">
           <span className="planmensual__badge">{badge}</span>
           <h2>Da el paso</h2>
-          <div className="planmensual__contacto_text">
-            <p>El plan mensual se abre por primera vez y con plazas muy limitadas para garantizar que cada miembro tenga <strong>disponibilidad real</strong> del estudio. Cuando se completen las 10 plazas, abrimos lista de espera.</p>
-            <p><strong>Escríbenos indicando qué plan te interesa</strong> (Starter, Creator o Pro) y te contamos los siguientes pasos para reservar tu plaza.</p>
-          </div>
-          <div className="planmensual__canales">
-            <a className="planmensual__canal planmensual__canal--destacado" href={waGeneral} target="_blank" rel="noopener noreferrer">
-              <h3>WhatsApp</h3>
-              <span>+34 613 39 55 33</span>
-            </a>
-            <a className="planmensual__canal" href={mailto}>
-              <h3>Correo</h3>
-              <span>arstudiospain@gmail.com</span>
-            </a>
-            <a className="planmensual__canal" href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">
-              <h3>Instagram</h3>
-              <span>@studioar.es</span>
-            </a>
-          </div>
+          <p>Escríbenos por WhatsApp indicando qué plan te interesa y te contamos los siguientes pasos para reservar tu plaza. Cuando se completen las {PLAZAS_TOTALES} plazas, abrimos lista de espera.</p>
+          <a className="planmensual__whatsapp" href={waGeneral} target="_blank" rel="noopener noreferrer">
+            <span>Reservar mi plaza por WhatsApp</span>
+            <small>+34 613 39 55 33</small>
+          </a>
+          <p className="planmensual__otros">
+            También por correo en <a href={mailto}>arstudiospain@gmail.com</a> o por Instagram en <a href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">@studioar.es</a>
+          </p>
         </section>
 
-        <div className="button__cierre"><ButtonArrow texto="RESERVAR MI PLAZA" href={waGeneral} /></div>
+        {/* INSTAGRAM */}
+        <section className="planmensual__ig">
+          <span className="planmensual__label">En Instagram</span>
+          <h2>Lo que pasa<br />en el estudio.</h2>
+          <div className="planmensual__ig_grid">
+            {POSTS_IG.map((code) => (
+              <blockquote
+                key={code}
+                className="instagram-media"
+                data-instgrm-permalink={`https://www.instagram.com/p/${code}/`}
+                data-instgrm-version="14"
+              >
+                <a href={`https://www.instagram.com/p/${code}/`} target="_blank" rel="noopener noreferrer">Ver esta publicación en Instagram</a>
+              </blockquote>
+            ))}
+          </div>
+          <div className="planmensual__ig_more">
+            <ButtonArrow texto="VER @STUDIOAR.ES" href="https://www.instagram.com/studioar.es/" />
+          </div>
+          <Script
+            src="https://www.instagram.com/embed.js"
+            strategy="lazyOnload"
+            onLoad={() => window.instgrm?.Embeds?.process()}
+          />
+        </section>
+
+        {/* CONDICIONES (plegadas, después del cierre) */}
+        <section className="planmensual__condiciones">
+          <details>
+            <summary>Condiciones completas del plan mensual</summary>
+            <div className="planmensual__cond_grid">
+              <div>
+                <h3>Compromiso y pago</h3>
+                <ul>
+                  <li>Permanencia mínima de 3 meses.</li>
+                  <li>Pago mensual. Sin pagos por adelantado de varios meses.</li>
+                </ul>
+              </div>
+              <div>
+                <h3>Depósito de garantía</h3>
+                <ul>
+                  <li>Starter y Creator: 100€. Pro: 150€.</li>
+                  <li>Reembolsable al finalizar si el espacio y el equipo quedan en buen estado.</li>
+                  <li>La baja antes de los 3 meses implica la pérdida del depósito.</li>
+                </ul>
+              </div>
+              <div>
+                <h3>Uso del estudio</h3>
+                <ul>
+                  <li>Plan personal e intransferible. Puedes traer clientes o modelos a tus sesiones.</li>
+                  <li>Solo un miembro usa el estudio a la vez: tu sesión es tuya.</li>
+                  <li>Toda sesión se reserva por el sistema con la antelación de tu plan.</li>
+                  <li>Cancelación con menos de 24h: la sesión cuenta como usada.</li>
+                </ul>
+              </div>
+              <div className="planmensual__cond_wide">
+                <h3>Horas y sesiones</h3>
+                <p>Las horas de cada semana <strong>no son acumulables</strong>: si no las usas dentro de la semana, se pierden. Así garantizamos disponibilidad real del estudio para todos los miembros. Con dos excepciones según tu plan:</p>
+                <div className="planmensual__excepciones">
+                  <div>
+                    <h4>Creator</h4>
+                    <p>Puedes juntar tus 2 sesiones de la semana en <strong>un solo día</strong>: tus 4 horas semanales en una única sesión de 4h, en lugar de dos sesiones de 2h en días distintos.</p>
+                  </div>
+                  <div>
+                    <h4>Pro</h4>
+                    <p>Las horas que no uses durante la semana de tu sábado mensual puedes gastarlas <strong>ese mismo sábado</strong>, con un <strong>mínimo de 4 horas</strong> y un <strong>máximo de 9 horas</strong> en el día (tu asignación semanal completa).</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="planmensual__nota">La franja de mañana (9–14h) es exclusiva del plan Pro. Sábados disponibles a tarifa normal (mínimo 4h), salvo el sábado mensual del plan Pro. Domingos no incluidos.</p>
+          </details>
+        </section>
 
       </main>
 
       <a className="planmensual__sticky" href={waGeneral} target="_blank" rel="noopener noreferrer">Reservar mi plaza</a>
     </>
   )
-}
-
-// Prerender estático que se regenera cada hora: así el mes del badge cambia
-// solo, sin necesidad de volver a desplegar.
-export async function getStaticProps() {
-  const { plazas, mes } = plazasDelMes()
-  return { props: { plazas, mes }, revalidate: 3600 }
 }
