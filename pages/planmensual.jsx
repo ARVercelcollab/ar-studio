@@ -9,9 +9,9 @@ import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
 const WA = 'https://wa.me/34613395533?text='
 const wa = (texto) => WA + encodeURIComponent(texto)
 const waGeneral = wa('Hola, quiero una plaza del plan mensual')
-const waStarter = wa('Hola, quiero la plaza Starter')
-const waCreator = wa('Hola, quiero la plaza Creator')
-const waPro = wa('Hola, quiero la plaza Pro')
+const waStarter = wa('Hola, quiero reservar la plaza del plan Starter de AR Studio.')
+const waCreator = wa('Hola, quiero reservar la plaza del plan Creator de AR Studio.')
+const waPro = wa('Hola, quiero reservar la plaza del plan Pro de AR Studio.')
 
 // Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
 const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DDPtXSHotvd', 'DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
