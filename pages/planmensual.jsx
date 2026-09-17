@@ -14,7 +14,13 @@ const waPro = wa('Hola, quiero la plaza Pro')
 const mailto = 'mailto:arstudiospain@gmail.com?subject=' + encodeURIComponent('Plan mensual AR Studio')
 
 // Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
-const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
+const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DDPtXSHotvd', 'DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
+const HTML_IG = POSTS_IG.map((code) => {
+  const url = `https://www.instagram.com/p/${code}/`
+  return `<blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14"><a href="${url}" target="_blank" rel="noopener noreferrer">Ver esta publicación en Instagram</a></blockquote>`
+}).join('')
+// Objeto con identidad fija: si se creara en cada render, React volvería a escribir el HTML y borraría los iframes
+const HTML_IG_PROP = { __html: HTML_IG }
 
 // Material incluido: 5 categorías, 3 ítems visibles y el resto desplegable
 const MATERIAL = [
@@ -79,13 +85,14 @@ export default function PlanMensual() {
 
         {/* ESPACIO */}
         <section className="planmensual__espacio" id="espacio">
-          <div className="planmensual__espacio_fotos">
-            <Image className="planmensual__foto planmensual__foto--alta" src="/media/studio-2.jpg" alt="Estudio vacío de AR Studio en Valencia: ciclorama blanco, 3,5 metros de techo y dos focos Godox" loading="lazy" decoding="async" width={900} height={1250} sizes="(max-width: 700px) 100vw, 40vw" />
-            <Image className="planmensual__foto" src="/media/col2.jpg" alt="El estudio montado con sillón, mesa de madera y plantas junto a la ventana" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 30vw" />
-          </div>
+          {/* Foto ancha del estudio montado. Para cambiarla basta con sustituir public/media/espacio-montado.jpg */}
+          <Image className="planmensual__foto planmensual__foto--ancha" src="/media/espacio-montado.jpg" alt="El estudio de AR Studio montado: sillones, mesa de madera, plantas y el banco con cojines bajo el arco de luz" loading="lazy" decoding="async" width={1600} height={1067} sizes="(max-width: 1400px) 94vw, 1400px" />
           <div className="planmensual__espacio_content">
-            <span className="planmensual__label">El espacio</span>
-            <h2>Luz natural.<br />Fondo neutro.<br />Minimalismo.</h2>
+            <div>
+              <span className="planmensual__label">El espacio</span>
+              <h2>Luz natural.<br />Fondo neutro.<br />Minimalismo.</h2>
+            </div>
+            <div>
             <p>89 m² con luz natural y ciclorama blanco, listos para fotografía, vídeo, contenido de marca personal, podcast y sesiones con clientes.</p>
             <dl className="planmensual__stats">
               <div><dt>89 m²</dt><dd>Superficie</dd></div>
@@ -93,6 +100,7 @@ export default function PlanMensual() {
               <div><dt>1</dt><dd>Miembro a la vez</dd></div>
               <div><dt>{PLAZAS_TOTALES}</dt><dd>Plazas totales</dd></div>
             </dl>
+            </div>
           </div>
         </section>
 
@@ -255,18 +263,9 @@ export default function PlanMensual() {
         <section className="planmensual__ig">
           <span className="planmensual__label">En Instagram</span>
           <h2>Lo que pasa<br />en el estudio.</h2>
-          <div className="planmensual__ig_grid" ref={igRef}>
-            {POSTS_IG.map((code) => (
-              <blockquote
-                key={code}
-                className="instagram-media"
-                data-instgrm-permalink={`https://www.instagram.com/p/${code}/`}
-                data-instgrm-version="14"
-              >
-                <a href={`https://www.instagram.com/p/${code}/`} target="_blank" rel="noopener noreferrer">Ver esta publicación en Instagram</a>
-              </blockquote>
-            ))}
-          </div>
+          {/* embed.js de Instagram reemplaza estos nodos por iframes; se inyectan como HTML
+              opaco para que React no intente reconciliarlos (si no, rompe al re-renderizar) */}
+          <div className="planmensual__ig_grid" ref={igRef} dangerouslySetInnerHTML={HTML_IG_PROP} />
           <div className="planmensual__ig_more">
             <button className="planmensual__ig_flecha" aria-label="Anterior" onClick={() => deslizarIg(-1)}>←</button>
             <ButtonArrow texto="VER @STUDIOAR.ES" href="https://www.instagram.com/studioar.es/" />
