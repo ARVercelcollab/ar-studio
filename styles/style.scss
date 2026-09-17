@@ -1103,8 +1103,8 @@ strong{
   }
 
   .planmensual__acento{
-    // Mismo beige que el botón secundario y mismo grosor que el resto del titular
-    color: $beige;
+    // Beige un punto más oscuro que el botón secundario, mismo grosor que el resto del titular
+    color: $beige-oscuro;
     font-weight: 200;
     // Es un span dentro del h1: debe heredar el tamaño del titular, no el de los textos
     font-size: inherit;
