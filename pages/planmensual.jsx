@@ -66,16 +66,17 @@ export default function PlanMensual() {
   }, [])
 
   // Botón fijo contextual: oculto en el hero, "Ver planes" hasta llegar a los planes,
-  // oculto mientras los planes o el cierre están en pantalla, "Solicitar plaza" después.
+  // oculto mientras la franja, los planes o el cierre están en pantalla, "Solicitar plaza" después.
   const [fijo, setFijo] = useState('oculto')
   useEffect(() => {
     const hero = document.querySelector('.planmensual__hero')
     const planes = document.querySelector('.planmensual__planes')
     const cierre = document.querySelector('.planmensual__contacto')
-    if (!hero || !planes || !cierre || !('IntersectionObserver' in window)) return
-    const visible = { hero: true, planes: false, cierre: false }
+    const banda = document.querySelector('.planmensual__banda')
+    if (!hero || !planes || !cierre || !banda || !('IntersectionObserver' in window)) return
+    const visible = { hero: true, planes: false, cierre: false, banda: false }
     const aplicar = () => {
-      if (visible.hero || visible.planes || visible.cierre) return setFijo('oculto')
+      if (visible.hero || visible.planes || visible.cierre || visible.banda) return setFijo('oculto')
       // Se mira en vivo si los planes quedaron arriba, no un valor cacheado
       setFijo(planes.getBoundingClientRect().top < 0 ? 'solicitar' : 'planes')
     }
@@ -83,6 +84,7 @@ export default function PlanMensual() {
       for (const e of entradas) {
         if (e.target === hero) visible.hero = e.isIntersecting
         if (e.target === cierre) visible.cierre = e.isIntersecting
+        if (e.target === banda) visible.banda = e.isIntersecting
         if (e.target === planes) visible.planes = e.isIntersecting
       }
       aplicar()
@@ -90,6 +92,7 @@ export default function PlanMensual() {
     io.observe(hero)
     io.observe(planes)
     io.observe(cierre)
+    io.observe(banda)
     return () => io.disconnect()
   }, [])
 
@@ -139,11 +142,8 @@ export default function PlanMensual() {
           {/* Foto ancha del estudio montado. Para cambiarla basta con sustituir public/media/espacio-montado.jpg */}
           <Image className="planmensual__foto planmensual__foto--ancha" src="/media/espacio-montado.jpg" alt="El estudio de AR Studio montado: sillones, mesa de madera, plantas y el banco con cojines bajo el arco de luz" loading="lazy" decoding="async" width={1600} height={1067} sizes="(max-width: 1400px) 94vw, 1400px" />
           <div className="planmensual__espacio_content">
-            <div>
-              <span className="planmensual__label">El espacio</span>
-              <h2>Luz natural.<br />Fondo neutro.<br />Minimalismo.</h2>
-            </div>
-            <div>
+            <span className="planmensual__label">El espacio</span>
+            <h2>Luz natural.<br />Fondo neutro.<br />Minimalismo.</h2>
             <p>89 m² con luz natural y ciclorama blanco, listos para fotografía, vídeo, contenido de marca personal, podcast y sesiones con clientes.</p>
             <dl className="planmensual__stats">
               <div><dt>89 m²</dt><dd>Superficie</dd></div>
@@ -151,7 +151,6 @@ export default function PlanMensual() {
               <div><dt>1</dt><dd>Miembro a la vez</dd></div>
               <div><dt>{PLAZAS_TOTALES}</dt><dd>Plazas totales</dd></div>
             </dl>
-            </div>
           </div>
         </section>
 

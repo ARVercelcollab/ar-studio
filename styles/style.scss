@@ -1113,7 +1113,7 @@ strong{
   }
 
   h2{
-    text-align: left;
+    text-align: center;
     font-family: $aktiv;
     color: $brown;
     font-size: 2.5rem;
@@ -1222,6 +1222,7 @@ strong{
 
   .planmensual__label{
     display: block;
+    text-align: center;
     font-family: $aktiv;
     color: $beige;
     font-size: 0.9rem;
@@ -1229,10 +1230,6 @@ strong{
     font-weight: 200;
     text-transform: uppercase;
     margin-bottom: 1rem;
-
-      @include media500px {
-        text-align: center;
-      }
   }
 
   .planmensual__badge{
@@ -1273,6 +1270,7 @@ strong{
 
   .planmensual__hero{
     margin-top: 100px;
+    text-align: center;
 
       @include media900px {
         margin-top: 60px;
@@ -1280,19 +1278,19 @@ strong{
 
       @include media500px {
         margin-top: 40px;
-        text-align: center;
       }
+
+    h1{
+      margin-left: auto;
+      margin-right: auto;
+    }
 
     .planmensual__sub{
       max-width: 620px;
       margin-bottom: 2.5rem;
-      text-align: left;
-
-        @include media500px {
-          text-align: center;
-          margin-left: auto;
-          margin-right: auto;
-        }
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
     }
   }
 
@@ -1300,10 +1298,7 @@ strong{
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-
-      @include media500px {
-        justify-content: center;
-      }
+    justify-content: center;
 
     > :nth-child(2){
       background-color: $beige;
@@ -1344,10 +1339,10 @@ strong{
   // ESPACIO
 
   .planmensual__espacio{
-    margin-top: 200px;
+    margin-top: 120px;
 
       @include media900px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
 
     .planmensual__foto--ancha{
@@ -1361,39 +1356,27 @@ strong{
     }
 
     .planmensual__espacio_content{
-      display: flex;
-      justify-content: space-between;
-      gap: 3rem;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
 
-        @include media900px {
-          display: block;
-        }
-
-      > div:first-child{
-        flex-shrink: 0;
-      }
-
-      > div:last-child{
-        max-width: 480px;
-
-          @include media900px {
-            max-width: 100%;
-          }
+      p{
+        text-align: center;
       }
     }
   }
 
   .planmensual__stats{
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 2rem 1rem;
     margin-top: 3rem;
+    text-align: center;
 
       @include media500px {
-        grid-template-columns: repeat(4, 1fr);
         gap: 1rem 0.5rem;
         margin-top: 2rem;
-        text-align: center;
       }
 
     dt{
@@ -1427,7 +1410,7 @@ strong{
   // MATERIAL
 
   .planmensual__material{
-    margin-top: 200px;
+    margin-top: 120px;
     display: flex;
     gap: 3rem;
     align-items: flex-start;
@@ -1453,6 +1436,14 @@ strong{
 
     .planmensual__material_content{
       flex-grow: 1;
+
+      h2, .planmensual__label{
+        text-align: left;
+
+          @include media900px {
+            text-align: center;
+          }
+      }
     }
 
     .planmensual__lead{
@@ -1511,10 +1502,10 @@ strong{
   // SESIONES DE FOTOS (carrusel)
 
   .planmensual__fotos{
-    margin-top: 200px;
+    margin-top: 120px;
 
       @include media700px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
 
     figure{
@@ -1542,22 +1533,19 @@ strong{
   // PLANES
 
   .planmensual__planes{
-    margin-top: 200px;
+    margin-top: 120px;
 
       @include media700px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
 
     .planmensual__planes_head{
       p{
         max-width: 600px;
         margin-bottom: 3rem;
-
-          @include media500px {
-            text-align: center;
-            margin-left: auto;
-            margin-right: auto;
-          }
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
       }
     }
   }
@@ -1712,10 +1700,10 @@ strong{
   // COMPARATIVA
 
   .planmensual__compara{
-    margin-top: 200px;
+    margin-top: 120px;
 
       @include media700px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
   }
 
@@ -1750,14 +1738,14 @@ strong{
   // CIERRE
 
   .planmensual__contacto{
-    margin-top: 200px;
+    margin-top: 120px;
     text-align: center;
     max-width: 640px;
     margin-left: auto;
     margin-right: auto;
 
       @include media700px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
 
     h2{
@@ -1781,11 +1769,11 @@ strong{
   .planmensual__banda{
     background-color: $beige;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     gap: 2rem;
     padding: 20px 30px;
-    margin-top: 100px;
+    margin-top: 80px;
 
       @include media700px {
         display: block;
@@ -1795,11 +1783,10 @@ strong{
 
     p{
       margin-bottom: 0;
-      text-align: left;
+      text-align: center;
       max-width: 700px;
 
         @include media700px {
-          text-align: center;
           margin-bottom: 1rem;
         }
     }
@@ -1877,10 +1864,10 @@ strong{
   // INSTAGRAM
 
   .planmensual__ig{
-    margin-top: 200px;
+    margin-top: 120px;
 
       @include media700px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
 
     // Los marcos se estiran todos a la altura del más alto, así los bordes quedan alineados
@@ -1925,10 +1912,10 @@ strong{
   // YOUTUBE
 
   .planmensual__yt{
-    margin-top: 200px;
+    margin-top: 120px;
 
       @include media700px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
 
     .youtube__card{
@@ -2026,12 +2013,12 @@ strong{
   // CONDICIONES (acordeón, después del cierre)
 
   .planmensual__condiciones{
-    margin-top: 150px;
+    margin-top: 120px;
     border-top: 1px solid $beige;
     border-bottom: 1px solid $beige;
 
       @include media700px {
-        margin-top: 100px;
+        margin-top: 80px;
       }
 
     details{
