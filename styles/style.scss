@@ -1784,16 +1784,10 @@ strong{
         letter-spacing: 0px;
       }
 
-      small{
-        color: $beige;
-        font-size: 0.8rem;
-        letter-spacing: 0px;
-      }
-
       &:hover{
         background-color: $beige;
 
-        span, small{
+        span{
           color: $brown;
         }
       }
@@ -1805,22 +1799,6 @@ strong{
         }
     }
 
-    .planmensual__otros{
-      margin-top: 2rem;
-      font-size: 0.8rem;
-      color: $beige;
-      letter-spacing: 0px;
-
-      a{
-        color: $brown;
-        border-bottom: 1px solid $beige;
-        transition: 0.3s ease-in-out;
-
-        &:hover{
-          border-color: $brown;
-        }
-      }
-    }
   }
 
 

@@ -11,7 +11,6 @@ const waGeneral = wa('Hola, quiero una plaza del plan mensual')
 const waStarter = wa('Hola, quiero la plaza Starter')
 const waCreator = wa('Hola, quiero la plaza Creator')
 const waPro = wa('Hola, quiero la plaza Pro')
-const mailto = 'mailto:arstudiospain@gmail.com?subject=' + encodeURIComponent('Plan mensual AR Studio')
 
 // Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
 const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DDPtXSHotvd', 'DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
@@ -249,14 +248,10 @@ export default function PlanMensual() {
         {/* CIERRE */}
         <section className="planmensual__contacto" id="unirte">
           <h2>Da el paso</h2>
-          <p>Escríbenos por WhatsApp indicando qué plan te interesa y te contamos los siguientes pasos para reservar tu plaza. Cuando se completen las {PLAZAS_TOTALES} plazas, abrimos lista de espera.</p>
+          <p>Escríbenos por WhatsApp indicando qué plan te interesa y te contamos los siguientes pasos para reservar tu plaza.</p>
           <a className="planmensual__whatsapp" href={waGeneral} target="_blank" rel="noopener noreferrer">
             <span>Reservar mi plaza por WhatsApp</span>
-            <small>+34 613 39 55 33</small>
           </a>
-          <p className="planmensual__otros">
-            También por correo en <a href={mailto}>arstudiospain@gmail.com</a> o por Instagram en <a href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">@studioar.es</a>
-          </p>
         </section>
 
         {/* INSTAGRAM */}
