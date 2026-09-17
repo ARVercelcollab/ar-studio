@@ -24,12 +24,12 @@ const HTML_IG_PROP = { __html: HTML_IG }
 
 // Vídeos grabados en el estudio (YouTube). "inicio" es el segundo en el que arranca.
 const VIDEOS_YT = [
-  { id: 'T2HYZRgie4Q', inicio: 95, autor: 'Carlos Correa', titulo: 'El negocio online nº1 en 2025 (aunque empieces desde cero)' },
+  { id: 'oXrZwDEh2Q4', inicio: 0, autor: 'Arianny Rivas', titulo: 'Si quieres modelar para Zara, primero necesitas ver esta clase' },
   { id: 'M5yvR_AKbUo', inicio: 7, autor: 'Arianny Rivas', titulo: 'Errores que te hacen perder un casting (y cómo evitarlos)' },
-  { id: 'U9Gn1jmGw3A', inicio: 7, autor: 'Arianny Rivas', titulo: 'Tutorial: aprende a posar como una modelo profesional en 5 minutos' },
+  { id: 'T2HYZRgie4Q', inicio: 95, autor: 'Carlos Correa', titulo: 'El negocio online nº1 en 2025 (aunque empieces desde cero)' },
   { id: 'pGJ-HgohR-8', inicio: 0, autor: 'Arianny Rivas', titulo: 'Reprogramar tu mente también es parte del modelaje' },
   { id: 'MpedQPQ9k-c', inicio: 6, autor: 'Carlos Correa', titulo: 'Cómo vender (cualquier cosa) con tu marca personal' },
-  { id: 'oXrZwDEh2Q4', inicio: 0, autor: 'Arianny Rivas', titulo: 'Si quieres modelar para Zara, primero necesitas ver esta clase' },
+  { id: 'U9Gn1jmGw3A', inicio: 7, autor: 'Arianny Rivas', titulo: 'Tutorial: aprende a posar como una modelo profesional en 5 minutos' },
   { id: 'wLG1lFQOxz0', inicio: 0, autor: 'Arianny Rivas', titulo: 'Ep. 2: Djabu Balde, modelo, actriz, madre y empresaria. ¿Se puede tener todo?' },
   { id: 'VDL-ba8TzuA', inicio: 0, autor: 'Carlos Correa', titulo: 'El error que hará que tu curso online venda 0€' },
 ]
