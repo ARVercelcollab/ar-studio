@@ -8,7 +8,7 @@ import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
 
 const WA = 'https://wa.me/34613395533?text='
 const wa = (texto) => WA + encodeURIComponent(texto)
-const waGeneral = wa('Hola, quiero una plaza del plan mensual')
+const waGeneral = wa('Hola, quiero una plaza del plan mensual de AR Studio')
 const waStarter = wa('Hola, quiero reservar la plaza del plan Starter de AR Studio.')
 const waCreator = wa('Hola, quiero reservar la plaza del plan Creator de AR Studio.')
 const waPro = wa('Hola, quiero reservar la plaza del plan Pro de AR Studio.')
