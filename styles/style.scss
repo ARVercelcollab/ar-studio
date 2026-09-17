@@ -1570,34 +1570,6 @@ strong{
     }
   }
 
-  .planmensual__fundador{
-    background-color: $beige;
-    display: flex;
-    gap: 3rem;
-    align-items: flex-start;
-    padding: 30px;
-    margin-top: 1rem;
-
-      @include media700px {
-        display: block;
-      }
-
-    h3{
-      flex-shrink: 0;
-      margin-top: 4px;
-      margin-bottom: 0;
-
-        @include media700px {
-          margin-bottom: 1rem;
-        }
-    }
-
-    p{
-      margin-bottom: 0;
-      max-width: 700px;
-    }
-  }
-
 
   // COMPARATIVA
 

@@ -58,7 +58,6 @@ export default function PlanMensual({ plazas, mes }) {
           <span>89 m² · techo 3,5 m</span>
           <span>Todo el material incluido</span>
           <span>Cuota mensual cerrada</span>
-          <span>Precio fundador congelado</span>
         </div>
 
         {/* INTRO */}
@@ -222,10 +221,6 @@ export default function PlanMensual({ plazas, mes }) {
 
           </div>
 
-          <div className="planmensual__fundador">
-            <h3>Precio fundador</h3>
-            <p>Los primeros miembros <strong>congelan su precio indefinidamente</strong> mientras mantengan el plan activo. Si los precios suben, tú mantienes el tuyo. Esta condición solo existe en esta primera apertura.</p>
-          </div>
         </section>
 
         {/* COMPARATIVA */}
@@ -269,7 +264,6 @@ export default function PlanMensual({ plazas, mes }) {
               <ul>
                 <li>Permanencia mínima de 3 meses.</li>
                 <li>Pago mensual. Sin pagos por adelantado de varios meses.</li>
-                <li>Precio fundador: tu cuota queda congelada mientras mantengas el plan activo.</li>
               </ul>
             </div>
             <div>
