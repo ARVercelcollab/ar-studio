@@ -255,14 +255,14 @@ export default function PlanMensual() {
               <h3>Starter</h3>
               <p className="planmensual__card_for">Para empezar a crear contenido con constancia.</p>
               <p className="planmensual__price">149€<small>/mes</small></p>
-              <p className="planmensual__hora">8 horas al mes</p>
+              <p className="planmensual__hora">8 horas al mes · IVA incluido</p>
               <ul>
                 <li>1 sesión por semana de 2 horas</li>
                 <li>Acceso de 14:00 a 20:00, L–V</li>
                 <li>Todo el material profesional incluido</li>
                 <li>Reserva con 72h de antelación</li>
               </ul>
-              <p className="planmensual__ahorro">A tarifa normal: 392€/mes. <strong>Ahorras 243€ cada mes.</strong></p>
+              <p className="planmensual__ahorro">A tarifa normal (50€/h + IVA): 484€/mes. <strong>Ahorras 335€ cada mes.</strong></p>
               <ButtonArrow texto="QUIERO STARTER" href={waStarter} />
               <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.starter)}</p>
             </div>
@@ -272,7 +272,7 @@ export default function PlanMensual() {
               <h3>Creator</h3>
               <p className="planmensual__card_for">Para quien graba y atiende clientes cada semana.</p>
               <p className="planmensual__price">249€<small>/mes</small></p>
-              <p className="planmensual__hora">16 horas al mes · sale a 15,6€/hora</p>
+              <p className="planmensual__hora">16 horas al mes · sale a 15,6€/hora · IVA incluido</p>
               <ul>
                 <li><strong>El doble de horas que Starter por solo 100€ más</strong></li>
                 <li>2 sesiones por semana de 2 horas</li>
@@ -280,7 +280,7 @@ export default function PlanMensual() {
                 <li>Todo el material profesional incluido</li>
                 <li>Reserva con solo 48h de antelación</li>
               </ul>
-              <p className="planmensual__ahorro">A tarifa normal: 784€/mes. <strong>Ahorras 535€ cada mes.</strong></p>
+              <p className="planmensual__ahorro">A tarifa normal (50€/h + IVA): 968€/mes. <strong>Ahorras 719€ cada mes.</strong></p>
               <ButtonArrow texto="QUIERO CREATOR" href={waCreator} />
               <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.creator)}</p>
             </div>
@@ -289,7 +289,7 @@ export default function PlanMensual() {
               <h3>Pro</h3>
               <p className="planmensual__card_for">Para el profesional que vive del estudio y necesita máxima flexibilidad.</p>
               <p className="planmensual__price">499€<small>/mes</small></p>
-              <p className="planmensual__hora">36 horas al mes · sale a 13,9€/hora</p>
+              <p className="planmensual__hora">36 horas al mes · sale a 13,9€/hora · IVA incluido</p>
               <ul>
                 <li>3 sesiones por semana de 3 horas</li>
                 <li>Acceso completo de 9:00 a 20:00, L–V</li>
@@ -297,7 +297,7 @@ export default function PlanMensual() {
                 <li>Reserva con solo 24h de antelación</li>
                 <li>Prioridad máxima de reserva</li>
               </ul>
-              <p className="planmensual__ahorro">A tarifa normal: más de 1.760€/mes. <strong>Ahorras más de 1.250€.</strong></p>
+              <p className="planmensual__ahorro">A tarifa normal (50€/h + IVA): más de 2.170€/mes. <strong>Ahorras más de 1.670€.</strong></p>
               <ButtonArrow texto="QUIERO PRO" href={waPro} />
               <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.pro)}</p>
             </div>
@@ -320,7 +320,7 @@ export default function PlanMensual() {
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Precio mensual</td><td>149€</td><td className="destacada">249€</td><td>499€</td></tr>
+                <tr><td>Precio mensual (IVA incluido)</td><td>149€</td><td className="destacada">249€</td><td>499€</td></tr>
                 <tr><td>Sesiones por semana</td><td>1</td><td className="destacada">2</td><td>3</td></tr>
                 <tr><td>Horas por sesión</td><td>2h</td><td className="destacada">2h</td><td>3h</td></tr>
                 <tr><td>Horas al mes</td><td>8h</td><td className="destacada">16h</td><td>36h</td></tr>
