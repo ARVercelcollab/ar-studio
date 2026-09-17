@@ -24,10 +24,10 @@ const FOTOS_SESIONES = [
 ]
 
 // Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
-const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DDPtXSHotvd', 'DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
+const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DDPtXSHotvd', 'DG3Z8khNTac', 'DDebU-CIxTi']
 const HTML_IG = POSTS_IG.map((code) => {
   const url = `https://www.instagram.com/p/${code}/`
-  return `<blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14"><a href="${url}" target="_blank" rel="noopener noreferrer">Ver esta publicación en Instagram</a></blockquote>`
+  return `<div class="planmensual__ig_item"><blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14"><a href="${url}" target="_blank" rel="noopener noreferrer">Ver esta publicación en Instagram</a></blockquote></div>`
 }).join('')
 // Objeto con identidad fija: si se creara en cada render, React volvería a escribir el HTML y borraría los iframes
 const HTML_IG_PROP = { __html: HTML_IG }

@@ -1855,22 +1855,32 @@ strong{
         margin-top: 100px;
       }
 
-    // Instagram sustituye el blockquote por un iframe con anchos propios; los fijamos para que la fila no se rompa
-    .instagram-media{
-      flex: 0 0 328px;
-      margin: 0 !important;
-      min-width: 0 !important;
-      max-width: 328px !important;
-      width: 328px !important;
-      border: 1px solid $beige !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
+    // Los marcos se estiran todos a la altura del más alto, así los bordes quedan alineados
+    // aunque Instagram dé a cada embed una altura distinta (los reels son más altos que las fotos)
+    .planmensual__ig_grid{
+      align-items: stretch;
+    }
+
+    .planmensual__ig_item{
+      width: 328px;
+      border: 1px solid $beige;
+      background-color: $white;
 
         @include media500px {
-          flex-basis: 84vw;
-          width: 84vw !important;
-          max-width: 84vw !important;
+          width: 84vw;
         }
+    }
+
+    // Instagram sustituye el blockquote por un iframe con estilos propios; los neutralizamos
+    .instagram-media{
+      margin: 0 !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      display: block;
     }
 
     .planmensual__ig_grid a{
