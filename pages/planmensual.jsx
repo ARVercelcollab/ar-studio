@@ -21,6 +21,7 @@ const FOTOS_SESIONES = [
   { src: '/media/col4.jpg', pie: 'Fotografía de producto', alt: 'Fotografía de producto deportivo con modelo en AR Studio' },
   { src: '/media/sesion-beauty.jpg', pie: 'Sesión beauty', alt: 'Sesión de cejas de una profesional beauty en el estudio' },
   { src: '/media/col3.jpg', pie: 'Talleres y eventos', alt: 'Taller de yoga con varias personas en el estudio' },
+  { src: '/media/sesion-lifestyle.jpg', pie: 'Contenido de marca personal', alt: 'Creadora leyendo una revista en el sillón de bouclé del estudio, con luz natural' },
 ]
 
 // Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
@@ -139,8 +140,11 @@ export default function PlanMensual() {
 
         {/* ESPACIO */}
         <section className="planmensual__espacio" id="espacio">
-          {/* Foto ancha del estudio montado. Para cambiarla basta con sustituir public/media/espacio-montado.jpg */}
-          <Image className="planmensual__foto planmensual__foto--ancha" src="/media/espacio-montado.jpg" alt="El estudio de AR Studio montado: sillones, mesa de madera, plantas y el banco con cojines bajo el arco de luz" loading="lazy" decoding="async" width={1600} height={1067} sizes="(max-width: 1400px) 94vw, 1400px" />
+          {/* Pareja de fotos cuadradas del estudio. Para cambiarlas basta con sustituir los archivos en public/media */}
+          <div className="planmensual__espacio_fotos">
+            <Image className="planmensual__foto" src="/media/espacio-arco.jpg" alt="El arco con cojines, la planta y las cortinas con luz natural del estudio de AR Studio" loading="lazy" decoding="async" width={1080} height={1080} sizes="(max-width: 1400px) 47vw, 690px" />
+            <Image className="planmensual__foto" src="/media/espacio-sillones.jpg" alt="Dos sillones de bouclé y mesa de madera frente a las cortinas del estudio" loading="lazy" decoding="async" width={1080} height={1080} sizes="(max-width: 1400px) 47vw, 690px" />
+          </div>
           <div className="planmensual__espacio_content">
             <span className="planmensual__label">El espacio</span>
             <h2>Luz natural.<br />Fondo neutro.<br />Minimalismo.</h2>
@@ -156,7 +160,7 @@ export default function PlanMensual() {
 
         {/* MATERIAL */}
         <section className="planmensual__material">
-          <Image className="planmensual__foto planmensual__material_foto" src="/media/col5.jpg" alt="Focos Godox con softbox montados en el estudio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 900px) 100vw, 40vw" />
+          <Image className="planmensual__foto planmensual__material_foto" src="/media/material-godox.jpg" alt="Foco Godox con softbox y silla de maquillaje sobre el fondo blanco del estudio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 900px) 100vw, 40vw" />
           <div className="planmensual__material_content">
             <span className="planmensual__label">Incluido en todos los planes</span>
             <h2>Todo el material,<br />sin coste adicional.</h2>
