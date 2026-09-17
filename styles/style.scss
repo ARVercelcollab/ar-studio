@@ -1503,39 +1503,33 @@ strong{
   }
 
 
-  // RESULTADOS
+  // SESIONES DE FOTOS (carrusel)
 
-  .planmensual__resultados{
+  .planmensual__fotos{
     margin-top: 200px;
 
       @include media700px {
         margin-top: 100px;
       }
 
-    .planmensual__resultados_grid{
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
+    figure{
+      width: 330px;
+      margin: 0;
 
-        @include media700px {
-          grid-template-columns: 1fr;
+        @include media500px {
+          width: 84vw;
         }
+    }
 
-      figure{
-        margin: 0;
-      }
+    .planmensual__foto--vertical{
+      aspect-ratio: 4 / 5;
+    }
 
-      figcaption{
-        color: $beige;
-        font-size: 0.8rem;
-        letter-spacing: 0px;
-        margin-top: 10px;
-
-          @include media500px {
-            text-align: center;
-            margin-bottom: 1rem;
-          }
-      }
+    figcaption{
+      color: $beige;
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+      margin-top: 10px;
     }
   }
 

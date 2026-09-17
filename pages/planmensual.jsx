@@ -13,6 +13,16 @@ const waStarter = wa('Hola, quiero reservar la plaza del plan Starter de AR Stud
 const waCreator = wa('Hola, quiero reservar la plaza del plan Creator de AR Studio.')
 const waPro = wa('Hola, quiero reservar la plaza del plan Pro de AR Studio.')
 
+// Sesiones hechas en el estudio (carrusel de fotos)
+const FOTOS_SESIONES = [
+  { src: '/media/sesion-editorial.jpg', pie: 'Editorial de moda', alt: 'Editorial de moda con modelo, gorra y muestras de tela sobre fondo blanco en AR Studio' },
+  { src: '/media/retrato-luz-natural.jpg', pie: 'Retrato con luz natural', alt: 'Retrato premamá con luz natural junto a la ventana de AR Studio' },
+  { src: '/media/sesion-corporativa.jpg', pie: 'Fotos corporativas para clientes', alt: 'Retrato corporativo de una profesional sentada bajo el arco del estudio' },
+  { src: '/media/col4.jpg', pie: 'Fotografía de producto', alt: 'Fotografía de producto deportivo con modelo en AR Studio' },
+  { src: '/media/sesion-beauty.jpg', pie: 'Sesión beauty', alt: 'Sesión de cejas de una profesional beauty en el estudio' },
+  { src: '/media/col3.jpg', pie: 'Talleres y eventos', alt: 'Taller de yoga con varias personas en el estudio' },
+]
+
 // Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
 const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DDPtXSHotvd', 'DG3Z8khNTac', 'DIbKlP1tx8Y', 'DDebU-CIxTi']
 const HTML_IG = POSTS_IG.map((code) => {
@@ -45,6 +55,7 @@ const MATERIAL = [
 
 export default function PlanMensual() {
   const [verTodo, setVerTodo] = useState(false)
+  const fotosRef = useRef(null)
   const igRef = useRef(null)
   const ytRef = useRef(null)
   const deslizar = (ref, dir) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: 'smooth' })
@@ -145,23 +156,21 @@ export default function PlanMensual() {
           </div>
         </section>
 
-        {/* RESULTADOS */}
-        <section className="planmensual__resultados">
-          <span className="planmensual__label">Hecho aquí</span>
-          <h2>Lo que sale<br />del estudio.</h2>
-          <div className="planmensual__resultados_grid">
-            <figure>
-              <Image className="planmensual__foto" src="/media/col4.jpg" alt="Fotografía de producto deportivo con modelo en AR Studio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
-              <figcaption>Fotografía de producto</figcaption>
-            </figure>
-            <figure>
-              <Image className="planmensual__foto" src="/media/retrato-luz-natural.jpg" alt="Retrato premamá con luz natural junto a la ventana de AR Studio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
-              <figcaption>Retrato con luz natural</figcaption>
-            </figure>
-            <figure>
-              <Image className="planmensual__foto" src="/media/col3.jpg" alt="Taller de yoga con varias personas en el estudio" loading="lazy" decoding="async" width={900} height={900} sizes="(max-width: 700px) 100vw, 33vw" />
-              <figcaption>Talleres y sesiones con clientes</figcaption>
-            </figure>
+        {/* SESIONES DE FOTOS */}
+        <section className="planmensual__fotos">
+          <span className="planmensual__label">Fotografías</span>
+          <h2>Sesiones de fotos<br />en el estudio.</h2>
+          <div className="planmensual__slider planmensual__fotos_grid" ref={fotosRef}>
+            {FOTOS_SESIONES.map((f) => (
+              <figure key={f.src}>
+                <Image className="planmensual__foto planmensual__foto--vertical" src={f.src} alt={f.alt} loading="lazy" decoding="async" width={720} height={900} sizes="(max-width: 700px) 84vw, 330px" />
+                <figcaption>{f.pie}</figcaption>
+              </figure>
+            ))}
+          </div>
+          <div className="planmensual__slider_nav">
+            <button className="planmensual__flecha" aria-label="Anterior" onClick={() => deslizar(fotosRef, -1)}>←</button>
+            <button className="planmensual__flecha" aria-label="Siguiente" onClick={() => deslizar(fotosRef, 1)}>→</button>
           </div>
         </section>
 
