@@ -1,9 +1,11 @@
 import Head from 'next/head'
 import Image from 'next/image'
-import Script from 'next/script'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import ButtonArrow from '../components/button'
 import YoutubeCard from '../components/YoutubeCard'
+import InstagramCard from '../components/InstagramCard'
+import InstagramModal from '../components/InstagramModal'
+import { POSTS_IG } from '../lib/instagram'
 import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
 
 const WA = 'https://wa.me/34613395533?text='
@@ -23,15 +25,6 @@ const FOTOS_SESIONES = [
   { src: '/media/col3.jpg', pie: 'Talleres y eventos', alt: 'Taller de yoga con varias personas en el estudio' },
   { src: '/media/sesion-lifestyle.jpg', pie: 'Contenido de marca personal', alt: 'Creadora leyendo una revista en el sillón de bouclé del estudio, con luz natural' },
 ]
-
-// Publicaciones públicas de @studioar.es que se incrustan al final (prueba viva)
-const POSTS_IG = ['DFIH97zIp6u', 'DF2m4ksIvAm', 'DEiIzfGoIfO', 'C92SN_mIcdF', 'DDPtXSHotvd', 'DG3Z8khNTac', 'DDebU-CIxTi']
-const HTML_IG = POSTS_IG.map((code) => {
-  const url = `https://www.instagram.com/p/${code}/`
-  return `<div class="planmensual__ig_item"><blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14"><a href="${url}" target="_blank" rel="noopener noreferrer">Ver esta publicación en Instagram</a></blockquote></div>`
-}).join('')
-// Objeto con identidad fija: si se creara en cada render, React volvería a escribir el HTML y borraría los iframes
-const HTML_IG_PROP = { __html: HTML_IG }
 
 // Vídeos grabados en el estudio (YouTube). "inicio" es el segundo en el que arranca.
 const VIDEOS_YT = [
@@ -61,10 +54,9 @@ export default function PlanMensual() {
   const ytRef = useRef(null)
   const deslizar = (ref, dir) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: 'smooth' })
 
-  // Si embed.js ya estaba cargado (navegación interna), procesar los embeds al montar
-  useEffect(() => {
-    if (window.instgrm?.Embeds) window.instgrm.Embeds.process()
-  }, [])
+  // Publicación de Instagram abierta en la ventana (código del post) o null
+  const [igAbierto, setIgAbierto] = useState(null)
+  const cerrarIg = useCallback(() => setIgAbierto(null), [])
 
   // Botón fijo contextual: oculto en el hero, "Ver planes" hasta llegar a los planes,
   // oculto mientras la franja, los planes o el cierre están en pantalla, "Solicitar plaza" después.
@@ -216,18 +208,17 @@ export default function PlanMensual() {
         <section className="planmensual__ig">
           <span className="planmensual__label">Instagram</span>
           <h2>Lo que pasa<br />en el estudio.</h2>
-          {/* embed.js de Instagram reemplaza estos nodos por iframes; se inyectan como HTML
-              opaco para que React no intente reconciliarlos (si no, rompe al re-renderizar) */}
-          <div className="planmensual__slider planmensual__ig_grid" ref={igRef} dangerouslySetInnerHTML={HTML_IG_PROP} />
+          {/* Miniaturas propias; al pulsar, el reproductor oficial se abre en una ventana sobre la página */}
+          <div className="planmensual__slider" ref={igRef}>
+            {POSTS_IG.map((p) => (
+              <InstagramCard key={p.code} {...p} onClick={(e) => { e.preventDefault(); setIgAbierto(p.code) }} />
+            ))}
+          </div>
           <div className="planmensual__slider_nav">
             <button className="planmensual__flecha" aria-label="Anterior" onClick={() => deslizar(igRef, -1)}>←</button>
             <button className="planmensual__flecha" aria-label="Siguiente" onClick={() => deslizar(igRef, 1)}>→</button>
           </div>
-          <Script
-            src="https://www.instagram.com/embed.js"
-            strategy="lazyOnload"
-            onLoad={() => window.instgrm?.Embeds?.process()}
-          />
+          {igAbierto && <InstagramModal code={igAbierto} onClose={cerrarIg} />}
         </section>
 
         {/* YOUTUBE */}

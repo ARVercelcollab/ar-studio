@@ -1871,24 +1871,154 @@ strong{
       @include media700px {
         margin-top: 80px;
       }
+  }
 
-    // Los marcos se estiran todos a la altura del más alto, así los bordes quedan alineados
-    // aunque Instagram dé a cada embed una altura distinta (los reels son más altos que las fotos)
-    .planmensual__ig_grid{
-      align-items: stretch;
+  // Tarjeta propia de cada publicación (miniatura + play); el embed oficial solo se carga en la ventana
+  .igcard{
+    width: 330px;
+    margin: 0;
+
+      @include media500px {
+        width: 84vw;
+      }
+
+    .igcard__marco{
+      position: relative;
+      display: block;
+      aspect-ratio: 4 / 5;
+      overflow: hidden;
+      background-color: $beige;
+
+      img{
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: 0.3s ease-in-out;
+      }
+
+      &:hover img{
+        transform: scale(1.03);
+      }
+
+      &:hover .igcard__play{
+        background-color: $beige;
+        color: $brown;
+      }
     }
 
-    .planmensual__ig_item{
-      width: 328px;
-      border: 1px solid $beige;
+    .igcard__play{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 64px;
+      height: 64px;
+      background-color: $brown;
+      color: $white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.3s ease-in-out;
+
+      svg{
+        margin-left: 3px;
+      }
+    }
+
+    .igcard__icono{
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      background-color: rgba($brown, 0.85);
+      color: $white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    figcaption{
+      color: $beige;
+      font-size: 0.8rem;
+      letter-spacing: 0px;
+      margin-top: 10px;
+    }
+  }
+
+  // Ventana con el reproductor oficial, solo cuando se pulsa una tarjeta
+  .igmodal{
+    position: fixed;
+    inset: 0;
+    z-index: 9500;
+    background-color: rgba($brown, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+
+    .igmodal__caja{
+      position: relative;
+      width: 400px;
+      max-width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
       background-color: $white;
 
-        @include media500px {
-          width: 84vw;
-        }
+      // Mientras Instagram monta su iframe, la caja tiene cuerpo y muestra el aviso
+      &.igmodal__caja--cargando,
+      &.igmodal__caja--lento,
+      &.igmodal__caja--error{
+        min-height: 60vh;
+      }
+
+      // El enlace de respaldo del blockquote no hace falta: el aviso ya cubre ese caso
+      blockquote a{
+        display: none;
+      }
     }
 
-    // Instagram sustituye el blockquote por un iframe con estilos propios; los neutralizamos
+    .igmodal__aviso{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+
+      span, a{
+        font-family: $aktiv;
+        color: $brown;
+        font-size: 0.8rem;
+        letter-spacing: 0px;
+        text-transform: uppercase;
+        line-height: 1.5;
+      }
+
+      a{
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+    }
+
+    .igmodal__cerrar{
+      position: absolute;
+      top: 12px;
+      right: 20px;
+      background: none;
+      border: 0;
+      color: $white;
+      font-family: $aktiv;
+      font-weight: 200;
+      font-size: 2.5rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
     .instagram-media{
       margin: 0 !important;
       min-width: 0 !important;
@@ -1899,17 +2029,7 @@ strong{
       border-radius: 0 !important;
       display: block;
     }
-
-    .planmensual__ig_grid a{
-      font-family: $aktiv;
-      color: $brown;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      display: block;
-      padding: 30px;
-    }
   }
-
 
   // YOUTUBE
 
