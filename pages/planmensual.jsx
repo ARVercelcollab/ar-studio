@@ -1,10 +1,9 @@
 import Head from 'next/head'
 import Image from 'next/image'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ButtonArrow from '../components/button'
 import YoutubeCard from '../components/YoutubeCard'
 import InstagramCard from '../components/InstagramCard'
-import InstagramModal from '../components/InstagramModal'
 import { POSTS_IG } from '../lib/instagram'
 import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
 
@@ -54,9 +53,9 @@ export default function PlanMensual() {
   const ytRef = useRef(null)
   const deslizar = (ref, dir) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: 'smooth' })
 
-  // Publicación de Instagram abierta en la ventana (código del post) o null
-  const [igAbierto, setIgAbierto] = useState(null)
-  const cerrarIg = useCallback(() => setIgAbierto(null), [])
+  // Reel que se está reproduciendo (código del post) o null; solo suena uno a la vez
+  const [reelActivo, setReelActivo] = useState(null)
+  const terminarReel = (code) => setReelActivo((actual) => (actual === code ? null : actual))
 
   // Botón fijo contextual: oculto en el hero, "Ver planes" hasta llegar a los planes,
   // oculto mientras la franja, los planes o el cierre están en pantalla, "Solicitar plaza" después.
@@ -208,17 +207,16 @@ export default function PlanMensual() {
         <section className="planmensual__ig">
           <span className="planmensual__label">Instagram</span>
           <h2>Lo que pasa<br />en el estudio.</h2>
-          {/* Miniaturas propias; al pulsar, el reproductor oficial se abre en una ventana sobre la página */}
+          {/* Reels alojados en la web: se reproducen en la propia tarjeta al pulsar */}
           <div className="planmensual__slider" ref={igRef}>
             {POSTS_IG.map((p) => (
-              <InstagramCard key={p.code} {...p} onClick={(e) => { e.preventDefault(); setIgAbierto(p.code) }} />
+              <InstagramCard key={p.code} {...p} activo={reelActivo === p.code} onActivar={setReelActivo} onTerminar={terminarReel} />
             ))}
           </div>
           <div className="planmensual__slider_nav">
             <button className="planmensual__flecha" aria-label="Anterior" onClick={() => deslizar(igRef, -1)}>←</button>
             <button className="planmensual__flecha" aria-label="Siguiente" onClick={() => deslizar(igRef, 1)}>→</button>
           </div>
-          {igAbierto && <InstagramModal code={igAbierto} onClose={cerrarIg} />}
         </section>
 
         {/* YOUTUBE */}
