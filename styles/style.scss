@@ -22,6 +22,7 @@ time, mark, audio, video {
 }
 
 html{
+  background-color: $white;
   scroll-behavior: smooth;
 }
 
@@ -1768,6 +1769,38 @@ strong{
 
   // FRANJA con llamada a los planes (entre las sesiones de fotos e Instagram)
 
+  // Extra opcional bajo las tarjetas de planes
+  .planmensual__extra{
+    margin-top: 3rem;
+    padding: 40px 30px;
+    border: 1px solid $beige;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    h3{
+      font-family: $aktiv;
+      color: $brown;
+      font-weight: 200;
+      font-size: 1.8rem;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    p{
+      max-width: 600px;
+      text-align: center;
+    }
+
+    .planmensual__extra_precio{
+      color: $beige-oscuro;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+    }
+  }
+
   .planmensual__banda{
     background-color: $beige;
     display: flex;
@@ -1982,6 +2015,12 @@ strong{
       @include media700px {
         margin-top: 80px;
       }
+
+    .planmensual__yt_prueba{
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+      text-align: center;
+    }
 
     .youtube__card{
       width: 420px;
@@ -2210,4 +2249,23 @@ strong{
     background-color: $beige;
     color: $brown;
   }
+}
+
+
+// Frase de la permanencia, visible bajo las tarjetas de los planes
+.planmensual__master .planmensual__compromiso{
+  font-family: $aktiv;
+  color: $brown;
+  font-size: 1rem;
+  letter-spacing: -0.5px;
+  font-weight: 200;
+  line-height: 1.4rem;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 2rem auto 0;
+}
+
+// El acento del título baja a su propia línea
+.planmensual__master .planmensual__hero .planmensual__acento{
+  display: block;
 }
