@@ -4,6 +4,7 @@ import { reservasParaRecordar, marcarRecordatorio, limpiarRetenciones, registrar
 import { correoRecordatorio } from '../../../lib/reservas/correos.js'
 import { urlReserva } from '../../../lib/reservas/flujo.js'
 import { urlBase } from '../../../lib/http.js'
+import { asegurarCuotasDeTodas } from '../../../lib/suscripciones/servicio.js'
 
 export default async function handler(req, res) {
   const secreto = process.env.CRON_SECRET
@@ -11,6 +12,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'no_autorizado' })
   }
   await limpiarRetenciones()
+  await asegurarCuotasDeTodas()
   const base = urlBase(req)
   const reservas = await reservasParaRecordar()
   let enviados = 0

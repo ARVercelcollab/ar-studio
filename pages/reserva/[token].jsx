@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { reservaPorToken } from '../../lib/reservas/servicio'
 import { vistaPublica } from '../../lib/reservas/publico'
 import { facturaDeReserva } from '../../lib/facturas/servicio'
-import { ESTUDIO, TEXTO_CANCELACION } from '../../lib/reservas/config'
+import { ESTUDIO, TEXTO_CANCELACION, PLAN_TEXTO_CANCELACION, PLAN_COMUN } from '../../lib/reservas/config'
 import { irAlTpv, pedirJson } from '../../lib/reservas/navegador'
 
 const ETIQUETAS = {
@@ -119,7 +119,7 @@ export default function PaginaReserva({ inicial, token, pago, factura }) {
             <dt>Duración</dt>
             <dd>{r.duracionTexto}</dd>
             <dt>Importe</dt>
-            <dd>{r.importe} (IVA incluido){r.pagoEstado === 'pagado' ? ' · pagado' : ''}</dd>
+            <dd>{r.esPlan && r.importe.startsWith('Incluida') ? r.importe : `${r.importe} (IVA incluido)${r.pagoEstado === 'pagado' ? ' · pagado' : ''}`}</dd>
             <dt>Dónde</dt>
             <dd><a className="rsv-enlace" href={r.mapa} target="_blank" rel="noopener noreferrer">{r.direccion}</a></dd>
           </dl>
@@ -148,7 +148,7 @@ export default function PaginaReserva({ inicial, token, pago, factura }) {
 
               <h2>¿Necesitas cambiarla?</h2>
               <ul className="rsv-ficha__politica">
-                {TEXTO_CANCELACION.map((t) => <li key={t}>{t}</li>)}
+                {(r.esPlan ? PLAN_TEXTO_CANCELACION : TEXTO_CANCELACION).map((t) => <li key={t}>{t}</li>)}
               </ul>
               {solicitud.enviada ? (
                 <p className="rsv__alerta is-ok">Recibido. Te escribimos enseguida para cerrarlo.</p>
@@ -169,7 +169,11 @@ export default function PaginaReserva({ inicial, token, pago, factura }) {
                     <textarea value={solicitud.mensaje} onChange={(e) => setSolicitud((s) => ({ ...s, mensaje: e.target.value }))} maxLength={1000} />
                   </label>
                   {solicitud.tipo === 'cancelar' && (
-                    <p className="rsv__nota rsv__ancho">Si cancelas hoy, según las condiciones te corresponde el {r.reembolsoHoy} % del importe.</p>
+                    <p className="rsv__nota rsv__ancho">
+                      {r.esPlan
+                        ? `Faltan ${r.horasHastaInicio} h para la sesión: con menos de ${PLAN_COMUN.avisoCancelacionH} h cuenta como usada.`
+                        : `Si cancelas hoy, según las condiciones te corresponde el ${r.reembolsoHoy} % del importe.`}
+                    </p>
                   )}
                   <button type="submit" className="rsv__boton rsv__ancho" disabled={solicitud.enviando}>{solicitud.enviando ? 'Enviando…' : 'Enviar al estudio'}</button>
                 </form>
