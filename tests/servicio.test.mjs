@@ -304,3 +304,21 @@ test('facturas: numeración correlativa, una por reserva, desglose de IVA y PDF'
   assert.equal(pdf.subarray(0, 5).toString(), '%PDF-')
   assert.ok(pdf.length > 5000)
 })
+
+test('panel: reservas a mano con desde-hasta y medias horas', async () => {
+  const fecha = await laborable(70)
+  await assert.rejects(S.crearReservaManual({ ...CLIENTE, fecha, desde: '10:00', hasta: '12:30' }), { codigo: 'precio' })
+  const r = await S.crearReservaManual({ ...CLIENTE, fecha, desde: '10:00', hasta: '12:30', precioCent: 12100 })
+  assert.equal(r.duracionHoras, 2.5)
+  assert.equal(horaMadrid(r.fin), '12:30')
+  // Con duración de tarifa, el precio sale solo
+  const t = await S.crearReservaManual({ ...CLIENTE, fecha, desde: '16:00', hasta: '19:00' })
+  assert.equal(t.precioCent, 14520)
+  await assert.rejects(S.crearReservaManual({ ...CLIENTE, fecha, desde: '20:00', hasta: '19:00' }), { codigo: 'horas' })
+  await assert.rejects(S.crearReservaManual({ ...CLIENTE, fecha, desde: '20:00', hasta: '20:10' }), { codigo: 'horas' })
+  const movida = await S.reprogramar(r.id, { fecha, desde: '09:00', hasta: '10:30' })
+  assert.equal(movida.duracionHoras, 1.5)
+  const { textoDuracion } = await import('../lib/reservas/config.js')
+  assert.equal(textoDuracion(2.5), '2 h 30 min')
+  assert.equal(textoDuracion(2), '2 horas')
+})

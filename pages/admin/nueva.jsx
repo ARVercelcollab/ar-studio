@@ -3,11 +3,12 @@ import { useRouter } from 'next/router'
 import { useState } from 'react'
 import Panel from '../../components/admin/Panel'
 import { redirigirSiNoAdmin } from '../../lib/admin/auth'
-import { ACTIVIDADES, FONDOS, EQUIPO, DURACIONES, formatoEuros } from '../../lib/reservas/config'
+import { ACTIVIDADES, FONDOS, EQUIPO, DURACIONES, formatoEuros, textoDuracion } from '../../lib/reservas/config'
+import { minutosDeHora } from '../../lib/reservas/tiempo'
 import { pedirJson } from '../../lib/reservas/navegador'
 
 const VACIA = {
-  fecha: '', hora: '10:00', horas: 2, nombre: '', apellidos: '', email: '', telefono: '',
+  fecha: '', desde: '10:00', hasta: '12:00', nombre: '', apellidos: '', email: '', telefono: '',
   actividad: 'Fotos', fondos: 'no', equipo: [], comentarios: '', precio: '',
   pagado: false, metodoPago: 'transferencia', notasInternas: '', enviarCorreo: false,
 }
@@ -17,7 +18,9 @@ export default function NuevaReserva() {
   const [f, setF] = useState(VACIA)
   const [estado, setEstado] = useState({ enviando: false, error: null })
   const poner = (k, v) => setF((x) => ({ ...x, [k]: v }))
-  const tarifa = DURACIONES.find((d) => d.horas === Number(f.horas))
+  const minutos = f.desde && f.hasta ? minutosDeHora(f.hasta) - minutosDeHora(f.desde) : 0
+  const horas = minutos / 60
+  const tarifa = DURACIONES.find((d) => d.horas === horas)
 
   async function guardar(e) {
     e.preventDefault()
@@ -35,11 +38,13 @@ export default function NuevaReserva() {
       <form className="adm-caja" onSubmit={guardar}>
         <div className="adm-form">
           <label>Día<input type="date" required value={f.fecha} onChange={(e) => poner('fecha', e.target.value)} /></label>
-          <label>Hora de inicio<input type="time" required step="1800" value={f.hora} onChange={(e) => poner('hora', e.target.value)} /></label>
-          <label>Horas<input type="number" min="1" max="14" required value={f.horas} onChange={(e) => poner('horas', e.target.value)} /></label>
-          <label>Precio total con IVA (€)
+          <div />
+          <label>Desde<input type="time" required step="900" value={f.desde} onChange={(e) => poner('desde', e.target.value)} /></label>
+          <label>Hasta<input type="time" required step="900" value={f.hasta} onChange={(e) => poner('hasta', e.target.value)} /></label>
+          <p className="adm-ancho adm-nota">{minutos > 0 ? `Duración: ${textoDuracion(horas)}.` : 'La hora de fin tiene que ser después de la de inicio.'}</p>
+          <label className="adm-ancho">Precio total con IVA (€)
             <input inputMode="decimal" value={f.precio} onChange={(e) => poner('precio', e.target.value)}
-              placeholder={tarifa ? `Vacío = tarifa (${formatoEuros(tarifa.laborable)} entre semana${tarifa.finde ? `, ${formatoEuros(tarifa.finde)} finde` : ''})` : 'Obligatorio para esta duración'} />
+              placeholder={tarifa ? `Vacío = tarifa (${formatoEuros(tarifa.laborable)} entre semana${tarifa.finde ? `, ${formatoEuros(tarifa.finde)} finde o festivo` : ''})` : 'Pon el precio: esta duración no tiene tarifa fija'} />
           </label>
           <label>Nombre<input required value={f.nombre} onChange={(e) => poner('nombre', e.target.value)} /></label>
           <label>Apellidos<input value={f.apellidos} onChange={(e) => poner('apellidos', e.target.value)} /></label>

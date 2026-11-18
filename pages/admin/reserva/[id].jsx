@@ -52,7 +52,7 @@ function Mensaje({ estado }) {
 
 export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura, emisorListo }) {
   const [pago, setPago] = useState({ metodo: 'transferencia', enviarCorreo: false })
-  const [mover, setMover] = useState({ fecha: r.fecha, hora: r.horaInicio, horas: r.duracionHoras, enviarCorreo: true })
+  const [mover, setMover] = useState({ fecha: r.fecha, desde: r.horaInicio, hasta: r.horaFin, enviarCorreo: true })
   const [cancel, setCancel] = useState({ motivo: '', reembolso: r.pagoEstado === 'pagado' ? ((r.precioCent * r.reembolsoHoyPct) / 10000).toFixed(2) : '0', enviarCorreo: true })
   const [notas, setNotas] = useState(r.notasInternas)
   const [ePago, accionPago] = useAccion(r.id)
@@ -74,7 +74,7 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
             <h2>{r.fechaTexto}, {r.horaInicio} – {r.horaFin} {chipEstado(r)}</h2>
             <dl className="adm-datos">
               <dt>Reserva</dt><dd>{r.codigo} · {r.origen === 'web' ? 'reservada en la web' : r.origen === 'manual' ? 'apuntada a mano' : 'desde Calendly'}</dd>
-              <dt>Duración</dt><dd>{r.duracionHoras} h · {r.tipoDia === 'finde' ? 'fin de semana o festivo' : 'entre semana'}</dd>
+              <dt>Duración</dt><dd>{r.duracionTexto} · {r.tipoDia === 'finde' ? 'fin de semana o festivo' : 'entre semana'}</dd>
               <dt>Importe</dt><dd>{r.importe} · {r.pagoTexto}{r.metodoPago ? ` (${r.metodoPago})` : ''}{r.reembolso ? ` · devuelto ${r.reembolso}` : ''}</dd>
               <dt>Correo</dt><dd>{r.email ? <a href={`mailto:${r.email}`}>{r.email}</a> : '—'}</dd>
               <dt>WhatsApp</dt><dd>{telefono ? <a href={`https://wa.me/${telefono}`} target="_blank" rel="noopener noreferrer">{r.telefono}</a> : '—'}</dd>
@@ -195,8 +195,8 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
               <h2>{r.estado === 'conflicto' ? 'Confirmar en una hora libre' : 'Cambiar día u hora'}</h2>
               <div className="adm-form">
                 <label>Día<input type="date" value={mover.fecha} onChange={(e) => setMover({ ...mover, fecha: e.target.value })} /></label>
-                <label>Hora de inicio<input type="time" step="1800" value={mover.hora} onChange={(e) => setMover({ ...mover, hora: e.target.value })} /></label>
-                <label>Horas<input type="number" min="1" max="14" value={mover.horas} onChange={(e) => setMover({ ...mover, horas: e.target.value })} /></label>
+                <label>Desde<input type="time" step="900" value={mover.desde} onChange={(e) => setMover({ ...mover, desde: e.target.value })} /></label>
+                <label>Hasta<input type="time" step="900" value={mover.hasta} onChange={(e) => setMover({ ...mover, hasta: e.target.value })} /></label>
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={mover.enviarCorreo} onChange={(e) => setMover({ ...mover, enviarCorreo: e.target.checked })} /> Avisar al cliente por correo</label>}
               </div>
               <p style={{ fontSize: '0.82rem', marginTop: 8 }}>El precio no cambia. Se comprueba que no choque con otra reserva ni con un bloqueo.</p>

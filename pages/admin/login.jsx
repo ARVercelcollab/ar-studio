@@ -30,7 +30,9 @@ export default function Login() {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <div className="adm-login">
-        <h1>Panel de AR Studio</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="adm-login__logo" src="/assets/AR_Studio.svg" alt="AR Studio" />
+        <h1>Panel del estudio</h1>
         <form onSubmit={entrar}>
           <input type="password" placeholder="Contraseña" value={contrasena} onChange={(e) => setContrasena(e.target.value)} autoFocus autoComplete="current-password" />
           {error && <p className="adm-mensaje is-error">{error}</p>}

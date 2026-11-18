@@ -138,7 +138,12 @@ $error: #a33b2b;
 
   &.is-activo {
     border-color: $brown;
-    background: $suave;
+    background: $brown;
+    color: $white;
+
+    .rsv__finde {
+      color: $beige;
+    }
   }
 }
 
@@ -350,7 +355,12 @@ $error: #a33b2b;
 
   &.is-activo {
     border-color: $brown;
-    background: $suave;
+    background: $brown;
+    color: $white;
+
+    input {
+      accent-color: $white;
+    }
   }
 }
 

@@ -18,8 +18,8 @@ const ETIQUETAS = {
 
 function enlaceGoogle(r) {
   const f = (iso) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '')
-  const fin = new Date(new Date(r.inicioIso).getTime() + r.duracionHoras * 3600000).toISOString()
-  const p = new URLSearchParams({ action: 'TEMPLATE', text: `Estudio AR Studio (${r.duracionHoras} h)`, dates: `${f(r.inicioIso)}/${f(fin)}`, location: r.direccion, details: `Reserva ${r.codigo}` })
+  const fin = r.finIso
+  const p = new URLSearchParams({ action: 'TEMPLATE', text: 'Estudio AR Studio', dates: `${f(r.inicioIso)}/${f(fin)}`, location: r.direccion, details: `Reserva ${r.codigo}` })
   return `https://calendar.google.com/calendar/render?${p}`
 }
 
@@ -117,7 +117,7 @@ export default function PaginaReserva({ inicial, token, pago, factura }) {
             <dt>Cuándo</dt>
             <dd>{r.franja}</dd>
             <dt>Duración</dt>
-            <dd>{r.duracionHoras} horas</dd>
+            <dd>{r.duracionTexto}</dd>
             <dt>Importe</dt>
             <dd>{r.importe} (IVA incluido){r.pagoEstado === 'pagado' ? ' · pagado' : ''}</dd>
             <dt>Dónde</dt>

@@ -19,7 +19,11 @@ export default function Panel({ titulo, children, acciones }) {
       </Head>
       <div className="adm">
         <header className="adm__barra">
-          <Link href="/admin" className="adm__marca">AR Studio <span>panel</span></Link>
+          <Link href="/admin" className="adm__marca">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/AR_Studio_blanco.svg" alt="AR Studio" />
+            <span>Panel</span>
+          </Link>
           <nav>
             {MENU.map(([href, texto]) => (
               <Link key={href} href={href} className={pathname === href ? 'is-activo' : ''}>{texto}</Link>

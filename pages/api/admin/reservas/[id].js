@@ -29,7 +29,7 @@ export default rutaAdmin(async (req, res) => {
       if (b.enviarCorreo && reserva.email) await correoCancelacion(reserva)
       break
     case 'mover':
-      reserva = await reprogramar(id, { fecha: b.fecha, hora: b.hora, horas: b.horas ? Number(b.horas) : undefined })
+      reserva = await reprogramar(id, { fecha: b.fecha, desde: b.desde || b.hora, hasta: b.hasta, horas: b.horas ? Number(b.horas) : undefined })
       if (b.enviarCorreo && reserva.email) await correoCambio(reserva, { urlReserva: urlReserva(base, reserva) })
       break
     case 'reactivar':

@@ -53,7 +53,7 @@ export default function Agenda({ vista, buscar, dias, cifras, calendario, avisos
               <span className="adm-fila__hora">{r.horaInicio} – {r.horaFin}</span>
               <span className="adm-fila__quien">
                 {r.nombre} {r.apellidos}
-                <small>{r.duracionHoras} h · {r.actividad || 'sin actividad'}{r.origen !== 'web' ? ` · ${r.origen}` : ''}{r.factura ? ' · pide factura' : ''}</small>
+                <small>{r.duracionTexto} · {r.actividad || 'sin actividad'}{r.origen !== 'web' ? ` · ${r.origen}` : ''}{r.factura ? ' · pide factura' : ''}</small>
               </span>
               <span>{r.importe}</span>
               {chipEstado(r)}
