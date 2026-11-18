@@ -632,6 +632,11 @@ $error: #a33b2b;
 .reservas__propias {
   max-width: 420px;
   align-self: center;
+  margin-bottom: 100px;
+
+  @include media900px {
+    margin-bottom: 70px;
+  }
 
   p {
     font-family: $aktiv;

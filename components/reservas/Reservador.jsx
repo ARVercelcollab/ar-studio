@@ -58,6 +58,7 @@ export default function Reservador() {
   const [horas, setHoras] = useState(null)
   const [mes, setMes] = useState(null)
   const [dias, setDias] = useState({})
+  const [festivos, setFestivos] = useState([])
   const [cargandoDias, setCargandoDias] = useState(false)
   const [fecha, setFecha] = useState(null)
   const [libres, setLibres] = useState(null)
@@ -88,7 +89,11 @@ export default function Reservador() {
     let vivo = true
     setCargandoDias(true)
     pedirJson(`/api/reservas/dias?desde=${desde}&hasta=${hasta}&horas=${horas}`)
-      .then((r) => vivo && setDias(r.dias))
+      .then((r) => {
+        if (!vivo) return
+        setDias(r.dias)
+        setFestivos(r.festivos || [])
+      })
       .catch((e) => vivo && setAviso({ tipo: 'error', texto: e.message }))
       .finally(() => vivo && setCargandoDias(false))
     return () => {
@@ -202,7 +207,7 @@ export default function Reservador() {
                 {celdasMes.map((f, i) => {
                   if (!f) return <span key={`v${i}`} />
                   const n = dias[f] || 0
-                  const finde = [0, 6].includes(diaSemana(f))
+                  const finde = [0, 6].includes(diaSemana(f)) || festivos.includes(f)
                   const clases = ['rsv__dia', n ? 'is-libre' : 'is-lleno', finde ? 'is-finde' : '', fecha === f ? 'is-elegido' : ''].join(' ')
                   return n ? (
                     <button key={f} type="button" className={clases} onClick={() => { setFecha(f); setHora(null) }} aria-label={textoFecha(f)}>
@@ -213,7 +218,7 @@ export default function Reservador() {
                   )
                 })}
               </div>
-              <p className="rsv__cargando">{cargandoDias ? 'Buscando huecos…' : horas && !Object.values(dias).some(Boolean) ? 'No quedan huecos este mes.' : ''}</p>
+              <p className="rsv__cargando">{cargandoDias ? 'Buscando huecos…' : horas && !Object.values(dias).some(Boolean) ? 'No quedan huecos este mes.' : horas && horas >= 4 ? 'Los días con punto son fin de semana o festivo: tienen precio de fin de semana.' : ''}</p>
             </div>
           )}
 
