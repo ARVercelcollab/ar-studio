@@ -69,13 +69,15 @@ export default function Gastos({ periodo, hoy, d, grupo, categoriaId, ok }) {
   const p = periodo.clave
   const cat = categoriaId ? d.categorias.find((c) => c.id === categoriaId) : null
   const filtro = (g) => ({ pathname: '/admin/finanzas/gastos', query: { p, ...(g ? { grupo: g } : {}) } })
-  const okId = ok && ok.startsWith('gasto:') ? Number(ok.slice(6)) : null
+  // ok=gasto:ID (nuevo) u ok=cambiado:ID (cambiado)
+  const okCambiado = Boolean(ok && ok.startsWith('cambiado:'))
+  const okId = ok && /^(gasto|cambiado):\d+$/.test(ok) ? Number(ok.split(':')[1]) : null
   const okFila = okId ? d.grupos.flatMap((g) => g.filas).find((f) => f.id === okId) : null
   return (
     <Panel titulo="Gastos" acciones={<Link href={`/admin/finanzas/gastos/nuevo?volver=${encodeURIComponent(router.asPath.split('?ok=')[0].split('&ok=')[0])}`} className="adm-boton">+ Apuntar gasto</Link>}>
       <SubmenuFinanzas p={p} />
       <SelectorPeriodo periodo={periodo} hoy={hoy} ruta="/admin/finanzas/gastos" extra={grupo ? { grupo } : {}} />
-      <MensajeOk texto={okFila ? `Gasto apuntado: ${okFila.concepto} · ${euros(okFila.totalCent, { decimales: true })}.` : ok === 'borrado' ? 'Borrado.' : ok ? 'Guardado.' : null} />
+      <MensajeOk texto={okFila ? `${okCambiado ? 'Gasto cambiado' : 'Gasto apuntado'}: ${okFila.concepto} · ${euros(okFila.totalCent, { decimales: true })}.` : ok === 'borrado' ? 'Borrado.' : ok ? 'Guardado.' : null} />
       <div className="adm-filtros">
         {[[null, 'Todos'], ...GRUPOS].map(([g, t]) => <Link key={t} href={filtro(g)} className={(grupo || null) === g && !cat ? 'is-activo' : ''}>{t}</Link>)}
         {cat && <Link href={filtro(null)} className="is-activo">{cat.nombre} ×</Link>}

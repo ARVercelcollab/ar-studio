@@ -11,11 +11,11 @@ import { fechaMadrid } from '../../../lib/reservas/tiempo'
 
 const aTexto = (cent) => (cent ? (cent / 100).toFixed(2).replace('.', ',') : '')
 
-export default function CalendlyMes({ k }) {
+function FormularioCalendly({ k }) {
   const router = useRouter()
   const [f, setF] = useState({
     cobrado: aTexto(k.fila?.cobradoCent), devuelto: aTexto(k.fila?.devueltoCent), comision: aTexto(k.comisionCent),
-    enlace: k.fila?.enlace || '', nota: k.fila?.nota || '', nada: Boolean(k.fila && !k.fila.cobradoCent && !k.fila.devueltoCent && !k.comisionCent),
+    enlace: k.fila?.enlace || '', nota: k.fila?.nota || '', nada: Boolean(k.fila && !k.fila.cobradoCent && !k.fila.devueltoCent),
   })
   const [total, setTotal] = useState('')
   const [estado, ejecutar] = useAccion()
@@ -32,7 +32,7 @@ export default function CalendlyMes({ k }) {
           <select value={k.mes} onChange={(e) => router.push(`/admin/finanzas/calendly?mes=${e.target.value}`)}>{k.meses.map((m) => <option key={m} value={m}>{textoMes(m)}</option>)}</select>
         </label>
         <label className="adm-check" style={{ margin: '12px 0' }}>
-          <input type="checkbox" checked={f.nada} onChange={(e) => setF((x) => ({ ...x, nada: e.target.checked, ...(e.target.checked ? { cobrado: '', devuelto: '', comision: '' } : {}) }))} /> Ese mes no hubo cobros de Calendly
+          <input type="checkbox" checked={f.nada} onChange={(e) => setF((x) => ({ ...x, nada: e.target.checked, ...(e.target.checked ? { cobrado: '', devuelto: '' } : {}) }))} /> Ese mes no hubo cobros de Calendly (las comisiones de Stripe se apuntan igual)
         </label>
         <div className="adm-form">
           <label className="adm-ancho">Reservas de Calendly cobradas ese mes (con IVA)
@@ -63,7 +63,7 @@ export default function CalendlyMes({ k }) {
             <small>Sin las devoluciones de cuotas o de fianzas, que ya se apuntan en su ficha. Cuotas devueltas por Stripe este mes: {pistas.cuotasDevueltas.n}.</small>
           </label>
           <label>Comisiones de Stripe ese mes (todas)
-            <input inputMode="decimal" disabled={f.nada} value={f.comision} onChange={(e) => poner('comision', e.target.value)} placeholder="0,00" />
+            <input inputMode="decimal" value={f.comision} onChange={(e) => poner('comision', e.target.value)} placeholder="0,00" />
             <small>Van solas a Gastos, en «Comisiones del banco y de cobro».</small>
           </label>
           <label className="adm-ancho">Enlace al informe (opcional)<input value={f.enlace} placeholder="https://dashboard.stripe.com/…" onChange={(e) => poner('enlace', e.target.value)} /></label>
@@ -71,12 +71,17 @@ export default function CalendlyMes({ k }) {
         </div>
         <Mensaje estado={estado} />
         <div className="adm-acciones adm-fin-botones">
-          <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => ejecutar('/api/admin/finanzas/calendly', { mes: k.mes, cobrado: f.nada ? '0' : f.cobrado, devuelto: f.nada ? '0' : f.devuelto, comision: f.nada ? '0' : f.comision, enlace: f.enlace, nota: f.nota, version: k.fila?.version })}>Guardar</button>
+          <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => ejecutar('/api/admin/finanzas/calendly', { mes: k.mes, cobrado: f.nada ? '0' : f.cobrado, devuelto: f.nada ? '0' : f.devuelto, comision: f.comision, enlace: f.enlace, nota: f.nota, version: k.fila?.version })}>Guardar</button>
           {k.fila && <button type="button" className="adm-boton adm-boton--peligro" disabled={estado.enviando} onClick={() => { if (window.confirm(`¿Borrar lo apuntado de Calendly en ${nombre}? También se borra su comisión.`)) ejecutar('/api/admin/finanzas/calendly', { accion: 'borrar', mes: k.mes }) }}>Borrar este mes</button>}
         </div>
       </div>
     </Panel>
   )
+}
+
+// Un formulario por mes: al cambiar de mes empieza de cero (no arrastra las cifras del anterior)
+export default function CalendlyMes({ k }) {
+  return <FormularioCalendly key={k.mes} k={k} />
 }
 
 export async function getServerSideProps(ctx) {

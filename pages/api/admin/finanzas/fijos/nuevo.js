@@ -4,6 +4,7 @@ import { crearGastoFijo } from '../../../../../lib/finanzas/servicio.js'
 
 export default rutaAdmin(async (req, res) => {
   const r = await crearGastoFijo(req.body || {})
-  const meses = r.mesesApuntados === 1 ? '1 mes' : `${r.mesesApuntados} meses`
-  res.status(200).json({ ok: true, id: r.id, concepto: r.concepto, mensaje: `Gasto fijo guardado.${r.mesesApuntados ? ` Se han apuntado ${meses}.` : ''}` })
+  const n = r.mesesApuntados
+  const apuntados = n === 1 ? ' Se ha apuntado 1 mes.' : n ? ` Se han apuntado ${n} meses.` : ''
+  res.status(200).json({ ok: true, id: r.id, concepto: r.concepto, mensaje: `Gasto fijo guardado.${apuntados}` })
 })

@@ -63,7 +63,9 @@ export function Variacion({ actual, comp, tipo = 'euros', subeEsBueno = true, te
   const e = useEuros()
   if (estado === 'no') return null
   if (estado === 'sin_datos' || comp === null || comp === undefined || actual === null || actual === undefined) {
-    return <span className="adm-var is-neutro">Sin datos de {textoComp}</span>
+    // «el 1–18 oct» → «del 1–18 oct»
+    const de = /^el /.test(textoComp || '') ? `del ${textoComp.slice(3)}` : `de ${textoComp}`
+    return <span className="adm-var is-neutro">Sin datos {de}</span>
   }
   const d = actual - comp
   const igual = d === 0 || (comp !== 0 && Math.abs(d / comp) < 0.01)
@@ -150,9 +152,11 @@ export function BarrasMeses({ meses, onElegir, hoyTexto }) {
   const e = useEuros()
   const [ref, ancho] = useAncho()
   const uid = idSeguro(useId())
-  const [activo, setActivo] = useState(null)
+  const [mesActivo, setMesActivo] = useState(null)
   const movil = ancho < 560
   const vista = movil ? meses.slice(-6) : meses
+  const activo = mesActivo === null ? null : vista.findIndex((m) => m.mes === mesActivo) >= 0 ? vista.findIndex((m) => m.mes === mesActivo) : null
+  const setActivo = (i) => setMesActivo(i === null ? null : vista[i]?.mes ?? null)
   const valores = vista.flatMap((m) => [m.facturacionCent, m.gastosCent]).filter((v) => v !== null)
   const max = Math.max(0, ...valores)
   const min = Math.min(0, ...valores)
@@ -423,7 +427,9 @@ export function Cascada({ filas }) {
 const tramoOcupacion = (pct) => (pct === null ? null : pct === 0 ? 0 : pct < 25 ? 1 : pct < 50 ? 2 : pct < 75 ? 3 : 4)
 
 export function MapaCalor({ celdas, porDia, porHora }) {
-  const [activo, setActivo] = useState(null)
+  const [pos, setPos] = useState(null) // { d, h }
+  const activo = pos ? celdas[pos.d]?.[pos.h] || null : null
+  const setActivo = (c) => setPos(c ? { d: celdas.findIndex((f) => f[0].dia === c.dia), h: c.hora - celdas[0][0].hora } : null)
   const nombres = { lun: 'Lunes', mar: 'Martes', mié: 'Miércoles', jue: 'Jueves', vie: 'Viernes', sáb: 'Sábado', dom: 'Domingo' }
   const maxHora = Math.max(...porHora.map((h) => h.pct || 0))
   const frase = (c) => (c.bloqueada ? `${nombres[c.dia]} de ${c.hora} a ${c.hora + 1} h: bloqueado` : `${nombres[c.dia]} de ${c.hora} a ${c.hora + 1} h: ocupado el ${c.pct ?? 0} %`)
@@ -443,7 +449,7 @@ export function MapaCalor({ celdas, porDia, porHora }) {
                   key={c.hora}
                   type="button"
                   role="gridcell"
-                  className={`adm-calor__celda${c.bloqueada ? ' is-bloqueada' : ''}${activo === c ? ' is-activa' : ''}`}
+                  className={`adm-calor__celda${c.bloqueada ? ' is-bloqueada' : ''}${activo && activo.dia === c.dia && activo.hora === c.hora ? ' is-activa' : ''}`}
                   style={{ background: c.bloqueada ? undefined : RAMPA_OCUPACION[t ?? 0] }}
                   aria-label={frase(c)}
                   onMouseEnter={() => setActivo(c)}

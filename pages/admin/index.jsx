@@ -1,7 +1,7 @@
 // Inicio del panel: cómo va el estudio de un vistazo (reservas, dinero, ocupación y avisos)
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import Panel, { Chip, chipEstado, ChipCuota, BarraHoras } from '../../components/admin/Panel'
 import SelectorPeriodo from '../../components/admin/Periodo'
 import {
@@ -43,14 +43,16 @@ function Kpi({ etiqueta, info, cifra, negativo, variacion, comp, pie, enlace, ch
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 // 'del 1 al 18 de noviembre' · 'del 1 de octubre al 18 de noviembre'
-function rangoLargo(desde, hastaExcl) {
+// conAnio: escribe el año aunque el tramo no cambie de año (p. ej. al comparar con el año pasado)
+function rangoLargo(desde, hastaExcl, conAnio = false) {
   const ult = new Date(`${hastaExcl}T12:00:00Z`)
   ult.setUTCDate(ult.getUTCDate() - 1)
   const h2 = ult.toISOString().slice(0, 10)
   const [y1, m1, d1] = desde.split('-').map(Number)
   const [y2, m2, d2] = h2.split('-').map(Number)
-  if (y1 === y2 && m1 === m2) return `del ${d1} al ${d2} de ${MESES[m2 - 1]}`
-  return `del ${d1} de ${MESES[m1 - 1]}${y1 !== y2 ? ` de ${y1}` : ''} al ${d2} de ${MESES[m2 - 1]}${y1 !== y2 ? ` de ${y2}` : ''}`
+  if (y1 === y2 && m1 === m2) return `del ${d1} al ${d2} de ${MESES[m2 - 1]}${conAnio ? ` de ${y2}` : ''}`
+  if (y1 === y2) return `del ${d1} de ${MESES[m1 - 1]} al ${d2} de ${MESES[m2 - 1]}${conAnio ? ` de ${y2}` : ''}`
+  return `del ${d1} de ${MESES[m1 - 1]} de ${y1} al ${d2} de ${MESES[m2 - 1]} de ${y2}`
 }
 
 function Caja({ id, titulo, subtitulo, resumen, children, acciones, className = '' }) {
@@ -75,7 +77,13 @@ function Contenido(d) {
   const router = useRouter()
   const e = useEuros()
   const { kpis, comparado, tramo, periodo } = d
-  const [mapa, setMapa] = useState(periodo.tipo === 'mes' && d.ocupacion.pocas ? 'tresMeses' : 'tramo')
+  const [mapaElegido, setMapa] = useState(periodo.tipo === 'mes' && d.ocupacion.pocas ? 'tresMeses' : 'tramo')
+  useEffect(() => {
+    setMapa(periodo.tipo === 'mes' && d.ocupacion.pocas ? 'tresMeses' : 'tramo')
+  }, [periodo.clave]) // eslint-disable-line react-hooks/exhaustive-deps
+  const mapa = periodo.tipo === 'mes' ? mapaElegido : 'tramo'
+  const oculto = useContext(ImportesOcultos)
+  const tapar = (t) => (oculto ? String(t).replace(/−?\d{1,3}(\.\d{3})*(,\d{1,2})? €/g, '••• €') : t)
   const textoComp = comparado?.texto || ''
   const estadoComp = comparado ? comparado.estado : 'no'
   const mesNombre = periodo.tipo === 'mes' ? textoMes(periodo.clave, { soloNombre: true }) : periodo.texto
@@ -107,8 +115,8 @@ function Contenido(d) {
   }
   let resumenG2
   if (ev.ingresosCent === 0 && ev.gastosCent === 0) resumenG2 = `Aún no hay cobros ni gastos en ${mesNombre}.`
-  else if (ev.cruce) resumenG2 = `Los ingresos cubrieron los gastos el ${textoFechaCorta(ev.porMes ? `${ev.cruce}-01` : ev.cruce)}${ev.porMes ? '' : ''}.`
-  else if (ev.gastosCent > ev.ingresosCent) resumenG2 = enCurso ? `Faltan ${e(ev.gastosCent - ev.ingresosCent)} para cubrir los gastos de ${mesNombre}.` : `${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)} cerró con ${e(ev.gastosCent - ev.ingresosCent)} de pérdida.`
+  else if (ev.gastosCent > ev.ingresosCent) resumenG2 = enCurso ? `Faltan ${e(ev.gastosCent - ev.ingresosCent)} para cubrir los gastos${periodo.tipo === 'mes' ? ` de ${mesNombre}` : ''}.` : `${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)} cerró con ${e(ev.gastosCent - ev.ingresosCent)} de pérdida.`
+  else if (ev.cruce) resumenG2 = ev.porMes ? `Los ingresos cubren los gastos desde ${textoMes(ev.cruce, { soloNombre: true })}.` : `Los ingresos cubren los gastos desde el ${textoFechaCorta(ev.cruce)}.`
 
   // G4 / G5
   const totalFuentes = d.fuentes.reduce((a, f) => a + f.baseCent, 0)
@@ -164,7 +172,7 @@ function Contenido(d) {
               {d.paraHacer.slice(0, 5).map((t, i) => (
                 <li key={i}>
                   <Chip tipo={NIVEL_CHIP[t.nivel]}>{t.chip}</Chip>
-                  {t.enlace ? <Link href={t.enlace}>{t.texto} ›</Link> : <span>{t.texto}</span>}
+                  {t.enlace ? <Link href={t.enlace}>{tapar(t.texto)} ›</Link> : <span>{tapar(t.texto)}</span>}
                 </li>
               ))}
             </ul>
@@ -174,7 +182,7 @@ function Contenido(d) {
               <summary>y {d.paraHacer.length - 5} más</summary>
               <ul className="adm-parahacer__lista">
                 {d.paraHacer.slice(5).map((t, i) => (
-                  <li key={i}><Chip tipo={NIVEL_CHIP[t.nivel]}>{t.chip}</Chip>{t.enlace ? <Link href={t.enlace}>{t.texto} ›</Link> : <span>{t.texto}</span>}</li>
+                  <li key={i}><Chip tipo={NIVEL_CHIP[t.nivel]}>{t.chip}</Chip>{t.enlace ? <Link href={t.enlace}>{tapar(t.texto)} ›</Link> : <span>{tapar(t.texto)}</span>}</li>
                 ))}
               </ul>
             </details>
@@ -191,7 +199,7 @@ function Contenido(d) {
       </SelectorPeriodo>
       <p className="adm-nota adm-dash__contexto">
         {enCurso ? `Del ${rangoLargo(tramo.desde, tramo.hasta).slice(4)}` : `${periodo.texto.charAt(0).toUpperCase() + periodo.texto.slice(1)} completo`}
-        {comparado ? `, comparado con ${enCurso ? `el periodo ${rangoLargo(comparado.desde, comparado.hasta)}` : `${comparado.texto} completo`}.` : '.'}
+        {comparado ? `, comparado con ${enCurso ? `el periodo ${rangoLargo(comparado.desde, comparado.hasta, comparado.desde.slice(0, 4) !== tramo.desde.slice(0, 4))}` : `${comparado.texto} completo`}.` : '.'}
         {periodo.antesDeDatos && ` El panel lleva las cuentas desde ${textoMes(d.desdeDatos)}: antes no hay datos de dinero.`}
       </p>
 
@@ -224,7 +232,7 @@ function Contenido(d) {
           etiqueta="Ocupación" enlace="#ocupacion"
           info="Horas reservadas entre horas posibles (13 h al día, de 9 a 22, menos los bloqueos). Cuenta el día de la sesión. Los 30 minutos entre reservas no cuentan, así que el 100 % no se alcanza."
           cifra={kpis.ocupacion.actual === null ? '—' : `${kpis.ocupacion.actual} %`}
-          variacion={<Variacion actual={kpis.ocupacion.actual} comp={kpis.ocupacion.comp} tipo="puntos" textoComp={varProps.textoComp} estado={comparado ? 'ok' : 'no'} />}
+          variacion={<Variacion actual={kpis.ocupacion.actual} comp={kpis.ocupacion.comp} tipo="puntos" textoComp={varProps.textoComp} estado={comparado ? comparado.estadoSesiones : 'no'} />}
           comp={`${h(kpis.ocupacion.horas)} de ${h(kpis.ocupacion.posibles)} posibles`}
           pie={kpis.ocupacion.futurasPeriodo ? `Ya reservadas hasta fin de periodo: ${h(kpis.ocupacion.futurasPeriodo)}` : null}
         >
@@ -245,12 +253,13 @@ function Contenido(d) {
         {d.grafico.filter((m) => m.facturacionCent !== null).length < 2 && (
           <p className="adm-nota">El panel guarda datos desde {textoMes(d.desdeDatos)}. Cada mes nuevo aparecerá aquí.</p>
         )}
+        {d.calendlyEnCurso && <p className="adm-notas">Lo cobrado por Calendly en {textoMes(d.hoy.slice(0, 7), { soloNombre: true })} se apunta al acabar el mes: hasta entonces, los ingresos de este mes se quedan cortos (en la comparación tampoco se cuenta el Calendly del mes anterior).</p>}
         {d.grafico.some((m) => m.faltaCalendly) && <p className="adm-notas">El punto naranja marca los meses en los que falta apuntar lo cobrado por Calendly. <Link href="/admin/finanzas/ingresos" className="adm-enlace">Apuntarlo</Link></p>}
       </Caja>
 
       <div className="adm-caja adm-apoyo">
-        <div><span>Reservas por horas</span><strong>{d.apoyo.porHoras.n} · {h(d.apoyo.porHoras.horas)}</strong><Variacion actual={d.apoyo.porHoras.n} comp={d.apoyo.porHoras.comp} tipo="unidades" {...varProps} estado={comparado ? 'ok' : 'no'} /></div>
-        <div><span>Sesiones de suscripción</span><strong>{d.apoyo.plan.n} · {h(d.apoyo.plan.horas)}</strong><Variacion actual={d.apoyo.plan.n} comp={d.apoyo.plan.comp} tipo="unidades" {...varProps} estado={comparado ? 'ok' : 'no'} /></div>
+        <div><span>Reservas por horas</span><strong>{d.apoyo.porHoras.n} · {h(d.apoyo.porHoras.horas)}</strong><Variacion actual={d.apoyo.porHoras.n} comp={d.apoyo.porHoras.comp} tipo="unidades" {...varProps} estado={comparado ? comparado.estadoSesiones : 'no'} /></div>
+        <div><span>Sesiones de suscripción</span><strong>{d.apoyo.plan.n} · {h(d.apoyo.plan.horas)}</strong><Variacion actual={d.apoyo.plan.n} comp={d.apoyo.plan.comp} tipo="unidades" {...varProps} estado={comparado ? comparado.estadoSesiones : 'no'} /></div>
         <div><span>Miembros activos</span><strong>{d.apoyo.miembros.n}</strong><small>+{d.apoyo.miembros.altas} {d.apoyo.miembros.altas === 1 ? 'alta' : 'altas'} · {d.apoyo.miembros.bajas} {d.apoyo.miembros.bajas === 1 ? 'baja' : 'bajas'}</small></div>
         <div><span>Cuotas sin pagar</span>{d.apoyo.cuotasSinPagar.n ? <strong className="is-malo">{d.apoyo.cuotasSinPagar.n} · {e(d.apoyo.cuotasSinPagar.totalCent)}</strong> : <strong className="is-bueno">Ninguna</strong>}<small>A día de hoy</small></div>
       </div>
@@ -261,7 +270,7 @@ function Contenido(d) {
           subtitulo="Ingresos y gastos acumulados · sin IVA"
           resumen={resumenG2}
         >
-          <LineasAcumuladas puntos={ev.puntos} comparacion={ev.comparacion} porMes={ev.porMes} cruce={ev.cruce} textoComp={comparado ? comparado.texto : ''} etiquetaPunto={etiquetaPunto} />
+          <LineasAcumuladas puntos={ev.puntos} comparacion={ev.comparacion} porMes={ev.porMes} cruce={ev.cruce} textoComp={ev.textoComparacion ? ev.textoComparacion.charAt(0).toUpperCase() + ev.textoComparacion.slice(1) : ''} etiquetaPunto={etiquetaPunto} />
         </Caja>
         <Caja id="lo-que-queda" titulo="De lo que entra a lo que queda" subtitulo={`${tramo.texto} · sin IVA`}>
           <Cascada filas={filasCascada} />
@@ -367,7 +376,7 @@ function Contenido(d) {
             <div className="adm-scroll">
               <table className="adm-tabla adm-tabla--num">
                 <thead><tr><th>Trimestre</th><th>IVA cobrado</th><th>IVA de gastos</th><th>A pagar</th></tr></thead>
-                <tbody>{d.iva.map((t) => <tr key={t.trimestre}><th scope="row">{t.texto.split(' (')[0]}</th><td className="num">{e(t.cobrado.ivaCent - t.devuelto.ivaCent)}</td><td className="num">{e(t.gastos.ivaCent)}</td><td className="num">{t.futuro ? '—' : e(t.netoCent)}</td></tr>)}</tbody>
+                <tbody>{d.iva.map((t) => <tr key={t.trimestre}><th scope="row">{t.texto.split(' (')[0]}</th><td className="num">{t.futuro ? '—' : e(t.cobrado.ivaCent - t.devuelto.ivaCent)}</td><td className="num">{t.futuro ? '—' : e(t.gastos.ivaCent)}</td><td className="num">{t.futuro ? '—' : e(t.netoCent)}</td></tr>)}</tbody>
               </table>
             </div>
           ) : (
@@ -378,7 +387,10 @@ function Contenido(d) {
             </div>
           )}
           <p className="adm-nota">Se declara con el modelo 303{periodo.tipo !== 'anio' ? `; el de este trimestre, ${iva.plazo}` : ''}. Este dinero no es del estudio: conviene apartarlo.</p>
-          {iva.avisos.faltaCalendly.length > 0 && <p className="adm-notas">Falta apuntar lo de Calendly de {listaMeses(iva.avisos.faltaCalendly, d.hoy)}: el IVA se queda corto.</p>}
+          {(() => {
+            const faltan = (periodo.tipo === 'anio' ? d.iva : [iva]).flatMap((t) => t.avisos.faltaCalendly)
+            return faltan.length > 0 ? <p className="adm-notas">Falta apuntar lo de Calendly de {listaMeses(faltan, d.hoy)}: el IVA se queda corto.</p> : null
+          })()}
           <p className="adm-nota"><Link href={`/admin/finanzas?p=${periodo.clave}#hacienda`} className="adm-enlace">Ver el detalle para la gestoría ›</Link></p>
         </Caja>
         <Caja titulo="Próximos gastos fijos" subtitulo="Próximos 30 días">
@@ -400,14 +412,9 @@ function Contenido(d) {
 
 export default function Inicio(d) {
   const router = useRouter()
-  const [oculto, setOculto] = useState(false)
+  const [oculto, setOculto] = useState(Boolean(d.oculto))
   const [cargando, setCargando] = useState(false)
   useEffect(() => {
-    try {
-      setOculto(window.localStorage.getItem('adm-ocultar-importes') === '1')
-    } catch {
-      // sin almacenamiento: se ven los importes
-    }
     let t
     const ini = () => { t = setTimeout(() => setCargando(true), 150) }
     const fin = () => { clearTimeout(t); setCargando(false) }
@@ -420,15 +427,11 @@ export default function Inicio(d) {
       router.events.off('routeChangeError', fin)
     }
   }, [router.events])
+  // Se recuerda en este navegador (cookie), también al recargar o volver otro día
   const alternar = () => {
-    setOculto((v) => {
-      try {
-        window.localStorage.setItem('adm-ocultar-importes', v ? '0' : '1')
-      } catch {
-        // nada
-      }
-      return !v
-    })
+    const nuevo = !oculto
+    document.cookie = `adm_ocultar=${nuevo ? '1' : '0'}; path=/admin; max-age=31536000; samesite=lax`
+    setOculto(nuevo)
   }
   return (
     <Panel
@@ -457,5 +460,6 @@ export async function getServerSideProps(ctx) {
   const periodo = leerPeriodo(ctx.query.p, hoy) || periodoActual('mes', hoy)
   const comparar = ['anterior', 'anio', 'no'].includes(ctx.query.comparar) ? ctx.query.comparar : 'anterior'
   const d = await datosInicio({ periodo, comparar })
-  return { props: JSON.parse(JSON.stringify(d)) }
+  const oculto = /(?:^|;\s*)adm_ocultar=1(?:;|$)/.test(ctx.req.headers.cookie || '')
+  return { props: JSON.parse(JSON.stringify({ ...d, oculto })) }
 }

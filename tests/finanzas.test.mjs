@@ -230,3 +230,43 @@ test('exportar: cabeceras exactas y devoluciones en negativo', async () => {
   assert.equal(fac.nombre, `finanzas-facturas-${p.clave}.csv`)
   await assert.rejects(FIN.exportarCsv(p, { tipo: 'otra' }), { codigo: 'tipo' })
 })
+
+test('guardar un gasto con retención sin cambiar nada no mueve ni un céntimo', async () => {
+  const alq = await cat('alquiler')
+  const fecha = sumarDias(HOY, -1)
+  const aTexto = (c) => (c / 100).toFixed(2).replace('.', ',')
+  for (const [base, ret] of [['857,33', 19], ['1.234,57', 19], ['333,33', 15], ['99,99', 7]]) {
+    const { id } = await FIN.crearGasto({ categoriaId: alq, importe: base, importeEs: 'base', fecha, tipoFactura: 'nif', ivaPct: 21, retencionPct: ret })
+    const a = (await FIN.fichaGasto(id)).gasto
+    // Como lo manda la ficha: lo pagado, con su IVA y retención; solo se pega el enlace de Drive
+    await FIN.editarGasto(id, { categoriaId: alq, importe: aTexto(a.totalCent), importeEs: 'pagado', fecha, tipoFactura: 'nif', ivaPct: 21, retencionPct: ret, enlace: 'https://drive.google.com/x' }, { version: a.version })
+    const b = (await FIN.fichaGasto(id)).gasto
+    assert.deepEqual([b.baseCent, b.ivaCent, b.retencionCent, b.totalCent], [a.baseCent, a.ivaCent, a.retencionCent, a.totalCent], `base ${base}`)
+    assert.equal(b.enlace, 'https://drive.google.com/x')
+  }
+})
+
+test('próximos fijos: con el cambio de importe que llega y sin los meses que no se pagan', async () => {
+  // Las cuentas empiezan hace 2 meses (lo fija la prueba de ajustes): este mes es «m» y el siguiente «s»
+  const m = C.mesDe(HOY)
+  const s = C.sumarMesesMes(m, 1)
+  const hoy = `${m}-10`
+  const { id } = await FIN.crearGastoFijo({ concepto: 'Internet prueba', categoriaId: await cat('internet'), importe: '100', tipoFactura: 'sin_iva', dia: 25, desdeMes: C.sumarMesesMes(m, -1) }, { hoy })
+  const v = (await query('SELECT version FROM gastos_fijos WHERE id = $1', [id])).rows[0].version
+  await FIN.cambiarImporteFijo(id, { importe: '150', desdeMes: s, version: v }, { hoy })
+  let p = (await FIN.proximosFijos({ hoy, dias: 50 })).filter((x) => x.fijoId === id)
+  assert.deepEqual(p.map((x) => [x.fecha, x.totalCent]), [[`${m}-25`, 10000], [`${s}-25`, 15000]])
+  // Este mes ya está apuntado: si ese mes no se paga, ya no sale
+  const mar = (await query(`SELECT id, version FROM gastos WHERE fijo_id = $1 AND mes = $2::date`, [id, `${m}-01`])).rows[0]
+  await FIN.anularMesFijo(mar.id, { version: mar.version })
+  p = (await FIN.proximosFijos({ hoy, dias: 50 })).filter((x) => x.fijoId === id)
+  assert.deepEqual(p.map((x) => [x.fecha, x.totalCent]), [[`${s}-25`, 15000]])
+  // Volver a contarlo después de un cambio de importe: el mes recoge el importe de ahora
+  const v2 = (await query('SELECT version FROM gastos_fijos WHERE id = $1', [id])).rows[0].version
+  await FIN.cambiarImporteFijo(id, { importe: '120', desdeMes: m, version: v2 }, { hoy })
+  const m2 = (await query(`SELECT id, version, total_cent FROM gastos WHERE fijo_id = $1 AND mes = $2::date`, [id, `${m}-01`])).rows[0]
+  assert.equal(m2.total_cent, 12000)
+  await FIN.recuperarMesFijo(m2.id, { version: m2.version })
+  p = (await FIN.proximosFijos({ hoy, dias: 50 })).filter((x) => x.fijoId === id)
+  assert.deepEqual(p.map((x) => [x.fecha, x.totalCent]), [[`${m}-25`, 12000], [`${s}-25`, 15000]])
+})

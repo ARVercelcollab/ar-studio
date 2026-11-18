@@ -164,7 +164,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
         return
       }
       const destino = volver.startsWith('/admin') ? volver : '/admin/finanzas/gastos'
-      router.push(`${destino}${destino.includes('?') ? '&' : '?'}ok=gasto:${r.id}`)
+      router.push(`${destino}${destino.includes('?') ? '&' : '?'}ok=${gasto ? 'cambiado' : 'gasto'}:${r.id}`)
     } catch (e) {
       setEstado({ enviando: false, error: e.message, ok: null })
     }
@@ -179,7 +179,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
         <p><Chip tipo="plan">{cat?.nombre}</Chip></p>
       ) : (
         ['variable', 'material', 'fijo'].map((g) => {
-          const cs = categorias.filter((c) => c.grupo === g && c.activa)
+          const cs = categorias.filter((c) => c.grupo === g && (c.activa || c.id === Number(f.categoriaId)))
           if (!cs.length) return null
           return (
             <div key={g} className="adm-fin-grupo">
@@ -350,7 +350,13 @@ export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = nul
 
 export function FormularioFijo({ categorias, hoy, onHecho }) {
   const mesHoy = hoy.slice(0, 7)
-  const [f, setF] = useState({ concepto: '', categoriaId: categorias.find((c) => c.grupo === 'fijo')?.id || '', importeEs: 'pagado', importe: '', cadaMeses: 1, dia: 1, desdeMes: mesHoy, tipoFactura: 'nif', ivaPct: 21, retencionPct: 0, metodoPago: 'domiciliacion', proveedor: '', nota: '' })
+  const [f, setF] = useState(() => {
+    const c = categorias.find((x) => x.grupo === 'fijo' && x.activa) || categorias[0]
+    return {
+      concepto: '', categoriaId: c?.id || '', importeEs: c?.retencionPct > 0 ? 'base' : 'pagado', importe: '', cadaMeses: 1, dia: 1, desdeMes: mesHoy,
+      tipoFactura: c?.tipoFactura || 'nif', ivaPct: c?.ivaPct ?? 21, retencionPct: c?.retencionPct ?? 0, metodoPago: 'domiciliacion', proveedor: '', nota: '',
+    }
+  })
   const [estado, ejecutar] = useAccion()
   const poner = (k, v) => setF((x) => ({ ...x, [k]: v }))
   const porId = Object.fromEntries(categorias.map((c) => [c.id, c]))

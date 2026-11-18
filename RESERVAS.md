@@ -17,6 +17,8 @@ apuntan a Calendly y `/reservar` redirige allí.
 | Correos | Resend (`reservas@studioar.es`) | Confirmación al cliente con el `.ics`, aviso al estudio, recordatorio el día antes, avisos de pagos raros |
 | Facturas | PDF por correo | Si el cliente pide factura, al confirmarse el pago se emite (serie AR-W, numeración correlativa) y se le envía en PDF con copia al estudio. Desde el panel se emite, se descarga o se reenvía |
 | Calendario | `/api/admin/calendario?clave=…` | Todas las reservas para suscribirse desde Google Calendar |
+| Inicio | `/admin` | Cómo va el estudio de un vistazo: reservas de hoy, lo que hay que hacer, ingresos, gastos, beneficio y ocupación con gráficas, comparado con el mes (o trimestre, o año) anterior |
+| Finanzas | `/admin/finanzas` | Facturación, gastos (fijos, variables y materiales), gastos fijos que se apuntan solos, lo cobrado por Calendly, IVA orientativo y CSV para la gestoría. Ver «Finanzas» más abajo |
 | Suscripciones | `/admin/suscripciones` | Planes mensuales (Starter, Creator, Pro): altas, horas de cada mes, sesiones, cuotas, fianza y bajas. Ver «Suscripciones» más abajo |
 
 Reglas copiadas de Calendly (se cambian en `lib/reservas/config.js`):
@@ -125,11 +127,12 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 ### 5. El día del cambio
 
 1. Poner el TPV en **real** y `NEXT_PUBLIC_RESERVAS_PROPIAS=1` en Producción, y volver a desplegar.
-2. Apuntar en el panel (*Nueva reserva*, marcada como pagada) las reservas futuras que haya en Calendly.
+2. Apuntar en el panel (*Nueva reserva*, marcada como pagada con **Cómo: Por Calendly (ya cobrada en Stripe)** y la fecha del cobro) las reservas futuras que haya en Calendly.
 3. Desactivar los tipos de evento de Calendly ese mismo día, para que nadie reserve en los dos sitios.
-4. Hacer una reserva real pequeña y devolverla desde el portal del TPV.
-5. Suscribirse al calendario desde Google Calendar con el enlace que sale al final de la agenda del panel.
-6. Cuando todo vaya bien un par de semanas, dar de baja Calendly.
+4. En *Finanzas → Ajustes*, poner el último mes en que se cobró por Calendly.
+5. Hacer una reserva real pequeña y devolverla desde el portal del TPV.
+6. Suscribirse al calendario desde Google Calendar con el enlace que sale al final de la agenda del panel.
+7. Cuando todo vaya bien un par de semanas, dar de baja Calendly.
 
 ### 6. Pendiente fuera de la fase 1
 
@@ -190,3 +193,38 @@ Sin datos personales en el repositorio (es público): todo se mete desde el pane
 4. Antes del segundo cobro (el recuadro *Para hacer* avisa 7 días antes):
    - **si sigue:** nada en Stripe; cuando cobre, marcar la cuota 2 como pagada (Stripe);
    - **si avisó por escrito de que lo deja:** *Ha avisado de que lo deja* → el panel propone el último día del mes de prueba y devolver la fianza → cancelar su suscripción en Stripe a mano y marcar «Ya lo he cancelado» → devolverle la fianza por transferencia → *Fianza → Apuntar devuelta*.
+
+## Inicio y Finanzas
+
+### Qué hay en cada sitio
+
+| Dónde | Qué |
+|---|---|
+| *Inicio* | Hoy y lo que viene, «Para hacer» (cuotas sin pagar, avisos de finanzas y de suscripciones, configuración), cuatro cifras (ingresos, gastos, beneficio, ocupación) con su comparación, ingresos y gastos de los últimos 12 meses, cómo va el mes día a día, de lo que entra a lo que queda, de dónde vienen los ingresos, en qué se va el dinero, cuándo se usa el estudio (mapa por día y hora), reservas por duración, suscripciones, IVA del trimestre y próximos gastos fijos. «Ocultar importes» tapa las cifras de dinero (por si hay alguien delante) |
+| *Finanzas → Resumen* | Las cifras del periodo con y sin IVA, de dónde viene la facturación y en qué se va, mes a mes, **Para Hacienda** (IVA del trimestre, retenciones del alquiler y de profesionales) y **Para la gestoría** (CSV de ingresos, gastos y facturas emitidas) |
+| *Finanzas → Facturación* | Cada cobro y cada devolución, con su factura; lo cobrado por Calendly de cada mes; lo que falta por cobrar |
+| *Finanzas → Gastos* | Todos los gastos del periodo en tres grupos: **fijos** (alquiler, alarma, internet, seguro, gestoría, autónomos, programas), **variables** (luz, agua, Aquaservice, limpieza, reparaciones, comisiones, publicidad) y **herramientas y materiales** (fondos, material del estudio, equipo). Las categorías se pueden cambiar, añadir u ocultar |
+| *Finanzas → Gastos fijos* | Lo que se paga cada mes (o cada 2, 3, 6 o 12 meses): se apunta solo en Gastos el mes que toca. Se puede programar una subida («desde enero son 950 €») o terminarlo |
+
+### Qué cuenta y qué no
+
+- **Criterio de caja**: un cobro cuenta el día en que entra el dinero y una devolución el día en que sale. Los gastos, el día de su factura o cargo; los fijos cuentan en su mes desde el día 1.
+- Todo se enseña **sin IVA** (con el IVA al lado). El beneficio es facturación menos gastos, antes del IRPF.
+- Las reservas por horas, las horas aparte de los planes y las cuotas cuentan solas. **Lo cobrado por Calendly no llega solo**: se apunta una vez al mes en *Facturación → Calendly* (con las pistas de lo que Stripe ya cobró y está en el panel, para no sumarlo dos veces). Las reservas de Calendly pasadas a la agenda no suman.
+- Las fianzas no son ingreso hasta que se resuelven: solo cuenta lo que el estudio se queda.
+- Cobros que no pasan por el panel (fondos o equipo del día, facturas hechas a mano AR-M, otros): *Facturación → + Apuntar otro ingreso*.
+- Gastos: con factura a nombre del estudio y su NIF, el IVA se descuenta; un ticket sin NIF cuenta entero; seguros, autónomos y banco no llevan IVA; las empresas de fuera de España (por ejemplo algunas apps) van aparte para la gestoría. El alquiler lleva normalmente una retención del 19 % que la gestoría ingresa con el modelo 115.
+- El IVA del trimestre es **orientativo**: lo que vale es lo que presente la gestoría.
+
+### Para empezar
+
+1. *Finanzas → Gastos fijos → + Nuevo gasto fijo*: alquiler (con su IVA y la retención si la lleva), alarma, internet, seguro, gestoría, cuota de autónomos y programas, cada uno con su día de cargo y desde qué mes.
+2. Cada vez que llegue una factura variable (luz, agua, Aquaservice…) o se compre material, *+ Apuntar gasto*. Si se pega el enlace de Drive de la factura, la gestoría la tiene a mano.
+3. Al acabar cada mes, mientras se cobre por Calendly: *Facturación → Calendly* con lo cobrado, lo devuelto y las comisiones del informe de Stripe.
+4. Cada trimestre, *Finanzas → Resumen → Para la gestoría*: los tres CSV.
+
+### Pendiente de decidir (con la gestoría)
+
+- El IVA de una fianza que os quedáis (ahora 0 %, `FIANZA_RETENIDA_IVA_PCT` en `lib/finanzas/config.js`).
+- Cómo van las comisiones de Stripe (ahora como empresa de fuera de España, `COMISION_STRIPE_TIPO_FACTURA`).
+- Si el alquiler lleva retención (depende del casero).

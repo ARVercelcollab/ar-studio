@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import Panel from '../../../../components/admin/Panel'
 import { SubmenuFinanzas, FormularioGasto, useAccion, Mensaje } from '../../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../../lib/admin/auth'
-import { fichaGasto, datosFormularioGasto } from '../../../../lib/finanzas/servicio'
+import { fichaGasto, datosFormularioGasto, listarCategorias } from '../../../../lib/finanzas/servicio'
 import { textoMes, euros } from '../../../../lib/finanzas/calculos'
 import { fechaMadrid } from '../../../../lib/reservas/tiempo'
 
@@ -38,7 +38,7 @@ export default function FichaGasto({ ficha, datos, hoy }) {
         </div>
       ) : (
         <>
-          <FormularioGasto datos={datos} hoy={hoy} inicial={inicial} gasto={g} fijo={ficha.fijo} volver={volver} />
+          <FormularioGasto key={`${g.id}-${g.version}`} datos={datos} hoy={hoy} inicial={inicial} gasto={g} fijo={ficha.fijo} volver={volver} />
           <div className="adm-caja">
             <Mensaje estado={estado} />
             <div className="adm-acciones">
@@ -73,5 +73,12 @@ export async function getServerSideProps(ctx) {
     if (e.estadoHttp === 404) return { notFound: true }
     throw e
   }
-  return { props: JSON.parse(JSON.stringify({ ficha, datos: await datosFormularioGasto(), hoy })) }
+  const datos = await datosFormularioGasto()
+  // Si su categoría está oculta, se enseña igualmente para poder corregir el gasto
+  if (!datos.categorias.some((c) => c.id === ficha.gasto.categoriaId)) {
+    const todas = await listarCategorias({ todas: true })
+    const c = todas.find((x) => x.id === ficha.gasto.categoriaId)
+    if (c) datos.categorias = [...datos.categorias, c]
+  }
+  return { props: JSON.parse(JSON.stringify({ ficha, datos, hoy })) }
 }

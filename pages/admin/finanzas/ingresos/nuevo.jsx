@@ -20,7 +20,8 @@ export async function getServerSideProps(ctx) {
   if (redir) return redir
   ctx.res.setHeader('Cache-Control', 'no-store')
   const hoy = fechaMadrid(new Date())
-  const reservas = await reservasParaIngreso({ hoy })
   const r = /^\d+$/.test(String(ctx.query.reserva || '')) ? Number(ctx.query.reserva) : null
-  return { props: { hoy, reservas, reserva: r, sentido: ctx.query.sentido === 'devolucion' ? 'devolucion' : 'cobro' } }
+  // La reserva del aviso sale en la lista aunque no sea de los últimos 30 días
+  const reservas = await reservasParaIngreso({ hoy, incluir: r })
+  return { props: { hoy, reservas, reserva: reservas.some((x) => x.id === r) ? r : null, sentido: ctx.query.sentido === 'devolucion' ? 'devolucion' : 'cobro' } }
 }

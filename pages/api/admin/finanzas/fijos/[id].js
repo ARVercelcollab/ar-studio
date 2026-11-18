@@ -5,6 +5,8 @@ import { textoMes, listaMeses } from '../../../../../lib/finanzas/calculos.js'
 import { fechaMadrid } from '../../../../../lib/reservas/tiempo.js'
 
 const meses = (n) => (n === 1 ? '1 mes' : `${n} meses`)
+// «1 mes ya apuntado» / «3 meses ya apuntados»
+const apuntados = (n, ya = '') => (n === 1 ? `1 mes ${ya}apuntado` : `${n} meses ${ya}apuntados`)
 
 export default rutaAdmin(async (req, res) => {
   const id = req.query.id
@@ -18,8 +20,8 @@ export default rutaAdmin(async (req, res) => {
     }
     case 'importe': {
       const r = await FIN.cambiarImporteFijo(id, { importe: b.importe, desdeMes: b.desdeMes, version })
-      let mensaje = `Importe cambiado desde ${textoMes(b.desdeMes)} (${meses(r.cambiados)} ya apuntados).`
-      if (r.sinTocar.length) mensaje += ` ${listaMeses(r.sinTocar, hoy).replace(/^./, (c) => c.toUpperCase())} lo cambiasteis a mano y no se ha tocado.`
+      let mensaje = `Importe cambiado desde ${textoMes(b.desdeMes)} (${apuntados(r.cambiados, 'ya ')}).`
+      if (r.sinTocar.length) mensaje += ` ${listaMeses(r.sinTocar, hoy).replace(/^./, (c) => c.toUpperCase())} ${r.sinTocar.length === 1 ? 'lo cambiasteis a mano y no se ha tocado' : 'los cambiasteis a mano y no se han tocado'}.`
       return res.status(200).json({ ok: true, mensaje })
     }
     case 'quitar_cambio':
@@ -33,11 +35,11 @@ export default rutaAdmin(async (req, res) => {
     }
     case 'quitar_final': {
       const r = await FIN.quitarFinalGastoFijo(id, { version })
-      return res.status(200).json({ ok: true, mensaje: `Vuelve a apuntarse cada mes (${meses(r.apuntados)} apuntados).` })
+      return res.status(200).json({ ok: true, mensaje: `Vuelve a apuntarse cada mes (${apuntados(r.apuntados)}).` })
     }
     case 'borrar': {
       const r = await FIN.borrarGastoFijo(id, { version })
-      return res.status(200).json({ ok: true, mensaje: `Gasto fijo borrado con sus ${meses(r.borrados)}.` })
+      return res.status(200).json({ ok: true, mensaje: r.borrados === 1 ? 'Gasto fijo borrado con su mes apuntado.' : r.borrados ? `Gasto fijo borrado con sus ${r.borrados} meses.` : 'Gasto fijo borrado.' })
     }
     default:
       return res.status(400).json({ error: 'accion', mensaje: 'Acción desconocida.' })

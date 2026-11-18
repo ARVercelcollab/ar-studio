@@ -7,7 +7,7 @@ import Panel, { Segmento } from '../../components/admin/Panel'
 import SesionPlan from '../../components/admin/SesionPlan'
 import { redirigirSiNoAdmin } from '../../lib/admin/auth'
 import { ACTIVIDADES, FONDOS, EQUIPO, DURACIONES, formatoEuros, textoDuracion } from '../../lib/reservas/config'
-import { minutosDeHora, horaDeMinutos } from '../../lib/reservas/tiempo'
+import { minutosDeHora, horaDeMinutos, fechaMadrid } from '../../lib/reservas/tiempo'
 import { pedirJson } from '../../lib/reservas/navegador'
 import { opcionesParaReservar } from '../../lib/suscripciones/servicio'
 
@@ -17,7 +17,7 @@ const VACIA = {
   pagado: false, metodoPago: 'transferencia', pagadoEn: '', notasInternas: '', enviarCorreo: false,
 }
 
-export default function NuevaReserva({ miembros, modoInicial, susInicial }) {
+export default function NuevaReserva({ miembros, modoInicial, susInicial, hoy }) {
   const router = useRouter()
   const [modo, setModo] = useState(modoInicial)
   const cambiarModo = (m) => {
@@ -29,7 +29,7 @@ export default function NuevaReserva({ miembros, modoInicial, susInicial }) {
       <div style={{ marginBottom: 16 }}>
         <Segmento opciones={[['horas', 'Por horas'], ['suscripcion', 'Suscripción']]} valor={modo} onCambio={cambiarModo} />
       </div>
-      {modo === 'suscripcion' ? <SesionDeMiembro miembros={miembros} susInicial={susInicial} /> : <ReservaPorHoras />}
+      {modo === 'suscripcion' ? <SesionDeMiembro miembros={miembros} susInicial={susInicial} /> : <ReservaPorHoras hoy={hoy} />}
     </Panel>
   )
 }
@@ -96,7 +96,7 @@ function SesionDeMiembro({ miembros, susInicial }) {
   )
 }
 
-function ReservaPorHoras() {
+function ReservaPorHoras({ hoy }) {
   const router = useRouter()
   const [f, setF] = useState(VACIA)
   const [estado, setEstado] = useState({ enviando: false, error: null })
@@ -159,7 +159,7 @@ function ReservaPorHoras() {
           ) : <div />}
           {f.pagado && (
             <>
-              <label>Cobrada el<input type="date" max={new Date().toISOString().slice(0, 10)} value={f.pagadoEn} onChange={(e) => poner('pagadoEn', e.target.value)} /></label>
+              <label>Cobrada el<input type="date" max={hoy} value={f.pagadoEn} onChange={(e) => poner('pagadoEn', e.target.value)} /></label>
               {f.metodoPago === 'calendly'
                 ? <p className="adm-notas" style={{ alignSelf: 'end' }}>No cuenta en Finanzas como reserva: ese dinero va en el resumen de Calendly del mes. Tampoco se le hace factura aquí: la hace Stripe.</p>
                 : <p className="adm-nota" style={{ alignSelf: 'end' }}>Vacío = hoy. Cuenta en Finanzas el día del cobro.</p>}
@@ -187,6 +187,7 @@ export async function getServerSideProps(ctx) {
       miembros,
       susInicial,
       modoInicial: susInicial || ctx.query.modo === 'suscripcion' ? 'suscripcion' : 'horas',
+      hoy: fechaMadrid(new Date()),
     },
   }
 }
