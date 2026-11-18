@@ -211,10 +211,20 @@ test('revisión: no se puede alargar una retención sin fin ni acaparar horas', 
   const { reserva } = await S.crearReservaWeb(datos({ fecha, hora: '10:00', horas: 2 }), { proveedor: 'simulado', huella: 'h1' })
   for (let i = 0; i < 3; i++) await S.reintentarPago(reserva.token, { proveedor: 'simulado' })
   await assert.rejects(S.reintentarPago(reserva.token, { proveedor: 'simulado' }), { codigo: 'intentos' })
-  await S.crearReservaWeb(datos({ fecha, hora: '15:00', horas: 2 }), { proveedor: 'simulado', huella: 'h1' })
-  await assert.rejects(S.crearReservaWeb(datos({ fecha, hora: '18:00', horas: 2 }), { proveedor: 'simulado', huella: 'h1' }), { codigo: 'limite' })
+  // Desde la misma conexión, con correos inventados, no se pueden guardar más de 2 horas
+  await S.crearReservaWeb(datos({ fecha, hora: '15:00', horas: 2, email: 'otro1@example.com' }), { proveedor: 'simulado', huella: 'h1' })
+  await assert.rejects(S.crearReservaWeb(datos({ fecha, hora: '18:00', horas: 2, email: 'otro2@example.com' }), { proveedor: 'simulado', huella: 'h1' }), { codigo: 'limite' })
   // Otra persona sí puede
   await S.crearReservaWeb(datos({ fecha, hora: '18:00', horas: 2 }), { proveedor: 'simulado', huella: 'h2' })
+})
+
+test('revisión: si el cliente vuelve atrás desde el banco y reserva de nuevo, su hora anterior se suelta', async () => {
+  const fecha = await laborable(63)
+  const primera = await S.crearReservaWeb(datos({ fecha, hora: '10:00', horas: 2, email: 'vuelve@example.com' }), { proveedor: 'simulado', huella: 'h3' })
+  // Misma persona, misma hora: antes salía ocupada durante 20 minutos
+  const segunda = await S.crearReservaWeb(datos({ fecha, hora: '10:00', horas: 2, email: 'vuelve@example.com' }), { proveedor: 'simulado', huella: 'h3' })
+  assert.notEqual(segunda.reserva.id, primera.reserva.id)
+  assert.equal((await S.reservaPorToken(primera.reserva.token)).estado, 'caducada')
 })
 
 test('revisión: una reserva en conflicto ocupa su hora y se resuelve moviéndola; una cancelada pagada se reactiva', async () => {
@@ -243,6 +253,13 @@ test('revisión: con la base marcada como de producción, un TPV de pruebas no c
     await query(`DELETE FROM ajustes WHERE clave = 'entorno'`)
   }
   await comprobarProveedor(proveedorPorId('simulado'))
+  // Una rama de Neon copia la marca, pero con el servidor de producción: en la rama no cuenta
+  await query(`INSERT INTO ajustes (clave, valor) VALUES ('entorno', 'produccion:ep-produccion.neon.tech')`)
+  try {
+    await comprobarProveedor(proveedorPorId('simulado'))
+  } finally {
+    await query(`DELETE FROM ajustes WHERE clave = 'entorno'`)
+  }
 })
 
 test('facturas: numeración correlativa, una por reserva, desglose de IVA y PDF', async () => {
@@ -277,6 +294,11 @@ test('facturas: numeración correlativa, una por reserva, desglose de IVA y PDF'
   const segunda = await S.crearReservaManual({ ...CLIENTE, nombre: 'Сергей', fecha, hora: '19:00', horas: 2, pagoEstado: 'pagado' })
   const b = await F.emitirFactura(segunda.id, { nombre: 'Сергей Ñoño', nif: 'Y1234567X', direccion: 'Calle 2' })
   assert.match(b.factura.codigo, /-002$/)
+
+  // Nunca de una reserva devuelta
+  const devuelta = await S.crearReservaManual({ ...CLIENTE, fecha, hora: '12:30', horas: 1, precioCent: 5000, pagoEstado: 'pagado' })
+  await S.cancelar(devuelta.id, { motivo: 'prueba', reembolsoCent: 5000 })
+  await assert.rejects(F.emitirFactura(devuelta.id, { nombre: 'X SL', nif: 'B12345678', direccion: 'Y' }), { codigo: 'devuelta' })
 
   const pdf = await pdfFactura(b.factura)
   assert.equal(pdf.subarray(0, 5).toString(), '%PDF-')

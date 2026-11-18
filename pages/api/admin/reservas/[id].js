@@ -19,7 +19,7 @@ export default rutaAdmin(async (req, res) => {
     case 'pagada':
       reserva = await marcarPagada(id, { metodo: b.metodo, nota: b.nota })
       if (b.enviarCorreo && reserva.email) await correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: Boolean(reserva.factura) && facturasAutomaticas() })
-      if (reserva.factura && facturasAutomaticas()) {
+      if (b.enviarCorreo && reserva.factura && facturasAutomaticas()) {
         const r = await facturaAutomatica(reserva, { urlPanel: urlPanel(base) })
         if (r?.factura) mensaje = `Factura ${r.factura.codigo} emitida${r.enviada ? ' y enviada' : ''}.`
       }

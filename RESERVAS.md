@@ -91,7 +91,7 @@ producción queda marcada y rechaza cualquier pago hecho con un TPV en modo prue
 | `PAGOS_PROVEEDOR` | `addon` o `redsys` |
 | `ADDON_COMERCIO`, `ADDON_CUENTA`, `ADDON_SECRETO`, `ADDON_ENTORNO` | Si es Addon Payments (`ADDON_ENTORNO` = `pruebas` o `real`) |
 | `REDSYS_COMERCIO`, `REDSYS_TERMINAL`, `REDSYS_CLAVE`, `REDSYS_ENTORNO`, `REDSYS_METODOS` | Si es Redsys (`REDSYS_ENTORNO` = `pruebas` o `real`) |
-| `ADMIN_PASSWORD` | Contraseña del panel |
+| `ADMIN_PASSWORD` | Contraseña del panel, de 12 caracteres o más (si es más corta, el panel no deja entrar) |
 | `SESSION_SECRET` | Texto aleatorio de 32 caracteres o más (firma la sesión del panel) |
 | `CRON_SECRET` | Texto aleatorio: Vercel lo usa para lanzar el recordatorio diario |
 | `CALENDARIO_TOKEN` | Texto aleatorio de 24 caracteres o más, para el calendario de Google |
@@ -133,7 +133,7 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 
 - **Facturas:** las de las reservas web salen solas (serie AR-W) con el mismo diseño que las manuales (serie AR-M). Que el gestor confirme la serie. Las **rectificativas** (cuando se devuelve dinero de una reserva ya facturada) se hacen de momento a mano; el panel avisa. Antes del 1-7-2027 (o 1-1-2027 si factura una sociedad) hay que pasar a un programa que cumpla **Veri*factu**: este no lo cumple.
 - **Devoluciones:** desde el portal del TPV; el panel solo apunta el importe.
-- **Límites antiabuso:** cada persona puede tener como mucho 2 horas guardadas sin pagar y 4 intentos de pago por reserva; los intentos de entrar en el panel están limitados.
+- **Límites antiabuso:** cada conexión puede tener como mucho 2 horas guardadas sin pagar (12 en total a la vez) y 4 intentos de pago por reserva; si alguien vuelve atrás desde el banco y reserva otra vez, se suelta su hora anterior. En el panel, 8 contraseñas falsas seguidas bloquean esa conexión 15 minutos.
 - **Cambios del cliente:** el cliente los pide desde su página y el estudio los hace en el panel.
 - **Política de privacidad:** menciona Calendly como proveedor; al activar, cambiarla por el TPV de Comercia, Neon (base de datos) y Resend (correos).
 - **Planes mensuales y área de clientes:** fase 3.

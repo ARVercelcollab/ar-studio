@@ -143,7 +143,11 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
             ) : !emisorListo ? (
               <p>Faltan los datos de quien factura en Vercel (FACTURA_EMISOR_NOMBRE, FACTURA_EMISOR_NIF y FACTURA_EMISOR_DIRECCION).</p>
             ) : r.pagoEstado === 'pendiente' ? (
-              <p>Se podrá emitir cuando esté pagada{r.factura ? '; como la ha pedido, saldrá sola al marcarla como pagada' : ''}.</p>
+              <p>Se podrá emitir cuando esté pagada{r.factura ? '; como la ha pedido, saldrá sola al marcarla como pagada con el correo' : ''}.</p>
+            ) : r.pagoEstado !== 'pagado' ? (
+              <p>Tiene una devolución apuntada: si hace falta factura, hazla a mano por lo que se ha cobrado de verdad.</p>
+            ) : !['confirmada', 'cancelada'].includes(r.estado) ? (
+              <p>Resuelve antes la reserva (confírmala en una hora libre o cancélala).</p>
             ) : (
               <>
                 <div className="adm-form">
@@ -179,7 +183,7 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
                     <option value="otro">Otro</option>
                   </select>
                 </label>
-                {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.enviarCorreo} onChange={(e) => setPago({ ...pago, enviarCorreo: e.target.checked })} /> Mandarle el correo de confirmación</label>}
+                {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.enviarCorreo} onChange={(e) => setPago({ ...pago, enviarCorreo: e.target.checked })} /> Mandarle el correo de confirmación{r.factura ? ' y la factura' : ''}</label>}
               </div>
               <Mensaje estado={ePago} />
               <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={ePago.enviando} onClick={() => accionPago({ accion: 'pagada', ...pago }, 'Marcada como pagada.')}>Marcar pagada</button></p>
