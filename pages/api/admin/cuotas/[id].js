@@ -42,7 +42,7 @@ export default rutaAdmin(async (req, res) => {
       await SUS.anularCuota(id, { nota: b.nota, pausa: Boolean(b.pausa) })
       return res.status(200).json({ ok: true, mensaje: 'Cuota anulada.' })
     case 'devolver': {
-      const r = await SUS.devolverCuota(id, { nota: b.nota })
+      const r = await SUS.devolverCuota(id, { nota: b.nota, fecha: b.fecha || null })
       return res.status(200).json({ ok: true, mensaje: r.facturaCodigo ? `Apuntada como devuelta. Tiene la factura ${r.facturaCodigo}: haz la rectificativa a mano.` : 'Apuntada como devuelta.' })
     }
     case 'factura': {

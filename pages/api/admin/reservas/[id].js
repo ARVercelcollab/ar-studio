@@ -30,7 +30,7 @@ export default rutaAdmin(async (req, res) => {
   }
   switch (b.accion) {
     case 'pagada':
-      reserva = await marcarPagada(id, { metodo: b.metodo, nota: b.nota })
+      reserva = await marcarPagada(id, { metodo: b.metodo, nota: b.nota, fecha: b.fecha || null })
       if (b.enviarCorreo && reserva.email) await correo(() => correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: Boolean(reserva.factura) && facturasAutomaticas() }))
       if (b.enviarCorreo && reserva.factura && facturasAutomaticas()) {
         const r = await facturaAutomatica(reserva, { urlPanel: urlPanel(base) })

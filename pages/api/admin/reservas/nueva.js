@@ -25,7 +25,10 @@ export default rutaAdmin(async (req, res) => {
     hasta: b.hasta,
     precioCent,
     pagoEstado: b.pagado ? 'pagado' : 'pendiente',
-    metodoPago: b.pagado ? b.metodoPago || 'transferencia' : null,
+    // «Por Calendly (ya cobrada en Stripe)»: cuenta en el resumen de Calendly del mes, no aquí
+    origen: b.pagado && b.metodoPago === 'calendly' ? 'calendly' : 'manual',
+    metodoPago: b.pagado ? (b.metodoPago === 'calendly' ? 'stripe' : b.metodoPago || 'transferencia') : null,
+    pagadoEn: b.pagado ? b.pagadoEn || null : null,
     notasInternas: b.notasInternas,
   })
   if (b.enviarCorreo && reserva.email) await correoConfirmacion(reserva, { urlReserva: urlReserva(urlBase(req), reserva) })
