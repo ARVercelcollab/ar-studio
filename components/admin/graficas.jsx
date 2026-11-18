@@ -23,9 +23,13 @@ export const RAMPA_OCUPACION = ['#f6f3ef', '#c9a684', '#a97d55', '#83552f', '#5a
 
 export const ImportesOcultos = createContext(false)
 
+// En el Inicio, euros sin céntimos (las cifras de detalle con céntimos están en Finanzas)
 export function useEuros() {
   const oculto = useContext(ImportesOcultos)
-  return (cent, op) => (oculto && cent !== null && cent !== undefined ? '••• €' : euros(cent, op))
+  return (cent) => {
+    if (cent === null || cent === undefined) return euros(cent)
+    return oculto ? '••• €' : euros(Math.round(cent / 100) * 100)
+  }
 }
 
 // Eje: '5.000 €', '12 mil €'
@@ -55,7 +59,7 @@ const idSeguro = (id) => id.replace(/[^a-zA-Z0-9_-]/g, '')
 // ---------- Variación frente al periodo comparado ----------
 
 // tipo: euros | unidades | horas | puntos; subeEsBueno: true/false
-export function Variacion({ actual, comp, tipo = 'euros', subeEsBueno = true, textoComp, estado = 'ok' }) {
+export function Variacion({ actual, comp, tipo = 'euros', subeEsBueno = true, textoComp, estado = 'ok', conPorcentaje = true }) {
   const e = useEuros()
   if (estado === 'no') return null
   if (estado === 'sin_datos' || comp === null || comp === undefined || actual === null || actual === undefined) {
@@ -71,7 +75,7 @@ export function Variacion({ actual, comp, tipo = 'euros', subeEsBueno = true, te
   let txt
   if (tipo === 'euros') {
     txt = `${e(abs)} ${sube ? 'más' : 'menos'}`
-    if (Math.abs(comp) >= 30000 && tipo === 'euros' && comp > 0) txt += ` (${sube ? '+' : '−'}${Math.round((abs * 100) / Math.abs(comp))} %)`
+    if (conPorcentaje && comp >= 30000) txt += ` (${sube ? '+' : '−'}${Math.round((abs * 100) / comp)} %)`
   } else if (tipo === 'horas') txt = `${String(abs).replace('.', ',')} h ${sube ? 'más' : 'menos'}`
   else if (tipo === 'puntos') txt = `${abs} ${abs === 1 ? 'punto' : 'puntos'}`
   else txt = `${abs} ${sube ? 'más' : 'menos'}`

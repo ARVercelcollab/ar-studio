@@ -216,7 +216,7 @@ function Contenido(d) {
           etiqueta="Beneficio" enlace="#lo-que-queda" negativo={kpis.beneficio.actual < 0}
           info="Ingresos menos gastos, los dos sin IVA. No descuenta impuestos sobre el beneficio."
           cifra={e(kpis.beneficio.actual)}
-          variacion={<Variacion actual={kpis.beneficio.actual} comp={kpis.beneficio.comp} {...varProps} />}
+          variacion={<Variacion actual={kpis.beneficio.actual} comp={kpis.beneficio.comp} conPorcentaje={false} {...varProps} />}
           comp={conComp(kpis.beneficio.comp)}
           pie={kpis.beneficio.actual < 0 ? 'Los gastos superan a los ingresos' : kpis.beneficio.ingresos >= 30000 && kpis.beneficio.deCada100 !== null ? `De cada 100 € que entran, os quedan ${kpis.beneficio.deCada100} €` : null}
         />

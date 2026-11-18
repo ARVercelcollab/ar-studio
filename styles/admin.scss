@@ -2204,3 +2204,30 @@ $c-malo: #a33b2b;
   color: $gris-texto;
   line-height: 1.4;
 }
+
+// Filas de tabla con su etiqueta en <th scope="row">: como una celda normal
+.adm-tabla tbody th {
+  text-transform: none;
+  font-size: inherit;
+  color: inherit;
+  font-weight: 300;
+  letter-spacing: 0;
+  padding: 8px 8px 8px 0;
+  border-top: 1px solid $borde;
+  text-align: left;
+  vertical-align: top;
+}
+
+.adm-tabla--num th:not(:first-child) {
+  text-align: right;
+}
+
+.adm-fin-grupo-gasto > summary {
+  grid-template-columns: 14px minmax(0, 1.2fr) minmax(0, 1fr) auto !important;
+}
+
+.adm-apoyo > div > .adm-var {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+}

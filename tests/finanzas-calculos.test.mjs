@@ -233,3 +233,29 @@ test('CSV para la gestoría', () => {
   const csv = aCsv([['A', (f) => f.a], ['B', (f) => f.b, 'numero']], [{ a: 'x', b: 100 }])
   assert.equal(csv, 'A;B\r\nx;1,00\r\n')
 })
+
+test('inicio: tramo en curso, comparación justa y ocupación', async () => {
+  const I = await import('../lib/admin/inicio.js')
+  const p = C.leerPeriodo('2026-12', '2026-12-31')
+  const t = I.tramoDe(p, '2026-12-31')
+  assert.equal(t.dias, 31)
+  // El 31 de diciembre se compara con noviembre entero (30 días)
+  assert.deepEqual(I.tramoComparado(p, t, 'anterior'), { desde: '2026-11-01', hasta: '2026-12-01', completo: true, enCurso: false })
+  const nov = C.leerPeriodo('2026-11', '2026-11-18')
+  const tn = I.tramoDe(nov, '2026-11-18')
+  assert.deepEqual([tn.desde, tn.hasta, tn.dias], ['2026-11-01', '2026-11-19', 18])
+  assert.deepEqual(I.tramoComparado(nov, tn, 'anterior'), { desde: '2026-10-01', hasta: '2026-10-19', completo: false, enCurso: false })
+  assert.equal(I.tramoComparado(nov, tn, 'anio').desde, '2025-11-01')
+  assert.equal(I.tramoComparado(nov, tn, 'no'), null)
+  assert.equal(I.textoTramo(tn, nov), '1–18 nov')
+  // Una sesión de 10 a 14 un lunes: 4 h de 13 posibles; un bloqueo de 18 a 22 resta 4 h
+  const ses = [{ fecha: '2026-11-16', inicio: new Date('2026-11-16T09:00:00Z'), fin: new Date('2026-11-16T13:00:00Z') }]
+  const bloq = [{ inicio: new Date('2026-11-16T17:00:00Z'), fin: new Date('2026-11-16T21:00:00Z') }]
+  const o = I.ocupacionDe(ses, bloq, '2026-11-16', '2026-11-17', new Date('2026-11-20T00:00:00Z'))
+  assert.equal(o.horasOcupadas, 4)
+  assert.equal(o.horasPosibles, 9)
+  assert.equal(o.pct, 44)
+  assert.equal(o.horasCelebradas, 4)
+  assert.equal(o.celdas[0][1].pct, 100) // lunes de 10 a 11
+  assert.equal(o.celdas[0][9].bloqueada, true) // lunes de 18 a 19
+})
