@@ -66,34 +66,40 @@ export function PreviaSesion({ previa, cargando, desde, onElegirHueco }) {
 }
 
 // accion: 'reservar' (nueva sesión) o 'mover' (reservaId). datosExtra se manda con la petición.
+// Al mover, inicial trae también lo que ya tiene la sesión (horasPlan, horasExtra, precioCent):
+// se conserva su reparto y su precio mientras no cambie la duración ni se toque el precio.
+// Para otra persona, el que la usa le pone otra key (así empieza de cero).
 export default function SesionPlan({ susId, inicial, excluirId = null, accion = 'reservar', reservaId = null, datosExtra = {}, children, onHecho, textoBoton }) {
+  const moviendo = accion === 'mover'
   const [fecha, setFecha] = useState(inicial.fecha || '')
   const [desde, setDesde] = useState(inicial.desde || '')
   const [hasta, setHasta] = useState(inicial.hasta || '')
-  const [horasPlan, setHorasPlan] = useState('')
-  const [precio, setPrecio] = useState(null) // null = sin tocar (se usa el sugerido)
+  const [horasPlan, setHorasPlan] = useState(moviendo && inicial.horasPlan != null ? String(inicial.horasPlan) : '')
+  const [precio, setPrecio] = useState(null) // null = sin tocar (el que tenía al mover, o el orientativo)
   const [extraPagado, setExtraPagado] = useState(false)
   const [extraMetodo, setExtraMetodo] = useState('transferencia')
   const [estado, setEstado] = useState({ enviando: false, error: null })
   const { previa, cargando, recargar } = usePreviaSesion(susId, { fecha, desde, hasta, horasPlan, excluirId })
 
-  // Al cambiar de miembro, vuelve a lo de partida
-  useEffect(() => {
-    setFecha(inicial.fecha || '')
-    setDesde(inicial.desde || '')
-    setHasta(inicial.hasta || '')
-    setHorasPlan('')
-    setPrecio(null)
-  }, [susId]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const duracionMin = desde && hasta ? minutosDeHora(hasta) - minutosDeHora(desde) : 0
+  // Cambiar el inicio mantiene la duración (y el reparto); cambiar el fin la cambia
   const moverDesde = (nuevo) => {
     if (duracionMin > 0 && minutosDeHora(nuevo) + duracionMin <= 24 * 60) setHasta(horaDeMinutos(minutosDeHora(nuevo) + duracionMin))
+    else {
+      setHorasPlan('')
+      setPrecio(null)
+    }
     setDesde(nuevo)
+  }
+  const cambiarHasta = (nuevo) => {
+    setHasta(nuevo)
+    setHorasPlan('')
+    setPrecio(null)
   }
 
   const extra = previa?.horasExtra || 0
-  const precioMostrado = precio !== null ? precio : euros(previa?.precioExtraSugeridoCent ?? null)
+  const mismasExtras = moviendo && inicial.horasExtra != null && Math.abs(extra - inicial.horasExtra) < 1e-9
+  const precioMostrado = precio !== null ? precio : mismasExtras ? euros(inicial.precioCent ?? 0) : euros(previa?.precioExtraSugeridoCent ?? null)
   const hayAvisos = previa?.avisos?.length > 0
   const hayErrores = previa?.errores?.length > 0
 
@@ -102,7 +108,8 @@ export default function SesionPlan({ susId, inicial, excluirId = null, accion = 
     const cuerpo = {
       fecha, desde, hasta,
       horasPlan: horasPlan === '' ? null : horasPlan,
-      precioExtra: extra > 0 ? precioMostrado : '',
+      // Al mover sin tocar el precio y con las mismas horas aparte, el servidor conserva su precio y su pago
+      precioExtra: extra > 0 && !(precio === null && mismasExtras) ? precioMostrado : '',
       extraPagado, extraMetodo,
       avisosAceptados: (previa?.avisos || []).map((a) => a.codigo),
       ...datosExtra,
@@ -124,9 +131,9 @@ export default function SesionPlan({ susId, inicial, excluirId = null, accion = 
         <label>Día<input type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} /></label>
         <div />
         <label>Desde<input type="time" required step="900" value={desde} onChange={(e) => moverDesde(e.target.value)} /></label>
-        <label>Hasta<input type="time" required step="900" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Hasta<input type="time" required step="900" value={hasta} onChange={(e) => cambiarHasta(e.target.value)} /></label>
         <PreviaSesion previa={previa} cargando={cargando} desde={desde} onElegirHueco={moverDesde} />
-        {previa && !hayErrores && (
+        {previa?.periodo && (
           <>
             <label>Del plan (horas)
               <input type="number" min="0" step="0.25" value={horasPlan === '' ? previa.horasPlanPorDefecto ?? '' : horasPlan} onChange={(e) => setHorasPlan(e.target.value)} />
@@ -139,7 +146,7 @@ export default function SesionPlan({ susId, inicial, excluirId = null, accion = 
             <label>Precio de las {h(extra)} aparte (€, IVA incluido)
               <input inputMode="decimal" value={precioMostrado} onChange={(e) => setPrecio(e.target.value)} />
             </label>
-            <p className="adm-nota" style={{ alignSelf: 'end' }}>Precio orientativo de las condiciones. 0 = de regalo.</p>
+            <p className="adm-nota" style={{ alignSelf: 'end' }}>{precio === null && mismasExtras ? 'El precio que ya tenía (se mantiene su pago).' : 'Precio orientativo de las condiciones. 0 = de regalo.'}</p>
             {accion !== 'mover' && <label className="adm-check"><input type="checkbox" checked={extraPagado} onChange={(e) => setExtraPagado(e.target.checked)} /> Ya están pagadas</label>}
             {accion !== 'mover' && (extraPagado ? (
               <label>Cómo

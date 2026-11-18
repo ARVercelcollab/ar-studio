@@ -35,7 +35,14 @@ export default function NuevaSuscripcion({ hoy }) {
     try {
       const { id } = await pedirJson('/api/admin/suscripciones/nueva', {
         method: 'POST',
-        body: { ...f, primeraMetodo: f.metodoHabitual === 'stripe' ? 'stripe' : f.primeraMetodo, condiciones: cond, confirmado },
+        body: {
+          ...f,
+          primeraMetodo: f.metodoHabitual === 'stripe' ? 'stripe' : f.primeraMetodo,
+          // «Referencia o enlace»: una dirección https va como enlace (justificante)
+          ...(/^https:\/\//i.test(f.primeraReferencia.trim()) ? { primeraEnlace: f.primeraReferencia.trim(), primeraReferencia: '' } : {}),
+          condiciones: cond,
+          confirmado,
+        },
       })
       router.push(`/admin/suscripciones/${id}?ok=alta`)
     } catch (e) {
@@ -108,7 +115,7 @@ export default function NuevaSuscripcion({ hoy }) {
                 </label>
               )}
               <label>Cuándo<input type="date" max={hoy} value={f.primeraFecha} onChange={(e) => poner('primeraFecha', e.target.value)} /></label>
-              <label className="adm-ancho">Referencia (opcional)<input value={f.primeraReferencia} onChange={(e) => poner('primeraReferencia', e.target.value)} placeholder="Concepto de la transferencia, n.º de cobro…" /></label>
+              <label className="adm-ancho">Referencia o enlace (opcional)<input value={f.primeraReferencia} onChange={(e) => poner('primeraReferencia', e.target.value)} placeholder="Concepto de la transferencia, n.º de cobro o enlace al recibo de Stripe" /></label>
             </>
           )}
         </div>

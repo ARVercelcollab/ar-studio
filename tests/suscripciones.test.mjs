@@ -14,6 +14,7 @@ import * as SUS from '../lib/suscripciones/servicio.js'
 import * as F from '../lib/facturas/servicio.js'
 import { validarReserva } from '../lib/reservas/validacion.js'
 import { fechaMadrid, sumarDias, diaSemana, madridAInstante } from '../lib/reservas/tiempo.js'
+import { periodoNumero } from '../lib/suscripciones/reglas.js'
 
 after(() => cerrarDb())
 
@@ -298,4 +299,101 @@ test('borrar solo una suscripción sin movimientos; listado y opciones', async (
   assert.ok(previa.huecos.includes('14:00'))
   const mal = await SUS.comprobarSesion(usada.id, { fecha: await laborable(6), desde: '18:00', hasta: '17:00' })
   assert.equal(mal.errores[0].codigo, 'horas')
+})
+
+// ---------- Arreglos de la revisión ----------
+
+
+test('mover sin tocar el precio conserva el regalo y el precio pactado ya pagado', async () => {
+  const sus = await alta({ mesPrueba: false })
+  const f1 = await laborable(10)
+  // 5 h con 4 del plan y 1 aparte de regalo
+  const regalo = await SUS.crearSesionPlan(sus.id, { fecha: f1, desde: '14:00', hasta: '19:00', horasPlan: 4, precioExtraCent: 0, avisosAceptados: ['duracion'] })
+  const movida = await SUS.moverSesionPlan(regalo.reserva.id, { fecha: f1, desde: '14:30', hasta: '19:30', horasPlan: 4, precioExtraCent: null, avisosAceptados: ['duracion'] })
+  assert.equal(movida.precioCent, 0)
+  assert.equal(movida.pagoEstado, 'pagado')
+  assert.equal(movida.metodoPago, 'plan')
+  assert.equal(movida.horasPlan, 4)
+
+  const f2 = await laborable(11)
+  const pactada = await SUS.crearSesionPlan(sus.id, { fecha: f2, desde: '14:00', hasta: '19:00', horasPlan: 4, precioExtraCent: 5000, extraPagado: true, extraMetodo: 'bizum', avisosAceptados: ['duracion'] })
+  const otra = await SUS.moverSesionPlan(pactada.reserva.id, { fecha: f2, desde: '15:00', hasta: '20:00', horasPlan: 4, precioExtraCent: null, avisosAceptados: ['duracion'] })
+  assert.equal(otra.precioCent, 5000)
+  assert.equal(otra.pagoEstado, 'pagado')
+  assert.equal(otra.metodoPago, 'bizum')
+  // Si cambian las horas aparte hay que poner precio
+  await assert.rejects(SUS.moverSesionPlan(regalo.reserva.id, { fecha: f1, desde: '14:30', hasta: '19:30', horasPlan: 3, precioExtraCent: null, avisosAceptados: ['duracion'] }), { codigo: 'precio' })
+})
+
+test('cambiar condiciones desde un periodo posterior no toca los de antes, y cada cuota guarda su plan', async () => {
+  const sus = await alta({ mesPrueba: false, factura: { nombre: 'Ana Prueba SL', nif: 'B12345678', direccion: 'Calle 1, València' } })
+  const c1 = (await SUS.fichaSuscripcion(sus.id)).cuotas[0]
+  assert.equal(c1.plan, 'starter')
+  await SUS.cambiarCondiciones(sus.id, { plan: 'pro', cuotaCent: 25000, horasPeriodo: 12, duracionesH: '4,5; 8', sesionMinH: 4, sesionMaxH: 8, maxSesiones: '' }, { desdePeriodo: 3 })
+  await SUS.asegurarCuotasDeTodas(periodoNumero(sus, 3).desde)
+  const { rows } = await query('SELECT periodo, importe_cent, horas::float AS horas, plan FROM cuotas WHERE suscripcion_id = $1 ORDER BY periodo', [sus.id])
+  assert.deepEqual(rows.map((r) => [r.periodo, r.importe_cent, r.horas, r.plan]), [
+    [1, 14900, 8, 'starter'],
+    [2, 14900, 8, 'starter'],
+    [3, 25000, 12, 'pro'],
+  ])
+  const despues = await SUS._cargarSuscripcion(query, sus.id)
+  assert.deepEqual(despues.duracionesH, [4.5, 8])
+  // La factura de la cuota 1 dice el plan que se pagó
+  await SUS.marcarCuotaPagada(c1.id, { metodo: 'transferencia' })
+  const { factura } = await F.emitirFacturaCuota(c1.id)
+  assert.match(factura.lineas[0].descripcion, /plan Starter/)
+})
+
+test('duraciones con coma decimal', () => {
+  assert.deepEqual(SUS.leerDuraciones('4,5; 8'), [4.5, 8])
+  assert.deepEqual(SUS.leerDuraciones('4,5, 8'), [4.5, 8])
+  assert.deepEqual(SUS.leerDuraciones('4,8'), [4, 8])
+  assert.deepEqual(SUS.leerDuraciones('4 8'), [4, 8])
+  assert.deepEqual(SUS.leerDuraciones('4,5,8'), [4, 5, 8])
+  assert.deepEqual(SUS.leerDuraciones('4,25;6,75'), [4.25, 6.75])
+})
+
+test('Stripe: editar datos no reactiva un cobro ya cancelado y la misma sub_ no va en dos fichas', async () => {
+  const a = await alta({ mesPrueba: false, metodoHabitual: 'stripe', cobroExternoRef: 'sub_repetida' })
+  await assert.rejects(alta({ metodoHabitual: 'stripe', cobroExternoRef: 'sub_repetida' }), { codigo: 'cobroExternoRef', estadoHttp: 409 })
+  const b = await alta({ metodoHabitual: 'stripe', cobroExternoRef: 'sub_otra' })
+  await assert.rejects(SUS.editarSuscripcion(b.id, { metodoHabitual: 'stripe', cobroExternoRef: 'sub_repetida' }), { codigo: 'cobroExternoRef' })
+  await SUS.marcarCobroExternoCancelado(a.id)
+  const editada = await SUS.editarSuscripcion(a.id, { telefono: '611111111', metodoHabitual: 'stripe', cobroExternoRef: '' })
+  assert.equal(editada.cobroExterno, null)
+  assert.equal(editada.telefono, '611111111')
+})
+
+test('deshacer la baja recupera las cuotas que quitó (también una pausa)', async () => {
+  const sus = await alta({ mesPrueba: false })
+  await SUS.asegurarCuotasDeTodas(periodoNumero(sus, 3).desde)
+  const { rows: c3 } = await query('SELECT id FROM cuotas WHERE suscripcion_id = $1 AND periodo = 3', [sus.id])
+  await SUS.anularCuota(c3[0].id, { pausa: true, nota: 'pausa en verano' })
+  await SUS.darDeBaja(sus.id, { avisoEn: HOY, ultimoDia: sumarDias(periodoNumero(sus, 2).desde, -1) })
+  const { rows: tras } = await query('SELECT count(*)::int AS n FROM cuotas WHERE suscripcion_id = $1', [sus.id])
+  assert.equal(tras[0].n, 1)
+  await SUS.deshacerBaja(sus.id)
+  const { rows } = await query('SELECT periodo, estado, horas::float AS horas, nota FROM cuotas WHERE suscripcion_id = $1 ORDER BY periodo', [sus.id])
+  assert.deepEqual(rows.map((r) => [r.periodo, r.estado, r.horas, r.nota]), [
+    [1, 'pendiente', 8, null],
+    [2, 'pendiente', 8, null],
+    [3, 'anulada', 0, 'pausa en verano'],
+  ])
+})
+
+test('lista: en «Sin pagar» sale la cuota que se debe, no la del mes', async () => {
+  const inicio = sumarDias(HOY, -40)
+  const { suscripcion: sus } = await SUS.crearSuscripcion({
+    plan: 'starter', nombre: 'Deudora', email: email(), fechaInicio: inicio, fianza: { estado: 'sin_fianza' },
+  })
+  await SUS.asegurarCuotasDeTodas(HOY)
+  const ficha = await SUS.fichaSuscripcion(sus.id)
+  const actual = ficha.cuotas.find((c) => c.periodo === ficha.periodoActual.numero)
+  await SUS.marcarCuotaPagada(actual.id, { metodo: 'bizum' })
+  const { filas } = await SUS.listarSuscripciones({ vista: 'sin_pagar' })
+  const f = filas.find((x) => x.id === sus.id)
+  assert.equal(f.cuota.chip, 'pagada')
+  assert.equal(f.debe.chip, 'atrasada')
+  assert.equal(f.debe.desde, inicio)
 })

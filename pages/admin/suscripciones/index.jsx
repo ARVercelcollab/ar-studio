@@ -91,7 +91,9 @@ export default function Suscripciones({ vista, filas, cifras, tareas, ok }) {
             {f.estado === 'finalizada' ? <small>Terminó el {textoFechaCorta(f.ultimoDia, { anio: true })}</small> : <BarraHoras usadas={f.horas - f.restantes} total={f.horas} />}
           </div>
           <div>
-            {f.cuota ? <><ChipCuota chip={f.cuota.chip} /><small>{f.cuota.importe}{f.sinPagar > 1 ? ` · ${f.sinPagar} sin pagar` : ''}</small></> : <small>—</small>}
+            {f.debe && (vista === 'sin_pagar' || f.cuota?.chip !== f.debe.chip)
+              ? <><ChipCuota chip={f.debe.chip} /><small>{f.debe.importe} desde el {textoFechaCorta(f.debe.desde)}{f.sinPagar > 1 ? ` · ${f.sinPagar} sin pagar` : ''}</small></>
+              : f.cuota ? <><ChipCuota chip={f.cuota.chip} /><small>{f.cuota.importe}{f.sinPagar > 1 ? ` · ${f.sinPagar} sin pagar` : ''}</small></> : <small>—</small>}
           </div>
           <div className="adm-sus__botones">
             {f.estado !== 'finalizada' && <Link href={`/admin/nueva?suscripcion=${f.id}`} className="adm-boton">+ Sesión</Link>}

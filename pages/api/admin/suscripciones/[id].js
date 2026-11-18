@@ -5,6 +5,7 @@ import { correoConfirmacion } from '../../../../lib/reservas/correos.js'
 import { urlReserva } from '../../../../lib/reservas/flujo.js'
 import { urlBase } from '../../../../lib/http.js'
 import { textoDuracion } from '../../../../lib/reservas/config.js'
+import { registrarEvento } from '../../../../lib/reservas/servicio.js'
 
 const numero = (v) => (v === '' || v === null || v === undefined ? null : Number(String(v).replace(',', '.')))
 
@@ -21,14 +22,17 @@ export default rutaAdmin(async (req, res) => {
         fondos: b.fondos, notasInternas: b.notasInternas, avisosAceptados: b.avisosAceptados || [],
       })
       let mensaje = `Sesión reservada. Le quedan ${textoDuracion(resumen.restantes, { corto: true })} este periodo.`
+      let correoFallido = false
       if (b.enviarCorreo && reserva.email) {
         try {
           await correoConfirmacion(reserva, { urlReserva: urlReserva(urlBase(req), reserva) })
         } catch (e) {
+          correoFallido = true
           mensaje += ' No se pudo mandar el correo de confirmación.'
+          await registrarEvento(reserva.id, 'correo_fallido', { error: String(e.message || e) }, { suscripcionId: reserva.suscripcionId, autor: 'panel' }).catch(() => {})
         }
       }
-      return res.status(200).json({ id: reserva.id, mensaje })
+      return res.status(200).json({ id: reserva.id, mensaje, correoFallido })
     }
     case 'editar':
       await SUS.editarSuscripcion(id, {

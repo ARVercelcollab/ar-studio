@@ -1,6 +1,6 @@
 // Acciones sobre una reserva desde el panel
 import { rutaAdmin } from '../../../../lib/admin/api.js'
-import { marcarPagada, cancelar, reprogramar, guardarNotas, reactivar, reservaPorId } from '../../../../lib/reservas/servicio.js'
+import { marcarPagada, cancelar, reprogramar, guardarNotas, reactivar, reservaPorId, registrarEvento } from '../../../../lib/reservas/servicio.js'
 import { correoCancelacion, correoCambio, correoConfirmacion } from '../../../../lib/reservas/correos.js'
 import { urlReserva, urlPanel } from '../../../../lib/reservas/flujo.js'
 import { facturasAutomaticas } from '../../../../lib/facturas/servicio.js'
@@ -17,13 +17,22 @@ export default rutaAdmin(async (req, res) => {
   const base = urlBase(req)
   let reserva
   let mensaje = null
+  // La acción ya está hecha: si falla el correo se dice y se apunta, sin dar error
+  const correo = async (enviar) => {
+    try {
+      await enviar()
+    } catch (e) {
+      mensaje = [mensaje, 'No se ha podido mandar el correo al cliente: avísale por WhatsApp.'].filter(Boolean).join(' ')
+      await registrarEvento(reserva.id, 'correo_fallido', { error: String(e.message || e) }, { suscripcionId: reserva.suscripcionId ?? null, autor: 'panel' }).catch(() => {})
+    }
+  }
   switch (b.accion) {
     case 'pagada':
       reserva = await marcarPagada(id, { metodo: b.metodo, nota: b.nota })
-      if (b.enviarCorreo && reserva.email) await correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: Boolean(reserva.factura) && facturasAutomaticas() })
+      if (b.enviarCorreo && reserva.email) await correo(() => correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: Boolean(reserva.factura) && facturasAutomaticas() }))
       if (b.enviarCorreo && reserva.factura && facturasAutomaticas()) {
         const r = await facturaAutomatica(reserva, { urlPanel: urlPanel(base) })
-        if (r?.factura) mensaje = `Factura ${r.factura.codigo} emitida${r.enviada ? ' y enviada' : ''}.`
+        if (r?.factura) mensaje = [mensaje, `Factura ${r.factura.codigo} emitida${r.enviada ? ' y enviada' : ''}.`].filter(Boolean).join(' ')
       }
       break
     case 'cancelar': {
@@ -31,7 +40,7 @@ export default rutaAdmin(async (req, res) => {
       reserva = actual?.origen === 'plan'
         ? await cancelarSesionPlan(id, { motivo: b.motivo, reembolsoCent: aCent(b.reembolso), cuentaComoUsada: b.cuentaComoUsada ?? null })
         : await cancelar(id, { motivo: b.motivo, reembolsoCent: aCent(b.reembolso) })
-      if (b.enviarCorreo && reserva.email) await correoCancelacion(reserva)
+      if (b.enviarCorreo && reserva.email) await correo(() => correoCancelacion(reserva))
       break
     }
     case 'mover': {
@@ -39,7 +48,7 @@ export default rutaAdmin(async (req, res) => {
       reserva = actual?.origen === 'plan'
         ? await moverSesionPlan(id, { fecha: b.fecha, desde: b.desde, hasta: b.hasta, horasPlan: b.horasPlan ?? null, precioExtraCent: b.precioExtra === undefined ? null : aCentONulo(b.precioExtra), avisosAceptados: b.avisosAceptados || [] })
         : await reprogramar(id, { fecha: b.fecha, desde: b.desde || b.hora, hasta: b.hasta, horas: b.horas ? Number(b.horas) : undefined })
-      if (b.enviarCorreo && reserva.email) await correoCambio(reserva, { urlReserva: urlReserva(base, reserva) })
+      if (b.enviarCorreo && reserva.email) await correo(() => correoCambio(reserva, { urlReserva: urlReserva(base, reserva) }))
       break
     }
     case 'reactivar':

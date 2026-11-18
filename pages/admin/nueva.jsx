@@ -78,7 +78,7 @@ function SesionDeMiembro({ miembros, susInicial }) {
             susId={m.id}
             inicial={inicial}
             datosExtra={{ fondos, notasInternas, enviarCorreo }}
-            onHecho={() => router.push(`/admin/suscripciones/${m.id}?ok=sesion`)}
+            onHecho={(r) => router.push(`/admin/suscripciones/${m.id}?ok=${r?.correoFallido ? 'sesion_sin_correo' : 'sesion'}`)}
           >
             <label>Fondos
               <select value={fondos} onChange={(e) => setFondos(e.target.value)}>{FONDOS.map((x) => <option key={x.id} value={x.id}>{x.texto}</option>)}</select>

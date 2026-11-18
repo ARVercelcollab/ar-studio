@@ -8,7 +8,7 @@ export function formularioDeCondiciones(c) {
   return {
     cuota: txt(c.cuotaCent / 100),
     horasPeriodo: txt(c.horasPeriodo),
-    duracionesH: c.duracionesH && c.duracionesH.length ? c.duracionesH.map(txt).join(', ') : '',
+    duracionesH: c.duracionesH && c.duracionesH.length ? c.duracionesH.map(txt).join('; ') : '',
     sesionMinH: txt(c.sesionMinH),
     sesionMaxH: txt(c.sesionMaxH),
     maxSesiones: txt(c.maxSesiones),
@@ -37,7 +37,7 @@ export default function CondicionesPlan({ valor, onCambio }) {
       <label>Sesión mínima (h)<input inputMode="decimal" value={valor.sesionMinH} onChange={poner('sesionMinH')} /></label>
       <label>Sesión máxima (h)<input inputMode="decimal" value={valor.sesionMaxH} onChange={poner('sesionMaxH')} /></label>
       <label>Duraciones que puede elegir (h)
-        <input value={valor.duracionesH} onChange={poner('duracionesH')} placeholder="Vacío = cualquiera entre el mínimo y el máximo" />
+        <input value={valor.duracionesH} onChange={poner('duracionesH')} placeholder="Ej.: 4; 8 (vacío = cualquiera entre el mínimo y el máximo)" />
       </label>
       <label>Sesiones al mes como mucho<input inputMode="numeric" value={valor.maxSesiones} onChange={poner('maxSesiones')} placeholder="Vacío = sin límite" /></label>
       <label>Horario: desde (lunes a viernes)<input type="time" step="900" value={valor.franjaDesde} onChange={poner('franjaDesde')} /></label>

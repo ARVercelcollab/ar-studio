@@ -17,6 +17,7 @@ apuntan a Calendly y `/reservar` redirige allí.
 | Correos | Resend (`reservas@studioar.es`) | Confirmación al cliente con el `.ics`, aviso al estudio, recordatorio el día antes, avisos de pagos raros |
 | Facturas | PDF por correo | Si el cliente pide factura, al confirmarse el pago se emite (serie AR-W, numeración correlativa) y se le envía en PDF con copia al estudio. Desde el panel se emite, se descarga o se reenvía |
 | Calendario | `/api/admin/calendario?clave=…` | Todas las reservas para suscribirse desde Google Calendar |
+| Suscripciones | `/admin/suscripciones` | Planes mensuales (Starter, Creator, Pro): altas, horas de cada mes, sesiones, cuotas, fianza y bajas. Ver «Suscripciones» más abajo |
 
 Reglas copiadas de Calendly (se cambian en `lib/reservas/config.js`):
 
@@ -104,6 +105,7 @@ producción queda marcada y rechaza cualquier pago hecho con un TPV en modo prue
 | `RESEND_API_KEY` | Ya existe |
 | `RESERVAS_EMAIL_FROM` | Opcional. Por defecto `AR Studio <reservas@studioar.es>` |
 | `RESERVAS_EMAIL_ESTUDIO` | Opcional. A dónde llegan los avisos; por defecto `arstudiospain@gmail.com` |
+| `ESTUDIO_IBAN` | Opcional. Si se pone, el recordatorio de cuota por WhatsApp incluye el IBAN y el concepto |
 | `NEXT_PUBLIC_RESERVAS_PROPIAS` | `1` para activar. **Solo en Producción y el día del cambio** |
 
 Textos aleatorios: `openssl rand -base64 32`.
@@ -136,4 +138,55 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 - **Límites antiabuso:** cada conexión puede tener como mucho 2 horas guardadas sin pagar (12 en total a la vez) y 4 intentos de pago por reserva; si alguien vuelve atrás desde el banco y reserva otra vez, se suelta su hora anterior. En el panel, 8 contraseñas falsas seguidas bloquean esa conexión 15 minutos.
 - **Cambios del cliente:** el cliente los pide desde su página y el estudio los hace en el panel.
 - **Política de privacidad:** menciona Calendly como proveedor; al activar, cambiarla por el TPV de Comercia, Neon (base de datos) y Resend (correos).
-- **Planes mensuales y área de clientes:** fase 3.
+- **Área de clientes** (que los miembros vean sus horas y reserven solos): fase 3. Los planes ya se llevan desde el panel.
+
+## Suscripciones (planes mensuales)
+
+Las suscripciones se llevan **dentro del panel**, en *Suscripciones*. Las sesiones de los
+miembros son reservas normales de la agenda (salen con una raya marrón y «Incluida»), así
+nadie puede reservar encima.
+
+### Qué se hace en cada sitio
+
+| Dónde | Qué |
+|---|---|
+| *Suscripciones* | Quién está con plan, cuántas horas le quedan este mes, si la cuota está pagada y el recuadro **Para hacer** (cuotas sin pagar, fin del mes de prueba, horas que se van a perder, cobros de Stripe que hay que cancelar, fianzas) |
+| *+ Nueva suscripción* | Plan, datos, día del primer cobro (de ahí salen los periodos), mes de prueba, cómo paga, primera cuota, fianza, contrato y **condiciones especiales** si se ha pactado algo distinto |
+| *Nueva reserva → Suscripción* | Elegir a la persona, día y horas. Debajo sale en directo cuántas horas gasta del plan, cuántas van aparte (con precio orientativo; 0 = de regalo), los huecos libres en su horario y los avisos |
+| Ficha de cada miembro | Horas del periodo y sesiones, cuotas (marcar pagada, factura, recordatorio por WhatsApp, editar, anular, devolver), fianza, condiciones, datos, notas y baja |
+| Ficha de una sesión | Mover (comprobando sus reglas) y cancelar (con la casilla «Cuenta como usada») |
+
+### Cómo funciona
+
+- **Periodo** = el mes de cobro: del día del primer cobro al mismo día del mes siguiente. Las horas que no se usan se pierden al acabar el periodo.
+- **Cuotas:** cada periodo tiene su cuota, que aparece sola cuando empieza. El panel **no cobra**: se marca como pagada cuando llega la transferencia o el Bizum. A quien paga con **Stripe**, Stripe le sigue cobrando solo; aquí solo se apunta, y **al darle de baja hay que cancelarle la suscripción en Stripe a mano** (el panel lo recuerda).
+- **Facturas de cuotas:** si el miembro quiere factura (con NIF y dirección), al marcar la cuota pagada se emite y se le envía en la misma serie AR-W. Las cuotas de 0 € y las sesiones incluidas no se facturan; las horas aparte, sí.
+- **Reglas** que comprueba el panel (se pueden saltar con «Reservar igualmente» cuando son avisos): 72 h de antelación, su horario de lunes a viernes, duración de sesión, máximo de sesiones al mes y horas que le quedan. Fines de semana y festivos van siempre aparte. Chocar con otra reserva o un bloqueo no se puede saltar.
+- **Cancelar** con menos de 48 h: cuenta como usada (se puede desmarcar si hay un buen motivo).
+- **Baja:** al apuntarla, el panel propone el último día según el contrato (permanencia de 3 meses, mes de prueba, renovación y preaviso), explica qué pasa con la fianza y cancela las sesiones posteriores.
+- Los planes y las reglas comunes están en `lib/reservas/config.js` (`PLANES`, `PLAN_COMUN`). Cambiarlos ahí solo afecta a las altas nuevas; a un miembro ya dado de alta se le cambian desde su ficha (*Cambiar condiciones*, a partir de un periodo).
+
+### Pendiente de decidir
+
+- **Precio de las horas aparte para miembros.** Ahora el panel propone 60,50 €/h entre semana y 72,60 €/h el finde (`PLAN_HORA_EXTRA_CENT`, provisional) y se puede cambiar en cada sesión.
+- Si una **fianza que os quedáis** necesita factura (que lo diga el gestor).
+- Añadir la **renovación y el preaviso** a las condiciones de la web si se usan en algún contrato.
+
+### Pasar al panel a la clienta que ya tiene contrato
+
+Sin datos personales en el repositorio (es público): todo se mete desde el panel.
+
+1. En el Stripe del estudio, apuntar el `sub_…` de su suscripción, el día del primer cobro y el enlace a esa factura.
+2. *Suscripciones → + Nueva suscripción*:
+   - plan **Starter**, su nombre, correo y WhatsApp;
+   - «Empieza el» = el día del primer cobro de Stripe;
+   - ☑ primer mes de prueba;
+   - Cómo paga = **Stripe** y el `sub_…`;
+   - ☑ primera cuota pagada (fecha y referencia del cobro);
+   - fianza «Ya cobrada» por transferencia, con su fecha;
+   - enlace al contrato en Drive;
+   - **Condiciones especiales** como en su contrato: cuota 149 €, 8 h al mes, duraciones `4`, máximo 2 sesiones, 14:00–20:00 (y la permanencia, renovación y preaviso que diga el contrato).
+3. Meter por *Nueva reserva → Suscripción* las sesiones que ya haya hecho este periodo y las que tenga reservadas.
+4. Antes del segundo cobro (el recuadro *Para hacer* avisa 7 días antes):
+   - **si sigue:** nada en Stripe; cuando cobre, marcar la cuota 2 como pagada (Stripe);
+   - **si avisó por escrito de que lo deja:** *Ha avisado de que lo deja* → el panel propone el último día del mes de prueba y devolver la fianza → cancelar su suscripción en Stripe a mano y marcar «Ya lo he cancelado» → devolverle la fianza por transferencia → *Fianza → Apuntar devuelta*.

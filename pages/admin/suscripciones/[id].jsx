@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useMemo, useState } from 'react'
 import Panel, { Chip, ChipCuota, BarraHoras, chipEstado } from '../../../components/admin/Panel'
-import CondicionesPlan, { formularioDeCondiciones } from '../../../components/admin/CondicionesPlan'
+import CondicionesPlan, { formularioDeCondiciones, formularioDePlan } from '../../../components/admin/CondicionesPlan'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
 import { vistaAdmin, enlaceWhatsApp, fechaHoraTexto } from '../../../lib/admin/vista'
 import { fichaSuscripcion } from '../../../lib/suscripciones/servicio'
@@ -14,7 +14,7 @@ import { PLANES, METODOS_CUOTA, formatoEuros, textoDuracion } from '../../../lib
 import { fechaMadrid, textoFechaCorta } from '../../../lib/reservas/tiempo'
 import { pedirJson } from '../../../lib/reservas/navegador'
 import { ErrorReserva } from '../../../lib/reservas/servicio'
-import { emisor } from '../../../lib/facturas/servicio'
+import { emisor, facturasAutomaticas } from '../../../lib/facturas/servicio'
 
 const h = (x) => textoDuracion(x, { corto: true })
 const METODOS = Object.fromEntries(METODOS_CUOTA)
@@ -79,16 +79,32 @@ function Mensaje({ estado }) {
 
 // ---------- Cuotas ----------
 
-function FilaCuota({ c, sus, emisorListo, hoy }) {
+const pagoDe = (sus, emisorListo, facturasAuto, hoy) => {
+  const metodo = sus.metodoHabitual && METODOS[sus.metodoHabitual] ? sus.metodoHabitual : 'transferencia'
+  return { metodo, fecha: hoy, referencia: '', emitirFactura: Boolean(sus.factura) && metodo !== 'stripe' && emisorListo && facturasAuto }
+}
+const edicionDe = (c) => ({ importe: (c.importeCent / 100).toFixed(2).replace('.', ','), horas: String(c.horas).replace('.', ','), nota: '' })
+const facturaDe = (sus) => ({ nombre: sus.factura?.nombre || '', nif: sus.factura?.nif || '', direccion: sus.factura?.direccion || '' })
+// «Referencia o enlace»: si es una dirección https, va como enlace (justificante)
+const referenciaOEnlace = (v) => (/^https:\/\//i.test(String(v || '').trim()) ? { enlace: String(v).trim(), referencia: '' } : { referencia: v, enlace: '' })
+
+function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
   const [abierto, setAbierto] = useState(null) // 'pagar' | 'mas' | 'factura'
-  const metodoInicial = sus.metodoHabitual && METODOS[sus.metodoHabitual] ? sus.metodoHabitual : 'transferencia'
-  const [pago, setPago] = useState({ metodo: metodoInicial, fecha: hoy, referencia: '', emitirFactura: Boolean(sus.factura) && metodoInicial !== 'stripe' && emisorListo })
-  const [edicion, setEdicion] = useState({ importe: (c.importeCent / 100).toFixed(2).replace('.', ','), horas: String(c.horas).replace('.', ','), nota: '' })
+  const [pago, setPago] = useState(() => pagoDe(sus, emisorListo, facturasAuto, hoy))
+  const [edicion, setEdicion] = useState(() => edicionDe(c))
   const [pausa, setPausa] = useState(false)
-  const [datosFactura, setDatosFactura] = useState({ nombre: sus.factura?.nombre || '', nif: sus.factura?.nif || '', direccion: sus.factura?.direccion || '' })
+  const [datosFactura, setDatosFactura] = useState(() => facturaDe(sus))
   const [estado, ejecutar] = useAccion()
   const url = `/api/admin/cuotas/${c.id}`
-  const alternar = (que) => setAbierto((a) => (a === que ? null : que))
+  const alternar = (que) => {
+    if (abierto === que) return setAbierto(null)
+    // Cada vez que se abre, con los datos de ahora (pueden haber cambiado tras otra acción)
+    setPago(pagoDe(sus, emisorListo, facturasAuto, hoy))
+    setEdicion(edicionDe(c))
+    setPausa(false)
+    setDatosFactura(facturaDe(sus))
+    return setAbierto(que)
+  }
   const hacer = async (datos) => {
     const r = await ejecutar(url, datos)
     if (r) setAbierto(null)
@@ -106,13 +122,19 @@ function FilaCuota({ c, sus, emisorListo, hoy }) {
         <td>{formatoEuros(c.importeCent)}</td>
         <td>
           <ChipCuota chip={c.chip} />
-          {c.estado === 'pagada' && <small style={{ display: 'block', color: '#8a7a6c' }}>{METODOS[c.metodoPago] || c.metodoPago || ''}{c.pagadaEn ? ` · ${fecha(c.pagadaEn, false)}` : ''}</small>}
+          {c.estado === 'pagada' && (
+            <small style={{ display: 'block', color: '#8a7a6c' }}>
+              {METODOS[c.metodoPago] || c.metodoPago || ''}{c.pagadaEn ? ` · ${fecha(c.pagadaEn, false)}` : ''}{c.referencia ? ` · ${c.referencia}` : ''}
+              {c.enlace && <> · <a href={c.enlace} target="_blank" rel="noopener noreferrer" className="adm-enlace">justificante</a></>}
+            </small>
+          )}
         </td>
         <td>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {cobrable && <button type="button" className="adm-boton adm-mini" onClick={() => alternar('pagar')}>Marcar pagada</button>}
             {cobrable && c.recordatorio && <a className="adm-boton adm-boton--claro adm-mini" href={c.recordatorio} target="_blank" rel="noopener noreferrer">Recordar por WhatsApp</a>}
             {c.factura && <a className="adm-boton adm-boton--claro adm-mini" href={`/api/admin/facturas/${c.factura.id}`} target="_blank" rel="noopener noreferrer">Factura {c.factura.codigo}</a>}
+            {c.factura && <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => hacer({ accion: 'factura' })}>{c.factura.enviada ? 'Reenviar' : 'Enviar factura'}</button>}
             {!c.factura && c.estado === 'pagada' && c.importeCent > 0 && emisorListo && (
               <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={() => alternar('factura')}>Emitir factura</button>
             )}
@@ -133,7 +155,7 @@ function FilaCuota({ c, sus, emisorListo, hoy }) {
                       </select>
                     </label>
                     <label>Cuándo<input type="date" max={hoy} value={pago.fecha} onChange={(e) => setPago({ ...pago, fecha: e.target.value })} /></label>
-                    <label className="adm-ancho">Referencia (opcional)<input value={pago.referencia} onChange={(e) => setPago({ ...pago, referencia: e.target.value })} placeholder="Concepto, n.º de cobro de Stripe…" /></label>
+                    <label className="adm-ancho">Referencia o enlace (opcional)<input value={pago.referencia} onChange={(e) => setPago({ ...pago, referencia: e.target.value })} placeholder="Concepto, n.º de cobro, o el enlace al recibo de Stripe" /></label>
                     {sus.factura && emisorListo ? (
                       <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.emitirFactura} onChange={(e) => setPago({ ...pago, emitirFactura: e.target.checked })} /> Emitir y enviarle la factura{pago.metodo === 'stripe' ? ' (si Stripe ya se la manda, déjalo sin marcar)' : ''}</label>
                     ) : (
@@ -141,7 +163,7 @@ function FilaCuota({ c, sus, emisorListo, hoy }) {
                     )}
                   </div>
                   <p style={{ marginTop: 10 }}>
-                    <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => hacer({ accion: 'pagada', ...pago })}>Guardar pago</button>
+                    <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => hacer({ accion: 'pagada', ...pago, ...referenciaOEnlace(pago.referencia) })}>Guardar pago</button>
                   </p>
                 </>
               )}
@@ -205,13 +227,15 @@ function FilaCuota({ c, sus, emisorListo, hoy }) {
 
 // ---------- Columna derecha ----------
 
+const formularioDatos = (sus) => ({
+  nombre: sus.nombre, apellidos: sus.apellidos || '', email: sus.email, telefono: sus.telefono || '',
+  metodoHabitual: sus.metodoHabitual || '', cobroExternoRef: sus.cobroExternoRef || '', contratoUrl: sus.contratoUrl || '',
+  quiereFactura: Boolean(sus.factura), factura: { nombre: sus.factura?.nombre || '', nif: sus.factura?.nif || '', direccion: sus.factura?.direccion || '' },
+})
+
 function Datos({ sus }) {
   const [editando, setEditando] = useState(false)
-  const [f, setF] = useState({
-    nombre: sus.nombre, apellidos: sus.apellidos || '', email: sus.email, telefono: sus.telefono || '',
-    metodoHabitual: sus.metodoHabitual || '', cobroExternoRef: sus.cobroExternoRef || '', contratoUrl: sus.contratoUrl || '',
-    quiereFactura: Boolean(sus.factura), factura: { nombre: sus.factura?.nombre || '', nif: sus.factura?.nif || '', direccion: sus.factura?.direccion || '' },
-  })
+  const [f, setF] = useState(() => formularioDatos(sus))
   const [estado, ejecutar] = useAccion()
   const poner = (k, v) => setF((x) => ({ ...x, [k]: v }))
   const wa = enlaceWhatsApp(sus.telefono)
@@ -229,7 +253,7 @@ function Datos({ sus }) {
             <dt>Contrato</dt><dd>{sus.contratoUrl ? <a href={sus.contratoUrl} target="_blank" rel="noopener noreferrer">Abrir</a> : '—'}</dd>
             <dt>Alta</dt><dd>{fecha(sus.creadoEn.slice(0, 10))}</dd>
           </dl>
-          <p style={{ marginTop: 12 }}><button type="button" className="adm-boton adm-boton--claro" onClick={() => setEditando(true)}>Editar datos</button></p>
+          <p style={{ marginTop: 12 }}><button type="button" className="adm-boton adm-boton--claro" onClick={() => { setF(formularioDatos(sus)); setEditando(true) }}>Editar datos</button></p>
         </>
       ) : (
         <>
@@ -267,11 +291,18 @@ function Datos({ sus }) {
 }
 
 function Condiciones({ sus, condiciones, periodoActual, estado: estadoSus }) {
-  const [form, setForm] = useState(formularioDeCondiciones(sus))
-  const [plan, setPlan] = useState(sus.plan)
-  const [desde, setDesde] = useState(String(periodoActual.numero))
-  const [estado, ejecutar] = useAccion()
   const opciones = [0, 1, 2].map((i) => periodoNumero(sus, periodoActual.numero + i)).filter((p) => !sus.ultimoDia || p.desde <= sus.ultimoDia)
+  const [form, setForm] = useState(() => formularioDeCondiciones(sus))
+  const [plan, setPlan] = useState(sus.plan)
+  // Por defecto, desde el periodo siguiente (el actual ya está en marcha)
+  const [desde, setDesde] = useState(String((opciones[1] || opciones[0]).numero))
+  const [estado, ejecutar] = useAccion()
+  const elegirPlan = (v) => {
+    const tocado = JSON.stringify(form) !== JSON.stringify(formularioDeCondiciones(sus))
+    if (tocado && !window.confirm(`¿Poner las condiciones del plan ${PLANES[v].nombre}? Se pierden los cambios que has escrito.`)) return
+    setPlan(v)
+    setForm(v === sus.plan ? formularioDeCondiciones(sus) : formularioDePlan(v))
+  }
   return (
     <div className="adm-caja">
       <h2>Condiciones · {sus.planNombre}</h2>
@@ -282,7 +313,7 @@ function Condiciones({ sus, condiciones, periodoActual, estado: estadoSus }) {
           <summary>Cambiar condiciones</summary>
           <div className="adm-form" style={{ marginBottom: 12 }}>
             <label>Plan
-              <select value={plan} onChange={(e) => setPlan(e.target.value)}>
+              <select value={plan} onChange={(e) => elegirPlan(e.target.value)}>
                 {Object.entries(PLANES).map(([id, p]) => <option key={id} value={id}>{p.nombre}</option>)}
               </select>
             </label>
@@ -293,7 +324,7 @@ function Condiciones({ sus, condiciones, periodoActual, estado: estadoSus }) {
             </label>
           </div>
           <CondicionesPlan valor={form} onCambio={setForm} />
-          <p className="adm-nota" style={{ marginTop: 8 }}>Cambia la cuota y las horas de las cuotas pendientes desde ese periodo. Las ya pagadas no se tocan.</p>
+          <p className="adm-nota" style={{ marginTop: 8 }}>La cuota y las horas cambian desde ese periodo (los de antes se quedan como estaban y las cuotas ya pagadas no se tocan). El horario, las duraciones, el máximo de sesiones y la antelación valen ya para las sesiones que se reserven a partir de ahora.</p>
           <p style={{ marginTop: 10 }}>
             <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => ejecutar(`/api/admin/suscripciones/${sus.id}`, { accion: 'condiciones', plan, desdePeriodo: Number(desde), condiciones: form })}>Guardar condiciones</button>
           </p>
@@ -367,7 +398,7 @@ function Notas({ sus }) {
   )
 }
 
-function Baja({ sus, hoy, estado: estadoSus, puedeBorrarse }) {
+function Baja({ sus, sesiones, hoy, estado: estadoSus, puedeBorrarse }) {
   const router = useRouter()
   const [avisoEn, setAvisoEn] = useState(hoy)
   const propuesta = useMemo(() => propuestaBaja(sus, avisoEn || hoy), [sus, avisoEn, hoy])
@@ -431,7 +462,13 @@ function Baja({ sus, hoy, estado: estadoSus, puedeBorrarse }) {
           </div>
         )}
         <p style={{ marginTop: 10 }}>
-          <button type="button" className="adm-boton" disabled={estado.enviando || !dia} onClick={() => ejecutar(url, { accion: 'baja', avisoEn, ultimoDia: dia, motivo, cancelarSesiones, cobroExternoCancelado: stripeCancelado })}>Apuntar la baja</button>
+          <button type="button" className="adm-boton" disabled={estado.enviando || !dia} onClick={() => {
+            const despues = sesiones.filter((x) => ['confirmada', 'pendiente', 'conflicto'].includes(x.estado) && x.fecha > dia).length
+            const efecto = despues ? (cancelarSesiones ? ` Se cancelarán ${despues === 1 ? 'su sesión' : `sus ${despues} sesiones`} de después de ese día.` : ` Tiene ${despues === 1 ? 'una sesión' : `${despues} sesiones`} después de ese día.`) : ''
+            if (window.confirm(`¿Apuntar la baja con último día el ${fecha(dia)}?${efecto} Las cuotas pendientes de después se quitan.`)) {
+              ejecutar(url, { accion: 'baja', avisoEn, ultimoDia: dia, motivo, cancelarSesiones, cobroExternoCancelado: stripeCancelado })
+            }
+          }}>Apuntar la baja</button>
         </p>
       </details>
       {puedeBorrarse && (
@@ -467,7 +504,11 @@ function FilaSesion({ s }) {
 export default function FichaSuscripcion(p) {
   const { sus, estado, enPrueba, resumenActual, sesionesActual, resumenSiguiente, cuotas, sesiones, eventos, ultimoDiaPermanencia, hoy, emisorListo, ok } = p
   const otras = sesiones.filter((s) => !sesionesActual.some((x) => x.id === s.id))
-  const avisos = { alta: 'Suscripción dada de alta.', sesion: 'Sesión reservada.' }
+  const avisos = {
+    alta: 'Suscripción dada de alta.',
+    sesion: 'Sesión reservada.',
+    sesion_sin_correo: 'Sesión reservada, pero no se ha podido mandar el correo de confirmación: avísale por WhatsApp.',
+  }
   return (
     <Panel
       titulo={`${sus.nombre} ${sus.apellidos || ''}`.trim()}
@@ -478,7 +519,7 @@ export default function FichaSuscripcion(p) {
         </div>
       )}
     >
-      {ok && avisos[ok] && <p className="adm-mensaje">{avisos[ok]}</p>}
+      {ok && avisos[ok] && <p className={`adm-mensaje${ok === 'sesion_sin_correo' ? ' is-error' : ''}`}>{avisos[ok]}</p>}
       <p style={{ marginBottom: 16, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
         <Chip tipo="plan">{sus.planNombre}</Chip>
         <Chip tipo={estado === 'activa' ? 'ok' : estado === 'baja_avisada' ? 'aviso' : 'gris'}>{ESTADOS_SUSCRIPCION[estado]}</Chip>
@@ -512,7 +553,7 @@ export default function FichaSuscripcion(p) {
               <table className="adm-tabla adm-tabla--cuotas">
                 <thead><tr><th>Periodo</th><th>Importe</th><th>Estado</th><th /></tr></thead>
                 <tbody>
-                  {[...cuotas].reverse().map((c) => <FilaCuota key={c.id} c={c} sus={sus} emisorListo={emisorListo} hoy={hoy} />)}
+                  {[...cuotas].reverse().map((c) => <FilaCuota key={c.id} c={c} sus={sus} emisorListo={emisorListo} facturasAuto={p.facturasAuto} hoy={hoy} />)}
                 </tbody>
               </table>
             </div>
@@ -542,7 +583,7 @@ export default function FichaSuscripcion(p) {
         </div>
 
         <div>
-          <Baja sus={sus} hoy={hoy} estado={estado} puedeBorrarse={p.puedeBorrarse} />
+          <Baja sus={sus} sesiones={sesiones} hoy={hoy} estado={estado} puedeBorrarse={p.puedeBorrarse} />
           <Fianza sus={sus} hoy={hoy} />
           <Condiciones sus={sus} condiciones={p.condiciones} periodoActual={p.periodoActual} estado={estado} />
           <Datos sus={sus} />
@@ -590,6 +631,7 @@ export async function getServerSideProps(ctx) {
       condiciones: ficha.condiciones,
       hoy: fechaMadrid(new Date()),
       emisorListo: Boolean(emisor()),
+      facturasAuto: Boolean(facturasAutomaticas()),
       ok: typeof ctx.query.ok === 'string' ? ctx.query.ok : null,
     },
   }
