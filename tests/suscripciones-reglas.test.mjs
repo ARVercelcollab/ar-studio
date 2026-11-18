@@ -168,3 +168,9 @@ test('cuotas, tareas, recordatorio y condiciones', () => {
   assert.deepEqual(Object.keys(mal).sort(), ['franja', 'horasPeriodo', 'maxSesiones'])
   assert.ok(R.textoCondiciones(ANA).includes('L–V de 14:00 a 20:00'))
 })
+
+test('el recordatorio de una cuota dice el plan de esa cuota', () => {
+  const sus = { nombre: 'Ana', plan: 'creator', codigo: 'SUS-1' }
+  const t = R.textoRecordatorioCuota(sus, { desde: '2026-11-04', hasta: '2026-12-04', importeCent: 12900, plan: 'starter' })
+  assert.match(t, /suscripción Starter/)
+})

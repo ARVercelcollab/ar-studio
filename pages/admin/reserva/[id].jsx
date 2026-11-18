@@ -214,7 +214,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
           {r.esPlan && r.estado === 'confirmada' && sus && (
             <div className="adm-caja">
               <h2>Cambiar día u hora</h2>
-              {movida && <p className="adm-mensaje">{movida}</p>}
+              {movida && <p className={`adm-mensaje${movida.error ? ' is-error' : ''}`}>{movida.texto}</p>}
               <SesionPlan
                 susId={sus.id}
                 accion="mover"
@@ -223,7 +223,10 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
                 textoBoton="Mover sesión"
                 inicial={{ fecha: r.fecha, desde: r.horaInicio, hasta: r.horaFin, horasPlan: r.horasPlan, horasExtra: r.horasExtra, precioCent: r.precioCent }}
                 datosExtra={{ enviarCorreo: mover.enviarCorreo }}
-                onHecho={() => { setMovida('Sesión movida.'); router.replace(router.asPath, undefined, { scroll: false }) }}
+                onHecho={(res) => {
+                  setMovida({ texto: ['Sesión movida.', res?.mensaje].filter(Boolean).join(' '), error: Boolean(res?.correoFallido) })
+                  router.replace(router.asPath, undefined, { scroll: false })
+                }}
               >
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={mover.enviarCorreo} onChange={(e) => setMover({ ...mover, enviarCorreo: e.target.checked })} /> Avisarle por correo</label>}
               </SesionPlan>

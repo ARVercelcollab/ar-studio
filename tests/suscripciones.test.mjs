@@ -397,3 +397,42 @@ test('lista: en «Sin pagar» sale la cuota que se debe, no la del mes', async (
   assert.equal(f.debe.chip, 'atrasada')
   assert.equal(f.debe.desde, inicio)
 })
+
+test('las reglas de reserva de cada periodo se quedan aunque se cambien desde el siguiente', async () => {
+  const { suscripcion: sus } = await SUS.crearSuscripcion({ plan: 'creator', nombre: 'Cris', email: email(), fechaInicio: HOY, fianza: { estado: 'sin_fianza' } })
+  await SUS.cambiarCondiciones(sus.id, { plan: 'starter', cuotaCent: 12900, horasPeriodo: 4, duracionesH: [4], sesionMinH: 4, sesionMaxH: 4, maxSesiones: 1, franjaDesde: '14:00', franjaHasta: '20:00' }, { desdePeriodo: 2 })
+  // En el periodo 1 sigue con las de Creator: de 10 a 14 entra en su horario (9-20)
+  // Solo se comprueba (no se reserva): vale cualquier día laborable de cada periodo
+  const fest = new Set((await query('SELECT fecha::text AS fecha FROM festivos')).rows.map((r) => r.fecha))
+  const entreSemana = (f) => { while ([0, 6].includes(diaSemana(f)) || fest.has(f)) f = sumarDias(f, 1); return f }
+  const fecha = entreSemana(sumarDias(HOY, 7))
+  const v = await SUS.comprobarSesion(sus.id, { fecha, desde: '10:00', hasta: '14:00' })
+  assert.equal(v.periodo.numero, 1)
+  assert.equal(v.horasPlan, 4)
+  assert.equal(v.horasExtra, 0)
+  assert.ok(!v.notas.some((n) => n.codigo === 'franja'))
+  // En el periodo 2 ya van las de Starter
+  const fecha2 = entreSemana(periodoNumero(sus, 2).desde)
+  await SUS.asegurarCuotasDeTodas(fecha2)
+  const v2 = await SUS.comprobarSesion(sus.id, { fecha: fecha2, desde: '10:00', hasta: '14:00' })
+  assert.equal(v2.periodo.numero, 2)
+  assert.equal(v2.horasPlan, 0)
+})
+
+test('Stripe: con el cobro cancelado, una sub_ nueva desde Datos lo vuelve a enlazar', async () => {
+  const a = await alta({ mesPrueba: false, metodoHabitual: 'stripe', cobroExternoRef: 'sub_vieja_x' })
+  await SUS.marcarCobroExternoCancelado(a.id)
+  const e = await SUS.editarSuscripcion(a.id, { metodoHabitual: 'stripe', cobroExternoRef: 'sub_nueva_x' })
+  assert.equal(e.cobroExterno, 'stripe')
+  assert.equal(e.cobroExternoRef, 'sub_nueva_x')
+})
+
+test('deshacer la baja tras cambiar condiciones: las cuotas pendientes van con las de ahora', async () => {
+  const sus = await alta({ mesPrueba: false })
+  await SUS.asegurarCuotasDeTodas(periodoNumero(sus, 2).desde)
+  await SUS.darDeBaja(sus.id, { avisoEn: HOY, ultimoDia: sumarDias(periodoNumero(sus, 2).desde, -1) })
+  await SUS.cambiarCondiciones(sus.id, { cuotaCent: 9900 }, { desdePeriodo: 1 })
+  await SUS.deshacerBaja(sus.id)
+  const { rows } = await query('SELECT periodo, importe_cent FROM cuotas WHERE suscripcion_id = $1 ORDER BY periodo', [sus.id])
+  assert.deepEqual(rows.map((r) => [r.periodo, r.importe_cent]), [[1, 9900], [2, 9900]])
+})

@@ -1,7 +1,7 @@
 // Ficha de una suscripción: horas del periodo, sesiones, cuotas, fianza, condiciones y baja
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Panel, { Chip, ChipCuota, BarraHoras, chipEstado } from '../../../components/admin/Panel'
 import CondicionesPlan, { formularioDeCondiciones, formularioDePlan } from '../../../components/admin/CondicionesPlan'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
@@ -94,6 +94,12 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
   const [edicion, setEdicion] = useState(() => edicionDe(c))
   const [pausa, setPausa] = useState(false)
   const [datosFactura, setDatosFactura] = useState(() => facturaDe(sus))
+  // Si cambian los datos de partida con el formulario abierto (otra acción de la ficha), se ponen al día
+  const fuente = `${c.importeCent}|${c.horas}|${JSON.stringify(sus.factura || null)}`
+  useEffect(() => {
+    setEdicion((e) => ({ ...edicionDe(c), nota: e.nota }))
+    setDatosFactura(facturaDe(sus))
+  }, [fuente]) // eslint-disable-line react-hooks/exhaustive-deps
   const [estado, ejecutar] = useAccion()
   const url = `/api/admin/cuotas/${c.id}`
   const alternar = (que) => {
@@ -295,13 +301,17 @@ function Condiciones({ sus, condiciones, periodoActual, estado: estadoSus }) {
   const [form, setForm] = useState(() => formularioDeCondiciones(sus))
   const [plan, setPlan] = useState(sus.plan)
   // Por defecto, desde el periodo siguiente (el actual ya está en marcha)
-  const [desde, setDesde] = useState(String((opciones[1] || opciones[0]).numero))
+  const [desde, setDesde] = useState(() => String((opciones[1] || opciones[0] || periodoActual).numero))
   const [estado, ejecutar] = useAccion()
   const elegirPlan = (v) => {
     const tocado = JSON.stringify(form) !== JSON.stringify(formularioDeCondiciones(sus))
     if (tocado && !window.confirm(`¿Poner las condiciones del plan ${PLANES[v].nombre}? Se pierden los cambios que has escrito.`)) return
     setPlan(v)
-    setForm(v === sus.plan ? formularioDeCondiciones(sus) : formularioDePlan(v))
+    // Del plan nuevo se toma lo suyo (cuota, horas, sesiones, horario); lo del contrato se queda
+    setForm(v === sus.plan ? formularioDeCondiciones(sus) : {
+      ...formularioDePlan(v),
+      antelacionH: form.antelacionH, permanenciaMeses: form.permanenciaMeses, renovacionMeses: form.renovacionMeses, preavisoDias: form.preavisoDias,
+    })
   }
   return (
     <div className="adm-caja">

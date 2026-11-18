@@ -17,11 +17,13 @@ export default rutaAdmin(async (req, res) => {
   const base = urlBase(req)
   let reserva
   let mensaje = null
+  let correoFallido = false
   // La acción ya está hecha: si falla el correo se dice y se apunta, sin dar error
   const correo = async (enviar) => {
     try {
       await enviar()
     } catch (e) {
+      correoFallido = true
       mensaje = [mensaje, 'No se ha podido mandar el correo al cliente: avísale por WhatsApp.'].filter(Boolean).join(' ')
       await registrarEvento(reserva.id, 'correo_fallido', { error: String(e.message || e) }, { suscripcionId: reserva.suscripcionId ?? null, autor: 'panel' }).catch(() => {})
     }
@@ -68,5 +70,5 @@ export default rutaAdmin(async (req, res) => {
     default:
       return res.status(400).json({ error: 'accion', mensaje: 'Acción desconocida.' })
   }
-  res.status(200).json({ ok: true, estado: reserva?.estado, mensaje })
+  res.status(200).json({ ok: true, estado: reserva?.estado, mensaje, correoFallido })
 })
