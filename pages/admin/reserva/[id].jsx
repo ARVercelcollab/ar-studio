@@ -9,6 +9,7 @@ import { reservaPorId, pagosDeReserva, eventosDeReserva } from '../../../lib/res
 import { formatoEuros } from '../../../lib/reservas/config'
 import { pedirJson } from '../../../lib/reservas/navegador'
 import { urlBase } from '../../../lib/http'
+import { facturaDeReserva, emisor } from '../../../lib/facturas/servicio'
 
 const EVENTOS = {
   creada: 'Creada',
@@ -22,6 +23,10 @@ const EVENTOS = {
   cancelada: 'Cancelada',
   recordatorio: 'Recordatorio enviado',
   solicitud_cliente: 'El cliente pide un cambio',
+  reactivada: 'Reactivada',
+  factura_emitida: 'Factura emitida',
+  factura_enviada: 'Factura enviada',
+  factura_fallida: 'Fallo con la factura',
 }
 
 function useAccion(id) {
@@ -30,8 +35,8 @@ function useAccion(id) {
   async function ejecutar(datos, textoOk) {
     setEstado({ enviando: true, mensaje: null, error: false })
     try {
-      await pedirJson(`/api/admin/reservas/${id}`, { method: 'POST', body: datos })
-      setEstado({ enviando: false, mensaje: textoOk, error: false })
+      const r = await pedirJson(`/api/admin/reservas/${id}`, { method: 'POST', body: datos })
+      setEstado({ enviando: false, mensaje: [textoOk, r?.mensaje].filter(Boolean).join(' '), error: false })
       router.replace(router.asPath, undefined, { scroll: false })
     } catch (e) {
       setEstado({ enviando: false, mensaje: e.message, error: true })
@@ -45,7 +50,7 @@ function Mensaje({ estado }) {
   return <p className={`adm-mensaje${estado.error ? ' is-error' : ''}`}>{estado.mensaje}</p>
 }
 
-export default function FichaReserva({ r, pagos, eventos, enlaceCliente }) {
+export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura, emisorListo }) {
   const [pago, setPago] = useState({ metodo: 'transferencia', enviarCorreo: false })
   const [mover, setMover] = useState({ fecha: r.fecha, hora: r.horaInicio, horas: r.duracionHoras, enviarCorreo: true })
   const [cancel, setCancel] = useState({ motivo: '', reembolso: r.pagoEstado === 'pagado' ? ((r.precioCent * r.reembolsoHoyPct) / 10000).toFixed(2) : '0', enviarCorreo: true })
@@ -54,8 +59,11 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente }) {
   const [eMover, accionMover] = useAccion(r.id)
   const [eCancel, accionCancel] = useAccion(r.id)
   const [eNotas, accionNotas] = useAccion(r.id)
+  const [eFactura, accionFactura] = useAccion(r.id)
+  const [eReactivar, accionReactivar] = useAccion(r.id)
+  const [datosFactura, setDatosFactura] = useState({ nombre: r.factura?.nombre || '', nif: r.factura?.nif || '', direccion: r.factura?.direccion || '' })
 
-  const activa = ['confirmada', 'pendiente', 'conflicto'].includes(r.estado)
+  const puedeCobrarse = r.pagoEstado !== 'pagado' && r.estado !== 'cancelada'
   const telefono = (r.telefono || '').replace(/[^0-9]/g, '')
 
   return (
@@ -115,7 +123,50 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente }) {
         </div>
 
         <div>
-          {activa && r.pagoEstado !== 'pagado' && (
+          {r.estado === 'conflicto' && (
+            <div className="adm-caja">
+              <h2>Pago en revisión</h2>
+              <p>Ha llegado el pago pero la hora chocaba con otra reserva o el importe no cuadraba. Habla con el cliente y muévela a una hora libre (abajo), o cancélala y devuelve el dinero desde el TPV.</p>
+            </div>
+          )}
+
+          <div className="adm-caja">
+            <h2>Factura</h2>
+            {factura ? (
+              <>
+                <p>{factura.codigo} · {factura.total}{factura.enviadaEn ? ` · enviada a ${factura.enviadaA}` : ' · sin enviar'}</p>
+                <p style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <a className="adm-boton adm-boton--claro" href={`/api/admin/facturas/${factura.id}`} target="_blank" rel="noopener noreferrer">Ver PDF</a>
+                  {r.email && <button type="button" className="adm-boton adm-boton--claro" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura' }, 'Reenviada.')}>Reenviar al cliente</button>}
+                </p>
+              </>
+            ) : !emisorListo ? (
+              <p>Faltan los datos de quien factura en Vercel (FACTURA_EMISOR_NOMBRE, FACTURA_EMISOR_NIF y FACTURA_EMISOR_DIRECCION).</p>
+            ) : r.pagoEstado === 'pendiente' ? (
+              <p>Se podrá emitir cuando esté pagada{r.factura ? '; como la ha pedido, saldrá sola al marcarla como pagada' : ''}.</p>
+            ) : (
+              <>
+                <div className="adm-form">
+                  <label className="adm-ancho">Nombre o razón social<input value={datosFactura.nombre} onChange={(e) => setDatosFactura({ ...datosFactura, nombre: e.target.value })} /></label>
+                  <label>NIF o CIF<input value={datosFactura.nif} onChange={(e) => setDatosFactura({ ...datosFactura, nif: e.target.value })} /></label>
+                  <label className="adm-ancho">Dirección<input value={datosFactura.direccion} onChange={(e) => setDatosFactura({ ...datosFactura, direccion: e.target.value })} /></label>
+                </div>
+                <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura', ...datosFactura }, '')}>{r.email ? 'Emitir y enviar factura' : 'Emitir factura'}</button></p>
+              </>
+            )}
+            <Mensaje estado={eFactura} />
+          </div>
+
+          {r.estado === 'cancelada' && r.pagoEstado === 'pagado' && !r.reembolso && (
+            <div className="adm-caja">
+              <h2>Reactivar</h2>
+              <p>Esta reserva está cancelada pero pagada. Si el cliente sigue viniendo, reactívala (se comprueba que la hora siga libre); si no, devuelve el pago desde el TPV.</p>
+              <Mensaje estado={eReactivar} />
+              <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eReactivar.enviando} onClick={() => accionReactivar({ accion: 'reactivar' }, 'Reserva reactivada.')}>Reactivar reserva</button></p>
+            </div>
+          )}
+
+          {puedeCobrarse && (
             <div className="adm-caja">
               <h2>Marcar como pagada</h2>
               <div className="adm-form">
@@ -135,9 +186,9 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente }) {
             </div>
           )}
 
-          {r.estado === 'confirmada' && (
+          {['confirmada', 'conflicto'].includes(r.estado) && (
             <div className="adm-caja">
-              <h2>Cambiar día u hora</h2>
+              <h2>{r.estado === 'conflicto' ? 'Confirmar en una hora libre' : 'Cambiar día u hora'}</h2>
               <div className="adm-form">
                 <label>Día<input type="date" value={mover.fecha} onChange={(e) => setMover({ ...mover, fecha: e.target.value })} /></label>
                 <label>Hora de inicio<input type="time" step="1800" value={mover.hora} onChange={(e) => setMover({ ...mover, hora: e.target.value })} /></label>
@@ -146,13 +197,14 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente }) {
               </div>
               <p style={{ fontSize: '0.82rem', marginTop: 8 }}>El precio no cambia. Se comprueba que no choque con otra reserva ni con un bloqueo.</p>
               <Mensaje estado={eMover} />
-              <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eMover.enviando} onClick={() => accionMover({ accion: 'mover', ...mover }, 'Reserva movida.')}>Mover reserva</button></p>
+              <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eMover.enviando} onClick={() => accionMover({ accion: 'mover', ...mover }, r.estado === 'conflicto' ? 'Reserva confirmada.' : 'Reserva movida.')}>{r.estado === 'conflicto' ? 'Confirmar reserva' : 'Mover reserva'}</button></p>
             </div>
           )}
 
           {r.estado !== 'cancelada' && (
             <div className="adm-caja">
               <h2>Cancelar</h2>
+              {factura && <p className="adm-mensaje is-error" style={{ marginTop: 0 }}>Tiene la factura {factura.codigo}: si devuelves dinero, hay que hacer una factura rectificativa (de momento, a mano).</p>}
               {r.pagoEstado === 'pagado' && <p style={{ fontSize: '0.85rem', marginBottom: 10 }}>Hoy, según las condiciones, le corresponde el {r.reembolsoHoyPct} % ({formatoEuros(Math.round((r.precioCent * r.reembolsoHoyPct) / 100))}). Cambia el importe si acordáis otra cosa. La devolución hay que hacerla después en el TPV.</p>}
               <div className="adm-form">
                 <label className="adm-ancho">Motivo<input value={cancel.motivo} onChange={(e) => setCancel({ ...cancel, motivo: e.target.value })} /></label>
@@ -179,7 +231,9 @@ function textoEvento(e) {
   if (e.tipo === 'pago_fallido') return d.codigo ? `código ${d.codigo}` : ''
   if (e.tipo === 'pagada' && d.aviso && d.aviso !== 'confirmada') return `aviso: ${d.aviso}`
   if (e.tipo === 'movida' && d.antes) return `antes ${fechaHoraTexto(d.antes.inicio)}`
-  if (e.tipo === 'correo_fallido') return d.error
+  if (e.tipo === 'correo_fallido' || e.tipo === 'factura_fallida') return d.error
+  if (e.tipo === 'factura_emitida') return d.codigo
+  if (e.tipo === 'factura_enviada') return `${d.codigo} a ${d.a}`
   return ''
 }
 
@@ -189,10 +243,12 @@ export async function getServerSideProps(ctx) {
   ctx.res.setHeader('Cache-Control', 'no-store')
   const reserva = await reservaPorId(ctx.params.id)
   if (!reserva) return { notFound: true }
-  const [pagos, eventos] = await Promise.all([pagosDeReserva(reserva.id), eventosDeReserva(reserva.id)])
+  const [pagos, eventos, factura] = await Promise.all([pagosDeReserva(reserva.id), eventosDeReserva(reserva.id), facturaDeReserva(reserva.id)])
   return {
     props: {
       r: vistaAdmin(reserva),
+      factura: factura ? { id: factura.id, codigo: factura.codigo, total: formatoEuros(factura.totalCent), enviadaEn: factura.enviadaEn, enviadaA: factura.enviadaA } : null,
+      emisorListo: Boolean(emisor()),
       enlaceCliente: `${urlBase(ctx.req)}/reserva/${reserva.token}`,
       pagos: pagos.map((p) => ({ pedido: p.pedido, proveedor: p.proveedor, importe: formatoEuros(p.importeCent), estado: p.estado, codigoRespuesta: p.codigoRespuesta, creadoEn: fechaHoraTexto(p.creadoEn) })),
       eventos: eventos.map((e) => ({ tipo: e.tipo, cuando: fechaHoraTexto(e.creadoEn), texto: textoEvento(e) || null })),

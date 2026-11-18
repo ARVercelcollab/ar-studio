@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { reservaPorToken } from '../../lib/reservas/servicio'
 import { vistaPublica } from '../../lib/reservas/publico'
+import { facturaDeReserva } from '../../lib/facturas/servicio'
 import { ESTUDIO, TEXTO_CANCELACION } from '../../lib/reservas/config'
 import { irAlTpv, pedirJson } from '../../lib/reservas/navegador'
 
@@ -22,7 +23,7 @@ function enlaceGoogle(r) {
   return `https://calendar.google.com/calendar/render?${p}`
 }
 
-export default function PaginaReserva({ inicial, token, pago }) {
+export default function PaginaReserva({ inicial, token, pago, factura }) {
   const [r, setR] = useState(inicial)
   const [esperando, setEsperando] = useState(inicial.estado === 'pendiente' && pago === 'ok')
   const [error, setError] = useState(null)
@@ -123,6 +124,12 @@ export default function PaginaReserva({ inicial, token, pago }) {
             <dd><a className="rsv-enlace" href={r.mapa} target="_blank" rel="noopener noreferrer">{r.direccion}</a></dd>
           </dl>
 
+          {factura && (
+            <p className="rsv__nota" style={{ marginBottom: 18 }}>
+              Factura {factura}: <a className="rsv-enlace" href={`/api/reservas/${token}/factura`}>descargar PDF</a>
+            </p>
+          )}
+
           {error && <p className="rsv__alerta is-error">{error}</p>}
 
           {['pendiente', 'caducada'].includes(r.estado) && !esperando && r.origen === 'web' && (
@@ -190,5 +197,6 @@ export async function getServerSideProps({ params, query, res }) {
   res.setHeader('Cache-Control', 'no-store')
   const r = await reservaPorToken(String(params.token))
   if (!r) return { notFound: true }
-  return { props: { inicial: vistaPublica(r), token: String(params.token), pago: query.pago === 'ok' ? 'ok' : query.pago === 'ko' ? 'ko' : null } }
+  const factura = await facturaDeReserva(r.id)
+  return { props: { inicial: vistaPublica(r), token: String(params.token), pago: query.pago === 'ok' ? 'ok' : query.pago === 'ko' ? 'ko' : null, factura: factura?.codigo || null } }
 }

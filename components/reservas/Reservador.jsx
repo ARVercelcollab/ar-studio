@@ -121,6 +121,7 @@ export default function Reservador() {
 
   const elegirDuracion = (h) => {
     setHoras(h)
+    setPrecioDia(null)
     setHora(null)
     setLibres(null)
     setAviso(null)
@@ -210,7 +211,7 @@ export default function Reservador() {
                   const finde = [0, 6].includes(diaSemana(f)) || festivos.includes(f)
                   const clases = ['rsv__dia', n ? 'is-libre' : 'is-lleno', finde ? 'is-finde' : '', fecha === f ? 'is-elegido' : ''].join(' ')
                   return n ? (
-                    <button key={f} type="button" className={clases} onClick={() => { setFecha(f); setHora(null) }} aria-label={textoFecha(f)}>
+                    <button key={f} type="button" className={clases} onClick={() => { setFecha(f); setHora(null); setPrecioDia(null) }} aria-label={textoFecha(f)}>
                       {Number(f.slice(8))}
                     </button>
                   ) : (

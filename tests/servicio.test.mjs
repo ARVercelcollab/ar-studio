@@ -189,3 +189,96 @@ test('flujo completo con el TPV simulado y correos guardados', async () => {
   assert.equal(ok.reserva.precioCent, 27588)
   assert.ok(simulado)
 })
+
+test('revisión: un pago tardío nunca se pierde aunque otra retención caducada pise la hora', async () => {
+  const fecha = await laborable(60)
+  const a = await S.crearReservaWeb(datos({ fecha, hora: '10:00', horas: 2 }), { proveedor: 'simulado' })
+  await query(`UPDATE reservas SET expira_en = now() - interval '1 minute' WHERE id = $1`, [a.reserva.id])
+  const b = await S.crearReservaWeb(datos({ fecha, hora: '10:00', horas: 2, email: 'b@example.com' }), { proveedor: 'simulado' })
+  // La de B también caduca, pero nadie la ha marcado aún como caducada
+  await query(`UPDATE reservas SET expira_en = now() - interval '1 minute' WHERE id = $1`, [b.reserva.id])
+  const r = await S.registrarResultadoPago({ proveedor: 'simulado', pedido: a.pago.pedido, pagado: true, importeCent: 9680 })
+  assert.equal(r.aviso, 'confirmada')
+  assert.equal(r.reserva.pagoEstado, 'pagado')
+  // Y si B paga ahora, queda apuntado como conflicto (no se pierde)
+  const rb = await S.registrarResultadoPago({ proveedor: 'simulado', pedido: b.pago.pedido, pagado: true, importeCent: 9680 })
+  assert.equal(rb.aviso, 'conflicto')
+  assert.equal(rb.reserva.pagoEstado, 'pagado')
+})
+
+test('revisión: no se puede alargar una retención sin fin ni acaparar horas', async () => {
+  const fecha = await laborable(62)
+  const { reserva } = await S.crearReservaWeb(datos({ fecha, hora: '10:00', horas: 2 }), { proveedor: 'simulado', huella: 'h1' })
+  for (let i = 0; i < 3; i++) await S.reintentarPago(reserva.token, { proveedor: 'simulado' })
+  await assert.rejects(S.reintentarPago(reserva.token, { proveedor: 'simulado' }), { codigo: 'intentos' })
+  await S.crearReservaWeb(datos({ fecha, hora: '15:00', horas: 2 }), { proveedor: 'simulado', huella: 'h1' })
+  await assert.rejects(S.crearReservaWeb(datos({ fecha, hora: '18:00', horas: 2 }), { proveedor: 'simulado', huella: 'h1' }), { codigo: 'limite' })
+  // Otra persona sí puede
+  await S.crearReservaWeb(datos({ fecha, hora: '18:00', horas: 2 }), { proveedor: 'simulado', huella: 'h2' })
+})
+
+test('revisión: una reserva en conflicto ocupa su hora y se resuelve moviéndola; una cancelada pagada se reactiva', async () => {
+  const fecha = await laborable(64)
+  const a = await S.crearReservaWeb(datos({ fecha, hora: '10:00', horas: 2 }), { proveedor: 'simulado' })
+  // Importe que no cuadra -> conflicto, pero la hora sigue siendo suya
+  const r = await S.registrarResultadoPago({ proveedor: 'simulado', pedido: a.pago.pedido, pagado: true, importeCent: 1 })
+  assert.equal(r.aviso, 'conflicto')
+  assert.ok(!(await S.consultarHoras({ fecha, horas: 2 })).horas.includes('10:00'))
+  await assert.rejects(S.crearBloqueo({ fecha, desde: '10:00', hasta: '11:00' }), { codigo: 'ocupada' })
+  const ok = await S.reprogramar(a.reserva.id, { fecha, hora: '10:00' })
+  assert.equal(ok.estado, 'confirmada')
+
+  const c = await S.cancelar(a.reserva.id, { motivo: 'prueba' })
+  assert.equal(c.estado, 'cancelada')
+  const re = await S.reactivar(a.reserva.id)
+  assert.equal(re.estado, 'confirmada')
+})
+
+test('revisión: con la base marcada como de producción, un TPV de pruebas no confirma nada', async () => {
+  const { comprobarProveedor, proveedorPorId } = await import('../lib/pagos/index.js')
+  await query(`INSERT INTO ajustes (clave, valor) VALUES ('entorno', 'produccion')`)
+  try {
+    await assert.rejects(comprobarProveedor(proveedorPorId('simulado')), /producción/)
+  } finally {
+    await query(`DELETE FROM ajustes WHERE clave = 'entorno'`)
+  }
+  await comprobarProveedor(proveedorPorId('simulado'))
+})
+
+test('facturas: numeración correlativa, una por reserva, desglose de IVA y PDF', async () => {
+  process.env.FACTURA_EMISOR_NOMBRE = 'Emisora de Prueba'
+  process.env.FACTURA_EMISOR_NIF = 'X0000000T'
+  process.env.FACTURA_EMISOR_DIRECCION = 'Calle Falsa 1|46007 València|España'
+  process.env.FACTURA_SERIE = 'AR-T'
+  const F = await import('../lib/facturas/servicio.js')
+  const { pdfFactura } = await import('../lib/facturas/pdf.js')
+  assert.deepEqual(F.desglose(9680), { baseCent: 8000, ivaCent: 1680, totalCent: 9680 })
+  assert.deepEqual(F.desglose(48400), { baseCent: 40000, ivaCent: 8400, totalCent: 48400 })
+
+  const fecha = await laborable(66)
+  const sinPagar = await S.crearReservaManual({ ...CLIENTE, fecha, hora: '10:00', horas: 2 })
+  await assert.rejects(F.emitirFactura(sinPagar.id, { nombre: 'X', nif: 'B12345678', direccion: 'Y' }), { codigo: 'sin_pagar' })
+
+  const pagada = await S.crearReservaManual({ ...CLIENTE, fecha, hora: '15:00', horas: 3, pagoEstado: 'pagado', metodoPago: 'bizum' })
+  await assert.rejects(F.emitirFactura(pagada.id), { codigo: 'datos' })
+  const a = await F.emitirFactura(pagada.id, { nombre: 'Estudio Cliente SL', nif: 'b12345678', direccion: 'Avenida del Puerto 1, 46021 València' })
+  assert.equal(a.nueva, true)
+  assert.match(a.factura.codigo, /^AR-T-\d{4}-001$/)
+  assert.equal(a.factura.baseCent, 12000)
+  assert.equal(a.factura.ivaCent, 2520)
+  assert.equal(a.factura.cliente.nif, 'B12345678')
+  assert.equal(a.factura.lineas[0].cantidad, '3 h')
+  assert.equal(a.factura.lineas[0].precioUnitarioCent, 4000)
+  // Pedirla otra vez devuelve la misma
+  const otra = await F.emitirFactura(pagada.id)
+  assert.equal(otra.nueva, false)
+  assert.equal(otra.factura.codigo, a.factura.codigo)
+
+  const segunda = await S.crearReservaManual({ ...CLIENTE, nombre: 'Сергей', fecha, hora: '19:00', horas: 2, pagoEstado: 'pagado' })
+  const b = await F.emitirFactura(segunda.id, { nombre: 'Сергей Ñoño', nif: 'Y1234567X', direccion: 'Calle 2' })
+  assert.match(b.factura.codigo, /-002$/)
+
+  const pdf = await pdfFactura(b.factura)
+  assert.equal(pdf.subarray(0, 5).toString(), '%PDF-')
+  assert.ok(pdf.length > 5000)
+})

@@ -7,6 +7,7 @@ import { listarReservas, buscarReservas } from '../../lib/reservas/servicio'
 import { madridAInstante, fechaMadrid, sumarDias, textoFecha } from '../../lib/reservas/tiempo'
 import { formatoEuros } from '../../lib/reservas/config'
 import { urlBase } from '../../lib/http'
+import { avisosDeConfiguracion } from '../../lib/admin/configuracion'
 
 const VISTAS = [
   ['proximas', 'Próximas'],
@@ -15,9 +16,16 @@ const VISTAS = [
   ['canceladas', 'Canceladas'],
 ]
 
-export default function Agenda({ vista, buscar, dias, cifras, calendario }) {
+export default function Agenda({ vista, buscar, dias, cifras, calendario, avisos }) {
   return (
     <Panel titulo="Agenda" acciones={<Link href="/admin/nueva" className="adm-boton">+ Nueva reserva</Link>}>
+      {avisos.length > 0 && (
+        <div className="adm-caja">
+          <h2>Pendiente de configurar</h2>
+          <ul style={{ listStyle: 'disc', marginLeft: 18, lineHeight: 1.6, fontWeight: 300 }}>{avisos.map((a) => <li key={a}>{a}</li>)}</ul>
+        </div>
+      )}
+
       <div className="adm-cifras">
         <div><span>Hoy</span><strong>{cifras.hoy}</strong></div>
         <div><span>Próximos 7 días</span><strong>{cifras.semana}</strong></div>
@@ -117,6 +125,7 @@ export async function getServerSideProps(ctx) {
         mes: formatoEuros(cobrado),
         revisar,
       },
+      avisos: avisosDeConfiguracion(),
       calendario: token && token.length >= 24 ? `${urlBase(ctx.req)}/api/admin/calendario?clave=${token}` : null,
       hoyTexto: textoFecha(hoy),
     },

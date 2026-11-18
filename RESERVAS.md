@@ -14,7 +14,8 @@ apuntan a Calendly y `/reservar` redirige allí.
 | Reservar | `/reservar` | Duración (2, 3, 4, 6, 8 y 10 h), calendario con los huecos libres, datos del cliente (las mismas preguntas que Calendly) y pago |
 | Página de la reserva | `/reserva/[enlace privado]` | Estado, reintentar el pago, añadir al calendario, pedir un cambio o cancelación |
 | Panel | `/admin` | Agenda, ficha de cada reserva, reservas a mano, mover, marcar pagada (Bizum, transferencia…), cancelar con la devolución que toca según las condiciones, bloqueos y festivos |
-| Correos | Resend (`reservas@studioar.es`) | Confirmación al cliente con el `.ics`, aviso al estudio con los datos de factura, recordatorio el día antes, avisos de pagos raros |
+| Correos | Resend (`reservas@studioar.es`) | Confirmación al cliente con el `.ics`, aviso al estudio, recordatorio el día antes, avisos de pagos raros |
+| Facturas | PDF por correo | Si el cliente pide factura, al confirmarse el pago se emite (serie AR-W, numeración correlativa) y se le envía en PDF con copia al estudio. Desde el panel se emite, se descarga o se reenvía |
 | Calendario | `/api/admin/calendario?clave=…` | Todas las reservas para suscribirse desde Google Calendar |
 
 Reglas copiadas de Calendly (se cambian en `lib/reservas/config.js`):
@@ -74,8 +75,13 @@ Comercia ofrece dos pasarelas y el código tiene las dos. Pregunta:
 
 ### 2. Base de datos
 
-En Vercel → proyecto → *Storage* → crear una base **Neon (Postgres)** y conectarla al proyecto:
-añade `DATABASE_URL` sola. Las tablas se crean solas la primera vez.
+En Vercel → proyecto → *Storage* → crear una base **Neon (Postgres)** y conectarla al proyecto.
+Las tablas se crean solas la primera vez.
+
+**Importante:** la base de datos de **Producción** no debe compartirse con las vistas previas.
+Al conectar Neon, marca solo *Production* para esa `DATABASE_URL` y usa una rama de Neon
+distinta (o la opción de ramas para vistas previas) en *Preview*. Por si acaso, la base de
+producción queda marcada y rechaza cualquier pago hecho con un TPV en modo pruebas.
 
 ### 3. Variables de entorno en Vercel
 
@@ -90,12 +96,20 @@ añade `DATABASE_URL` sola. Las tablas se crean solas la primera vez.
 | `CRON_SECRET` | Texto aleatorio: Vercel lo usa para lanzar el recordatorio diario |
 | `CALENDARIO_TOKEN` | Texto aleatorio de 24 caracteres o más, para el calendario de Google |
 | `SITIO_URL` | `https://www.studioar.es` |
+| `FACTURA_EMISOR_NOMBRE` | Quien factura (el mismo nombre que en las facturas manuales) |
+| `FACTURA_EMISOR_NIF` | Su NIF |
+| `FACTURA_EMISOR_DIRECCION` | Su dirección, con las líneas separadas por `|` (p. ej. `Calle 1|46007 València (Valencia)|España`) |
+| `FACTURA_SERIE` | Opcional. Por defecto `AR-W` (serie de las facturas de la web) |
+| `FACTURAS_AUTOMATICAS` | Opcional. `0` para que no se envíen solas (se emiten desde el panel) |
 | `RESEND_API_KEY` | Ya existe |
 | `RESERVAS_EMAIL_FROM` | Opcional. Por defecto `AR Studio <reservas@studioar.es>` |
 | `RESERVAS_EMAIL_ESTUDIO` | Opcional. A dónde llegan los avisos; por defecto `arstudiospain@gmail.com` |
 | `NEXT_PUBLIC_RESERVAS_PROPIAS` | `1` para activar. **Solo en Producción y el día del cambio** |
 
 Textos aleatorios: `openssl rand -base64 32`.
+
+Los datos de quien factura van en variables y no en el código porque el repositorio es público.
+El panel enseña arriba lo que falta por configurar.
 
 Ojo: el plan gratuito de Vercel (Hobby) no permite uso comercial; si la cuenta está en Hobby,
 conviene pasar a Pro.
@@ -117,8 +131,9 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 
 ### 6. Pendiente fuera de la fase 1
 
-- **Facturas:** se siguen haciendo a mano (serie AR-M) con los datos que llegan en el aviso al estudio. Para enlazarlas con un programa que cumpla Veri*factu, consultarlo con el gestor.
+- **Facturas:** las de las reservas web salen solas (serie AR-W) con el mismo diseño que las manuales (serie AR-M). Que el gestor confirme la serie. Las **rectificativas** (cuando se devuelve dinero de una reserva ya facturada) se hacen de momento a mano; el panel avisa. Antes del 1-7-2027 (o 1-1-2027 si factura una sociedad) hay que pasar a un programa que cumpla **Veri*factu**: este no lo cumple.
 - **Devoluciones:** desde el portal del TPV; el panel solo apunta el importe.
+- **Límites antiabuso:** cada persona puede tener como mucho 2 horas guardadas sin pagar y 4 intentos de pago por reserva; los intentos de entrar en el panel están limitados.
 - **Cambios del cliente:** el cliente los pide desde su página y el estudio los hace en el panel.
 - **Política de privacidad:** menciona Calendly como proveedor; al activar, cambiarla por el TPV de Comercia, Neon (base de datos) y Resend (correos).
 - **Planes mensuales y área de clientes:** fase 3.
