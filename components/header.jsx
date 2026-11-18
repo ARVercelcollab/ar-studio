@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
+import { URL_RESERVAR } from '../lib/enlaces';
 
 export default function Header() {
   // En la página del plan mensual el enlace del menú baja directamente a los planes
@@ -27,7 +28,7 @@ export default function Header() {
         <Link href="/#espacio">ESPACIO</Link>
         <Link href={hrefPlan}>PLAN MENSUAL</Link>
         <a href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
-        <a href="https://calendly.com/ar-studio">RESERVAR</a>
+        <a href={URL_RESERVAR}>RESERVAR</a>
       </nav>
 
       <div className="header__mobile">
@@ -42,7 +43,7 @@ export default function Header() {
         </Link>
 
         <a
-            href="https://calendly.com/ar-studio"
+            href={URL_RESERVAR}
             className="header__menu"
             aria-label="Menú"
           >

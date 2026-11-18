@@ -1,4 +1,5 @@
 import ButtonArrow from "../components/button"
+import { URL_RESERVAR } from "../lib/enlaces"
 
 export default function Condiciones() {
 
@@ -33,7 +34,7 @@ export default function Condiciones() {
         </ul>
 
 
-      <div className="button__cierre"><ButtonArrow texto="RESERVAR" href="https://calendly.com/ar-studio" /></div>
+      <div className="button__cierre"><ButtonArrow texto="RESERVAR" href={URL_RESERVAR} /></div>
 
         </section>
     </main>

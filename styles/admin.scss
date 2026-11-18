@@ -1,0 +1,463 @@
+@use './variables.scss' as *;
+
+// Panel del estudio (/admin)
+
+$borde: #e6ded5;
+$suave: #f6f3ef;
+$gris: #8a7a6c;
+
+.adm {
+  font-family: $aktiv;
+  color: $brown;
+  min-height: 100vh;
+  background: $suave;
+  // Evita que el margen del contenido deje una franja blanca arriba
+  display: flow-root;
+
+  p, li, label, input, textarea, select, button, td, th {
+    font-family: $aktiv;
+  }
+}
+
+.adm__barra {
+  background: $brown;
+  color: $white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 3vw;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  nav {
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.92rem;
+    font-weight: 300;
+
+    a {
+      opacity: 0.75;
+
+      &.is-activo,
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    button {
+      opacity: 0.75;
+      font-size: 0.92rem;
+    }
+  }
+}
+
+.adm__marca {
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+
+  span {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    margin-left: 6px;
+    letter-spacing: 1px;
+  }
+}
+
+.adm__cuerpo {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 3vw 80px;
+}
+
+.adm__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: -1px;
+  }
+}
+
+.adm-caja {
+  background: $white;
+  border: 1px solid $borde;
+  padding: 20px;
+  margin-bottom: 18px;
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 400;
+    margin-bottom: 14px;
+  }
+
+  p {
+    font-weight: 300;
+    line-height: 1.5;
+  }
+}
+
+.adm-cifras {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+
+  @include media800px {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  div {
+    background: $white;
+    border: 1px solid $borde;
+    padding: 14px 16px;
+  }
+
+  span {
+    display: block;
+    font-size: 0.78rem;
+    color: $gris;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  strong {
+    font-size: 1.6rem;
+    font-weight: 300;
+  }
+}
+
+.adm-filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  align-items: center;
+
+  a {
+    border: 1px solid $borde;
+    background: $white;
+    padding: 7px 12px;
+    font-size: 0.88rem;
+    font-weight: 300;
+
+    &.is-activo {
+      background: $brown;
+      color: $white;
+      border-color: $brown;
+    }
+  }
+
+  form {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+
+    @include media600px {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+}
+
+.adm-dia {
+  margin-bottom: 16px;
+
+  h3 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: $gris;
+    font-weight: 400;
+    margin: 0 0 8px;
+  }
+}
+
+.adm-fila {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  background: $white;
+  border: 1px solid $borde;
+  border-top: none;
+  padding: 12px 14px;
+  font-weight: 300;
+  font-size: 0.95rem;
+
+  &:first-of-type {
+    border-top: 1px solid $borde;
+  }
+
+  &:hover {
+    background: #fdfbf8;
+  }
+
+  .adm-fila__hora {
+    font-weight: 400;
+  }
+
+  .adm-fila__quien small {
+    display: block;
+    color: $gris;
+    font-size: 0.8rem;
+    margin-top: 3px;
+  }
+
+  @include media600px {
+    grid-template-columns: 80px minmax(0, 1fr);
+
+    > :nth-child(3),
+    > :nth-child(4) {
+      grid-column: 2;
+    }
+  }
+}
+
+.adm-chip {
+  display: inline-block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 8px 3px;
+  white-space: nowrap;
+  background: $suave;
+
+  &--ok {
+    background: #e8efe1;
+    color: #4f6b3a;
+  }
+
+  &--aviso {
+    background: #f6ead8;
+    color: #9a5b13;
+  }
+
+  &--error {
+    background: #f5e1dc;
+    color: #a33b2b;
+  }
+
+  &--gris {
+    background: #eeeae5;
+    color: $gris;
+  }
+}
+
+.adm-datos {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 9px 16px;
+  font-weight: 300;
+  font-size: 0.95rem;
+
+  dt {
+    color: $gris;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  @include media600px {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+
+    dd {
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.adm-dos {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 18px;
+  align-items: start;
+
+  @include media900px {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.adm-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @include media600px {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .adm-ancho {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: $gris;
+  }
+
+  label.adm-check {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    color: $brown;
+    font-size: 0.9rem;
+
+    input {
+      accent-color: $brown;
+    }
+  }
+}
+
+.adm input:not([type='checkbox']):not([type='radio']),
+.adm select,
+.adm textarea {
+  border: 1px solid $borde;
+  padding: 9px 10px;
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: $brown;
+  background: $white;
+  border-radius: 0;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: $brown;
+  }
+}
+
+.adm textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.adm-boton {
+  background: $brown;
+  color: $white;
+  padding: 10px 16px 9px;
+  font-size: 0.9rem;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: center;
+  display: inline-block;
+
+  &:hover:not(:disabled) {
+    background: $beige;
+    color: $brown;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &--claro {
+    background: $white;
+    color: $brown;
+    border: 1px solid $brown;
+  }
+
+  &--peligro {
+    background: #a33b2b;
+  }
+}
+
+.adm-mensaje {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 300;
+  margin: 10px 0;
+  background: #f1f5ec;
+  border-left: 3px solid #4f6b3a;
+
+  &.is-error {
+    background: #fbefec;
+    border-color: #a33b2b;
+  }
+}
+
+.adm-tabla {
+  width: 100%;
+  font-size: 0.9rem;
+  font-weight: 300;
+
+  th {
+    text-align: left;
+    color: $gris;
+    font-weight: 400;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    padding: 0 8px 8px 0;
+  }
+
+  td {
+    padding: 8px 8px 8px 0;
+    border-top: 1px solid $borde;
+    vertical-align: top;
+  }
+}
+
+.adm-historial {
+  font-size: 0.85rem;
+  font-weight: 300;
+
+  li {
+    padding: 6px 0;
+    border-top: 1px solid $borde;
+    display: flex;
+    gap: 10px;
+  }
+
+  time {
+    color: $gris;
+    flex: none;
+    width: 120px;
+  }
+}
+
+.adm-login {
+  max-width: 360px;
+  margin: 14vh auto;
+  background: $white;
+  border: 1px solid $borde;
+  padding: 28px;
+
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 300;
+    margin-bottom: 18px;
+  }
+
+  form {
+    display: grid;
+    gap: 12px;
+  }
+}
+
+.adm-copiar {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+
+  input {
+    font-size: 0.8rem !important;
+  }
+}

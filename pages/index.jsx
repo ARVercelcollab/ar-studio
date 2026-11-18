@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
 import Image from 'next/image';
+import { RESERVAS_PROPIAS } from '../lib/enlaces';
 
 
 
@@ -20,6 +21,11 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
   }, [])
 
   const abrirCalendly = () => {
+    // Con las reservas propias activadas, el botón lleva a /reservar
+    if (RESERVAS_PROPIAS) {
+      window.location.href = '/reservar'
+      return
+    }
     if (!scriptCargado) {
       const script = document.createElement('script')
       script.src = 'https://assets.calendly.com/assets/external/widget.js'
@@ -261,7 +267,13 @@ export default function Home() {  const [verMas, setVerMas] = useState(false)
           </div>
 
           {/* El script se carga solo si mostramos inline */}
-          {inlineActivo && (
+          {RESERVAS_PROPIAS && (
+            <div className="reservas__propias">
+              <p>Elige cuántas horas necesitas, el día y la hora, y paga online. Recibes la confirmación al momento.</p>
+              <ButtonArrow texto="VER HORAS LIBRES" href="/reservar" />
+            </div>
+          )}
+          {inlineActivo && !RESERVAS_PROPIAS && (
             <>
               <Script
                 src="https://assets.calendly.com/assets/external/widget.js"
