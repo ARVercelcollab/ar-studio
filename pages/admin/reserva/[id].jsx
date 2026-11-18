@@ -13,6 +13,8 @@ import { urlBase } from '../../../lib/http'
 import { facturaDeReserva, emisor } from '../../../lib/facturas/servicio'
 import { suscripcionCorta } from '../../../lib/suscripciones/servicio'
 import { cancelacionCuenta } from '../../../lib/suscripciones/reglas'
+import { ingresosDeReserva } from '../../../lib/finanzas/servicio'
+import { fechaMadrid } from '../../../lib/reservas/tiempo'
 
 const EVENTOS = {
   creada: 'Creada',
@@ -53,10 +55,10 @@ function Mensaje({ estado }) {
   return <p className={`adm-mensaje${estado.error ? ' is-error' : ''}`}>{estado.mensaje}</p>
 }
 
-export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, enlaceCliente, factura, emisorListo }) {
+export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, enlaceCliente, factura, emisorListo, cobrosDia, hoy }) {
   const router = useRouter()
   const [movida, setMovida] = useState(null)
-  const [pago, setPago] = useState({ metodo: 'transferencia', enviarCorreo: false })
+  const [pago, setPago] = useState({ metodo: 'transferencia', enviarCorreo: false, fecha: '' })
   const [mover, setMover] = useState({ fecha: r.fecha, desde: r.horaInicio, hasta: r.horaFin, enviarCorreo: true })
   // Sesiones del plan: cuentaComoUsada = null mientras no se toque la casilla, y entonces decide
   // el servidor con la hora exacta de cancelar (regla de las 48 h)
@@ -81,7 +83,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
       titulo={`${r.nombre} ${r.apellidos}`}
       acciones={(
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Link href="/admin" className="adm-boton adm-boton--claro">← Agenda</Link>
+          <Link href="/admin/agenda" className="adm-boton adm-boton--claro">← Agenda</Link>
           {sus && <Link href={`/admin/suscripciones/${sus.id}`} className="adm-boton adm-boton--claro">Su suscripción</Link>}
         </div>
       )}
@@ -104,6 +106,11 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
               <dt>Comentarios</dt><dd>{r.comentarios || '—'}</dd>
               {r.motivoCancelacion && (<><dt>Motivo</dt><dd>{r.motivoCancelacion}</dd></>)}
               <dt>Página del cliente</dt><dd><a href={enlaceCliente} target="_blank" rel="noopener noreferrer">Abrir</a></dd>
+              <dt>Cobros del día</dt>
+              <dd>
+                {cobrosDia.map((x) => <span key={x.id} style={{ display: 'block' }}>{x.sentido === 'devolucion' ? 'Devolución: ' : ''}{x.concepto} · {(x.totalCent / 100).toFixed(2).replace('.', ',')} € (<Link href={`/admin/finanzas/ingresos/${x.id}`}>ver</Link>)</span>)}
+                <Link href={`/admin/finanzas/ingresos/nuevo?reserva=${r.id}`}>Apuntar un cobro del día (fondos, equipo…)</Link>
+              </dd>
             </dl>
           </div>
 
@@ -151,7 +158,9 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
 
           <div className="adm-caja">
             <h2>Factura</h2>
-            {r.esPlan && !r.precioCent && !factura ? (
+            {r.origen === 'calendly' ? (
+              <p>Se cobró por Calendly: su factura está en Stripe.</p>
+            ) : r.esPlan && !r.precioCent && !factura ? (
               <p>Incluida en la suscripción: no lleva factura propia. Se factura la cuota del mes desde <Link href={sus ? `/admin/suscripciones/${sus.id}` : '/admin/suscripciones'} className="adm-enlace">su ficha</Link>.</p>
             ) : factura ? (
               <>
@@ -204,6 +213,8 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
                     <option value="otro">Otro</option>
                   </select>
                 </label>
+                <label>Cobrada el<input type="date" max={hoy} value={pago.fecha} onChange={(e) => setPago({ ...pago, fecha: e.target.value })} /></label>
+                <p className="adm-nota" style={{ alignSelf: 'end' }}>Vacío = hoy. Cuenta en Finanzas el día del cobro.</p>
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.enviarCorreo} onChange={(e) => setPago({ ...pago, enviarCorreo: e.target.checked })} /> Mandarle el correo de confirmación{r.factura ? ' y la factura' : ''}</label>}
               </div>
               <Mensaje estado={ePago} />
@@ -303,6 +314,8 @@ export async function getServerSideProps(ctx) {
       r: vistaAdmin(reserva),
       sus,
       cuentaPorRegla: Boolean(sus && reserva.origen === 'plan' && cancelacionCuenta(sus, reserva, new Date())),
+      cobrosDia: await ingresosDeReserva(reserva.id),
+      hoy: fechaMadrid(new Date()),
       factura: factura ? { id: factura.id, codigo: factura.codigo, total: formatoEuros(factura.totalCent), enviadaEn: factura.enviadaEn, enviadaA: factura.enviadaA } : null,
       emisorListo: Boolean(emisor()),
       enlaceCliente: `${urlBase(ctx.req)}/reserva/${reserva.token}`,

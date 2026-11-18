@@ -14,7 +14,7 @@ import { opcionesParaReservar } from '../../lib/suscripciones/servicio'
 const VACIA = {
   fecha: '', desde: '10:00', hasta: '12:00', nombre: '', apellidos: '', email: '', telefono: '',
   actividad: 'Fotos', fondos: 'no', equipo: [], comentarios: '', precio: '',
-  pagado: false, metodoPago: 'transferencia', notasInternas: '', enviarCorreo: false,
+  pagado: false, metodoPago: 'transferencia', pagadoEn: '', notasInternas: '', enviarCorreo: false,
 }
 
 export default function NuevaReserva({ miembros, modoInicial, susInicial }) {
@@ -149,12 +149,21 @@ function ReservaPorHoras() {
           <label className="adm-ancho">Comentarios del cliente<textarea value={f.comentarios} onChange={(e) => poner('comentarios', e.target.value)} /></label>
           <label className="adm-ancho">Notas internas<textarea value={f.notasInternas} onChange={(e) => poner('notasInternas', e.target.value)} placeholder="Solo las ve el estudio" /></label>
           <label className="adm-check"><input type="checkbox" checked={f.pagado} onChange={(e) => poner('pagado', e.target.checked)} /> Ya está pagada</label>
-          {f.pagado && (
+          {f.pagado ? (
             <label>Cómo
               <select value={f.metodoPago} onChange={(e) => poner('metodoPago', e.target.value)}>
                 <option value="transferencia">Transferencia</option><option value="bizum">Bizum</option><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option>
+                <option value="calendly">Por Calendly (ya cobrada en Stripe)</option>
               </select>
             </label>
+          ) : <div />}
+          {f.pagado && (
+            <>
+              <label>Cobrada el<input type="date" max={new Date().toISOString().slice(0, 10)} value={f.pagadoEn} onChange={(e) => poner('pagadoEn', e.target.value)} /></label>
+              {f.metodoPago === 'calendly'
+                ? <p className="adm-notas" style={{ alignSelf: 'end' }}>No cuenta en Finanzas como reserva: ese dinero va en el resumen de Calendly del mes. Tampoco se le hace factura aquí: la hace Stripe.</p>
+                : <p className="adm-nota" style={{ alignSelf: 'end' }}>Vacío = hoy. Cuenta en Finanzas el día del cobro.</p>}
+            </>
           )}
           <label className="adm-check adm-ancho"><input type="checkbox" checked={f.enviarCorreo} onChange={(e) => poner('enviarCorreo', e.target.checked)} /> Mandar al cliente el correo de confirmación</label>
         </div>

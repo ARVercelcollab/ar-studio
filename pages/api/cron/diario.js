@@ -5,6 +5,7 @@ import { correoRecordatorio } from '../../../lib/reservas/correos.js'
 import { urlReserva } from '../../../lib/reservas/flujo.js'
 import { urlBase } from '../../../lib/http.js'
 import { asegurarCuotasDeTodas } from '../../../lib/suscripciones/servicio.js'
+import { asegurarGastosFijos } from '../../../lib/finanzas/servicio.js'
 
 export default async function handler(req, res) {
   const secreto = process.env.CRON_SECRET
@@ -13,6 +14,7 @@ export default async function handler(req, res) {
   }
   await limpiarRetenciones()
   await asegurarCuotasDeTodas()
+  await asegurarGastosFijos()
   const base = urlBase(req)
   const reservas = await reservasParaRecordar()
   let enviados = 0

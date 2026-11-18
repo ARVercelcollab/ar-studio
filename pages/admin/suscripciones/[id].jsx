@@ -93,6 +93,7 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
   const [pago, setPago] = useState(() => pagoDe(sus, emisorListo, facturasAuto, hoy))
   const [edicion, setEdicion] = useState(() => edicionDe(c))
   const [pausa, setPausa] = useState(false)
+  const [devueltaEl, setDevueltaEl] = useState(hoy)
   const [datosFactura, setDatosFactura] = useState(() => facturaDe(sus))
   // Si cambian los datos de partida con el formulario abierto (otra acción de la ficha), se ponen al día
   const fuente = `${c.importeCent}|${c.horas}|${JSON.stringify(sus.factura || null)}`
@@ -134,6 +135,7 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
               {c.enlace && <> · <a href={c.enlace} target="_blank" rel="noopener noreferrer" className="adm-enlace">justificante</a></>}
             </small>
           )}
+          {c.estado === 'devuelta' && c.devueltaEn && <small style={{ display: 'block', color: '#8a7a6c' }}>Devuelta el {fecha(c.devueltaEn, false)}</small>}
         </td>
         <td>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -207,12 +209,13 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
                     <>
                       <div className="adm-form">
                         <label className="adm-ancho">Horas del periodo<input inputMode="decimal" value={edicion.horas} onChange={(e) => setEdicion({ ...edicion, horas: e.target.value })} /></label>
-                        <label className="adm-ancho">Nota<input value={edicion.nota} onChange={(e) => setEdicion({ ...edicion, nota: e.target.value })} /></label>
+                        <label>Nota<input value={edicion.nota} onChange={(e) => setEdicion({ ...edicion, nota: e.target.value })} /></label>
+                        <label>Devuelta el (si se devuelve)<input type="date" min={c.pagadaEn || undefined} max={hoy} value={devueltaEl} onChange={(e) => setDevueltaEl(e.target.value)} /></label>
                       </div>
                       <div className="adm-acciones">
                         <button type="button" className="adm-boton adm-mini" disabled={estado.enviando} onClick={() => hacer({ accion: 'editar', horas: edicion.horas, nota: edicion.nota })}>Guardar horas</button>
                         {!c.factura && <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => { if (window.confirm('¿Deshacer el pago? Vuelve a quedar pendiente.')) hacer({ accion: 'desmarcar' }) }}>Deshacer el pago</button>}
-                        <button type="button" className="adm-boton adm-boton--peligro adm-mini" disabled={estado.enviando} onClick={() => { if (window.confirm('¿Apuntar que se le ha devuelto esta cuota? (la devolución se hace aparte, en el banco o en Stripe)')) hacer({ accion: 'devolver', nota: edicion.nota }) }}>Se le ha devuelto</button>
+                        <button type="button" className="adm-boton adm-boton--peligro adm-mini" disabled={estado.enviando} onClick={() => { if (window.confirm('¿Apuntar que se le ha devuelto esta cuota? (la devolución se hace aparte, en el banco o en Stripe)')) hacer({ accion: 'devolver', nota: edicion.nota, fecha: devueltaEl || hoy }) }}>Se le ha devuelto</button>
                       </div>
                     </>
                   )}

@@ -6,14 +6,20 @@ import { TEXTOS_CHIP_CUOTA } from '../../lib/suscripciones/reglas'
 import { textoDuracion } from '../../lib/reservas/config'
 
 const MENU = [
-  ['/admin', 'Agenda'],
+  ['/admin', 'Inicio'],
+  ['/admin/agenda', 'Agenda'],
   ['/admin/nueva', 'Nueva reserva'],
   ['/admin/suscripciones', 'Suscripciones'],
+  ['/admin/finanzas', 'Finanzas'],
   ['/admin/bloqueos', 'Bloqueos'],
   ['/admin/festivos', 'Festivos'],
 ]
 
-const activo = (href, pathname) => (href === '/admin' ? pathname === '/admin' || pathname.startsWith('/admin/reserva') : pathname.startsWith(href))
+const activo = (href, pathname) => {
+  if (href === '/admin') return pathname === '/admin'
+  if (href === '/admin/agenda') return pathname.startsWith('/admin/agenda') || pathname.startsWith('/admin/reserva')
+  return pathname.startsWith(href)
+}
 
 export default function Panel({ titulo, children, acciones }) {
   const { pathname } = useRouter()
