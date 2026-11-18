@@ -1,11 +1,15 @@
 // Apuntar una reserva a mano (WhatsApp, transferencia, Bizum, una reserva que venía de Calendly…)
+// o una sesión de alguien con suscripción (gasta horas de su plan).
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import Panel from '../../components/admin/Panel'
+import Panel, { Segmento } from '../../components/admin/Panel'
+import SesionPlan from '../../components/admin/SesionPlan'
 import { redirigirSiNoAdmin } from '../../lib/admin/auth'
 import { ACTIVIDADES, FONDOS, EQUIPO, DURACIONES, formatoEuros, textoDuracion } from '../../lib/reservas/config'
-import { minutosDeHora } from '../../lib/reservas/tiempo'
+import { minutosDeHora, horaDeMinutos } from '../../lib/reservas/tiempo'
 import { pedirJson } from '../../lib/reservas/navegador'
+import { opcionesParaReservar } from '../../lib/suscripciones/servicio'
 
 const VACIA = {
   fecha: '', desde: '10:00', hasta: '12:00', nombre: '', apellidos: '', email: '', telefono: '',
@@ -13,7 +17,86 @@ const VACIA = {
   pagado: false, metodoPago: 'transferencia', notasInternas: '', enviarCorreo: false,
 }
 
-export default function NuevaReserva() {
+export default function NuevaReserva({ miembros, modoInicial, susInicial }) {
+  const router = useRouter()
+  const [modo, setModo] = useState(modoInicial)
+  const cambiarModo = (m) => {
+    setModo(m)
+    router.replace({ pathname: '/admin/nueva', query: m === 'suscripcion' ? { modo: 'suscripcion' } : {} }, undefined, { shallow: true })
+  }
+  return (
+    <Panel titulo="Nueva reserva">
+      <div style={{ marginBottom: 16 }}>
+        <Segmento opciones={[['horas', 'Por horas'], ['suscripcion', 'Suscripción']]} valor={modo} onCambio={cambiarModo} />
+      </div>
+      {modo === 'suscripcion' ? <SesionDeMiembro miembros={miembros} susInicial={susInicial} /> : <ReservaPorHoras />}
+    </Panel>
+  )
+}
+
+function SesionDeMiembro({ miembros, susInicial }) {
+  const router = useRouter()
+  const [susId, setSusId] = useState(susInicial || (miembros.length === 1 ? String(miembros[0].id) : ''))
+  const [fondos, setFondos] = useState('no')
+  const [notasInternas, setNotas] = useState('')
+  const [enviarCorreo, setEnviarCorreo] = useState(true)
+  const m = miembros.find((x) => String(x.id) === String(susId))
+
+  if (miembros.length === 0) {
+    return (
+      <div className="adm-caja">
+        <p>Todavía no hay nadie con suscripción activa.</p>
+        <p style={{ marginTop: 12 }}><Link href="/admin/suscripciones/nueva" className="adm-boton">+ Nueva suscripción</Link></p>
+      </div>
+    )
+  }
+
+  const inicial = m
+    ? { fecha: '', desde: m.franjaDesde, hasta: horaDeMinutos(Math.min(minutosDeHora(m.franjaDesde) + Math.round(m.duracionPorDefecto * 60), minutosDeHora(m.franjaHasta))) }
+    : { fecha: '', desde: '', hasta: '' }
+
+  return (
+    <div className="adm-caja">
+      <div className="adm-form">
+        <label className="adm-ancho">Quién
+          <select value={susId} onChange={(e) => setSusId(e.target.value)}>
+            <option value="">Elige a la persona…</option>
+            {miembros.map((x) => <option key={x.id} value={x.id}>{x.nombre} · {x.planNombre}</option>)}
+          </select>
+        </label>
+        {m && (
+          <p className="adm-ancho adm-nota">
+            {m.planNombre} · le quedan <strong>{textoDuracion(m.resumen.restantes, { corto: true })}</strong> de {textoDuracion(m.resumen.horas, { corto: true })} hasta el {m.resumen.hastaTexto}.{' '}
+            {m.condiciones.slice(1, 3).join(' · ')}. <Link href={`/admin/suscripciones/${m.id}`} className="adm-enlace">Ver ficha</Link>
+          </p>
+        )}
+      </div>
+      {m && (
+        <div style={{ marginTop: 14 }}>
+          <SesionPlan
+            key={m.id}
+            susId={m.id}
+            inicial={inicial}
+            datosExtra={{ fondos, notasInternas, enviarCorreo }}
+            onHecho={() => router.push(`/admin/suscripciones/${m.id}?ok=sesion`)}
+          >
+            <label>Fondos
+              <select value={fondos} onChange={(e) => setFondos(e.target.value)}>{FONDOS.map((x) => <option key={x.id} value={x.id}>{x.texto}</option>)}</select>
+            </label>
+            <div />
+            <label className="adm-ancho">Notas internas<textarea value={notasInternas} onChange={(e) => setNotas(e.target.value)} placeholder="Solo las ve el estudio" /></label>
+            <label className="adm-check adm-ancho">
+              <input type="checkbox" checked={enviarCorreo} onChange={(e) => setEnviarCorreo(e.target.checked)} disabled={!m.email} />
+              {m.email ? ' Mandarle el correo de confirmación' : ' No tiene correo apuntado: no se le puede mandar la confirmación'}
+            </label>
+          </SesionPlan>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReservaPorHoras() {
   const router = useRouter()
   const [f, setF] = useState(VACIA)
   const [estado, setEstado] = useState({ enviando: false, error: null })
@@ -34,7 +117,7 @@ export default function NuevaReserva() {
   }
 
   return (
-    <Panel titulo="Nueva reserva">
+    <>
       <form className="adm-caja" onSubmit={guardar}>
         <div className="adm-form">
           <label>Día<input type="date" required value={f.fecha} onChange={(e) => poner('fecha', e.target.value)} /></label>
@@ -79,10 +162,22 @@ export default function NuevaReserva() {
         {estado.error && <p className="adm-mensaje is-error">{estado.error}</p>}
         <p style={{ marginTop: 14 }}><button type="submit" className="adm-boton" disabled={estado.enviando}>{estado.enviando ? 'Guardando…' : 'Guardar reserva'}</button></p>
       </form>
-    </Panel>
+    </>
   )
 }
 
 export async function getServerSideProps(ctx) {
-  return redirigirSiNoAdmin(ctx) || { props: {} }
+  const redir = redirigirSiNoAdmin(ctx)
+  if (redir) return redir
+  ctx.res.setHeader('Cache-Control', 'no-store')
+  const miembros = await opcionesParaReservar()
+  const pedido = typeof ctx.query.suscripcion === 'string' ? ctx.query.suscripcion : ''
+  const susInicial = miembros.some((x) => String(x.id) === pedido) ? pedido : ''
+  return {
+    props: {
+      miembros,
+      susInicial,
+      modoInicial: susInicial || ctx.query.modo === 'suscripcion' ? 'suscripcion' : 'horas',
+    },
+  }
 }

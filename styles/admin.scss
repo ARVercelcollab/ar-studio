@@ -484,3 +484,333 @@ $gris: #8a7a6c;
   font-weight: 300;
   color: $gris;
 }
+
+// ---------- Suscripciones ----------
+
+.adm-segmento {
+  display: inline-flex;
+  border: 1px solid $brown;
+  margin-bottom: 16px;
+
+  button {
+    padding: 8px 16px 7px;
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: $brown;
+    background: $white;
+
+    & + button {
+      border-left: 1px solid $brown;
+    }
+
+    &.is-activo {
+      background: $brown;
+      color: $white;
+    }
+  }
+}
+
+.adm-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+
+  @include media600px {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  button {
+    border: 1px solid $borde;
+    background: $white;
+    padding: 14px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    strong {
+      font-size: 1.1rem;
+      font-weight: 400;
+    }
+
+    span {
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: $gris;
+    }
+
+    &.is-activo {
+      background: $brown;
+      border-color: $brown;
+      color: $white;
+
+      span {
+        color: $beige;
+      }
+    }
+  }
+}
+
+.adm-chip--plan {
+  background: #efe6dc;
+  color: $brown;
+}
+
+.adm-fila--plan {
+  box-shadow: inset 3px 0 0 $brown;
+}
+
+.adm-barra-horas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 300;
+
+  .adm-barra-horas__pista {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    background: $suave;
+    border: 1px solid $borde;
+
+    div {
+      height: 100%;
+      background: $brown;
+    }
+  }
+
+  span {
+    white-space: nowrap;
+  }
+}
+
+.adm-avisos {
+  background: #fbf4e8;
+  border-left: 3px solid #9a5b13;
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 0.88rem;
+  font-weight: 300;
+  line-height: 1.5;
+
+  strong {
+    font-weight: 400;
+    display: block;
+    margin-bottom: 4px;
+  }
+}
+
+.adm-notas {
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: #9a5b13;
+  line-height: 1.5;
+  margin: 6px 0;
+}
+
+.adm-huecos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 300;
+  margin: 8px 0;
+
+  button {
+    border: 1px solid $borde;
+    background: $white;
+    padding: 4px 9px;
+    font-size: 0.85rem;
+
+    &.is-activo {
+      background: $brown;
+      color: $white;
+      border-color: $brown;
+    }
+  }
+}
+
+.adm-tareas {
+  li {
+    padding: 8px 0;
+    border-top: 1px solid $borde;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 300;
+    font-size: 0.92rem;
+    flex-wrap: wrap;
+
+    &:first-child {
+      border-top: none;
+    }
+
+    a {
+      text-decoration: underline;
+    }
+
+    &.is-urgente {
+      color: #a33b2b;
+    }
+  }
+}
+
+.adm-grande {
+  font-size: 1.6rem;
+  font-weight: 300;
+  margin: 4px 0 10px;
+}
+
+.adm-banner {
+  background: $white;
+  border: 1px solid $borde;
+  border-left: 3px solid #9a5b13;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.92rem;
+  font-weight: 300;
+
+  a {
+    text-decoration: underline;
+    margin-left: 6px;
+  }
+}
+
+.adm-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.adm details > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 300;
+  margin: 8px 0;
+  list-style: none;
+
+  &::before {
+    content: '▸ ';
+  }
+}
+
+.adm details[open] > summary::before {
+  content: '▾ ';
+}
+
+.adm-enlace {
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 300;
+}
+
+.adm-sus {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.3fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  background: $white;
+  border: 1px solid $borde;
+  border-top: none;
+  padding: 12px 14px;
+  font-weight: 300;
+  font-size: 0.95rem;
+  box-shadow: inset 3px 0 0 $brown;
+
+  &:first-of-type {
+    border-top: 1px solid $borde;
+  }
+
+  small {
+    display: block;
+    color: $gris;
+    font-size: 0.8rem;
+    margin-top: 3px;
+  }
+
+  .adm-sus__quien a {
+    font-weight: 400;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .adm-sus__botones {
+    display: flex;
+    gap: 6px;
+
+    .adm-boton {
+      padding: 7px 11px 6px;
+      font-size: 0.8rem;
+    }
+  }
+
+  @include media800px {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    .adm-sus__horas {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .adm-sus__botones {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.adm-scroll {
+  overflow-x: auto;
+}
+
+.adm-cuota-form {
+  background: $suave;
+  border: 1px solid $borde;
+  padding: 12px;
+  margin: 6px 0 4px;
+}
+
+.adm-mini {
+  padding: 5px 9px 4px !important;
+  font-size: 0.78rem !important;
+}
+
+// En el móvil, cada cuota es una tarjeta (periodo e importe arriba, estado y botones debajo)
+.adm-tabla--cuotas {
+  @include media600px {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 4px 12px;
+      border-top: 1px solid $borde;
+      padding: 10px 0;
+    }
+
+    td {
+      border-top: none !important;
+      padding: 0 !important;
+    }
+
+    td:nth-child(3),
+    td:nth-child(4),
+    td[colspan] {
+      grid-column: 1 / -1;
+    }
+
+    td:nth-child(4) > div {
+      justify-content: flex-start !important;
+    }
+  }
+}

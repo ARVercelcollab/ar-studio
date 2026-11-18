@@ -6,8 +6,10 @@ import { urlReserva, urlPanel } from '../../../../lib/reservas/flujo.js'
 import { facturasAutomaticas } from '../../../../lib/facturas/servicio.js'
 import { emitirYEnviar, facturaAutomatica } from '../../../../lib/facturas/envio.js'
 import { urlBase } from '../../../../lib/http.js'
+import { moverSesionPlan, cancelarSesionPlan } from '../../../../lib/suscripciones/servicio.js'
 
 const aCent = (v) => (v === '' || v == null ? 0 : Math.round(Number(String(v).replace(',', '.')) * 100))
+const aCentONulo = (v) => (v === '' || v == null ? null : Math.round(Number(String(v).replace(',', '.')) * 100))
 
 export default rutaAdmin(async (req, res) => {
   const id = req.query.id
@@ -24,14 +26,22 @@ export default rutaAdmin(async (req, res) => {
         if (r?.factura) mensaje = `Factura ${r.factura.codigo} emitida${r.enviada ? ' y enviada' : ''}.`
       }
       break
-    case 'cancelar':
-      reserva = await cancelar(id, { motivo: b.motivo, reembolsoCent: aCent(b.reembolso) })
+    case 'cancelar': {
+      const actual = await reservaPorId(id)
+      reserva = actual?.origen === 'plan'
+        ? await cancelarSesionPlan(id, { motivo: b.motivo, reembolsoCent: aCent(b.reembolso), cuentaComoUsada: b.cuentaComoUsada ?? null })
+        : await cancelar(id, { motivo: b.motivo, reembolsoCent: aCent(b.reembolso) })
       if (b.enviarCorreo && reserva.email) await correoCancelacion(reserva)
       break
-    case 'mover':
-      reserva = await reprogramar(id, { fecha: b.fecha, desde: b.desde || b.hora, hasta: b.hasta, horas: b.horas ? Number(b.horas) : undefined })
+    }
+    case 'mover': {
+      const actual = await reservaPorId(id)
+      reserva = actual?.origen === 'plan'
+        ? await moverSesionPlan(id, { fecha: b.fecha, desde: b.desde, hasta: b.hasta, horasPlan: b.horasPlan ?? null, precioExtraCent: b.precioExtra === undefined ? null : aCentONulo(b.precioExtra), avisosAceptados: b.avisosAceptados || [] })
+        : await reprogramar(id, { fecha: b.fecha, desde: b.desde || b.hora, hasta: b.hasta, horas: b.horas ? Number(b.horas) : undefined })
       if (b.enviarCorreo && reserva.email) await correoCambio(reserva, { urlReserva: urlReserva(base, reserva) })
       break
+    }
     case 'reactivar':
       reserva = await reactivar(id)
       break

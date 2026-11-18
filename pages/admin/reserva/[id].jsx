@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
 import Panel, { chipEstado } from '../../../components/admin/Panel'
+import SesionPlan from '../../../components/admin/SesionPlan'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
 import { vistaAdmin, fechaHoraTexto } from '../../../lib/admin/vista'
 import { reservaPorId, pagosDeReserva, eventosDeReserva } from '../../../lib/reservas/servicio'
@@ -10,6 +11,7 @@ import { formatoEuros } from '../../../lib/reservas/config'
 import { pedirJson } from '../../../lib/reservas/navegador'
 import { urlBase } from '../../../lib/http'
 import { facturaDeReserva, emisor } from '../../../lib/facturas/servicio'
+import { suscripcionCorta } from '../../../lib/suscripciones/servicio'
 
 const EVENTOS = {
   creada: 'Creada',
@@ -50,10 +52,13 @@ function Mensaje({ estado }) {
   return <p className={`adm-mensaje${estado.error ? ' is-error' : ''}`}>{estado.mensaje}</p>
 }
 
-export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura, emisorListo }) {
+export default function FichaReserva({ r, sus, pagos, eventos, enlaceCliente, factura, emisorListo }) {
+  const router = useRouter()
+  const [movida, setMovida] = useState(null)
   const [pago, setPago] = useState({ metodo: 'transferencia', enviarCorreo: false })
   const [mover, setMover] = useState({ fecha: r.fecha, desde: r.horaInicio, hasta: r.horaFin, enviarCorreo: true })
-  const [cancel, setCancel] = useState({ motivo: '', reembolso: r.pagoEstado === 'pagado' ? ((r.precioCent * r.reembolsoHoyPct) / 10000).toFixed(2) : '0', enviarCorreo: true })
+  const cuentaPorRegla = Boolean(r.esPlan && sus && r.horasHastaInicio < sus.avisoCancelacionH)
+  const [cancel, setCancel] = useState({ motivo: '', reembolso: r.pagoEstado === 'pagado' && !r.esPlan ? ((r.precioCent * r.reembolsoHoyPct) / 10000).toFixed(2) : '0', enviarCorreo: true, cuentaComoUsada: cuentaPorRegla })
   const [notas, setNotas] = useState(r.notasInternas)
   const [ePago, accionPago] = useAccion(r.id)
   const [eMover, accionMover] = useAccion(r.id)
@@ -67,15 +72,24 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
   const telefono = (r.telefono || '').replace(/[^0-9]/g, '')
 
   return (
-    <Panel titulo={`${r.nombre} ${r.apellidos}`} acciones={<Link href="/admin" className="adm-boton adm-boton--claro">← Agenda</Link>}>
+    <Panel
+      titulo={`${r.nombre} ${r.apellidos}`}
+      acciones={(
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link href="/admin" className="adm-boton adm-boton--claro">← Agenda</Link>
+          {sus && <Link href={`/admin/suscripciones/${sus.id}`} className="adm-boton adm-boton--claro">Su suscripción</Link>}
+        </div>
+      )}
+    >
       <div className="adm-dos">
         <div>
           <div className="adm-caja">
             <h2>{r.fechaTexto}, {r.horaInicio} – {r.horaFin} {chipEstado(r)}</h2>
             <dl className="adm-datos">
-              <dt>Reserva</dt><dd>{r.codigo} · {r.origen === 'web' ? 'reservada en la web' : r.origen === 'manual' ? 'apuntada a mano' : 'desde Calendly'}</dd>
+              <dt>Reserva</dt><dd>{r.codigo} · {r.esPlan ? <>sesión de la suscripción{sus ? <> <Link href={`/admin/suscripciones/${sus.id}`}>{sus.planNombre} ({sus.codigo})</Link></> : null}</> : r.origen === 'web' ? 'reservada en la web' : r.origen === 'manual' ? 'apuntada a mano' : 'desde Calendly'}</dd>
               <dt>Duración</dt><dd>{r.duracionTexto} · {r.tipoDia === 'finde' ? 'fin de semana o festivo' : 'entre semana'}</dd>
-              <dt>Importe</dt><dd>{r.importe} · {r.pagoTexto}{r.metodoPago ? ` (${r.metodoPago})` : ''}{r.reembolso ? ` · devuelto ${r.reembolso}` : ''}</dd>
+              {r.esPlan && (<><dt>Horas del plan</dt><dd>{r.horasPlanTexto}{r.estado === 'cancelada' ? (r.cuentaComoUsada ? ' · cancelada, pero cuenta como usada' : ' · cancelada, no cuenta') : ''}</dd></>)}
+              <dt>Importe</dt><dd>{r.esPlan && !r.precioCent ? 'Incluida en la suscripción' : <>{r.importe}{r.esPlan ? ' (horas aparte)' : ''} · {r.pagoTexto}{r.metodoPago && r.metodoPago !== 'plan' ? ` (${r.metodoPago})` : ''}{r.reembolso ? ` · devuelto ${r.reembolso}` : ''}</>}</dd>
               <dt>Correo</dt><dd>{r.email ? <a href={`mailto:${r.email}`}>{r.email}</a> : '—'}</dd>
               <dt>WhatsApp</dt><dd>{telefono ? <a href={`https://wa.me/${telefono}`} target="_blank" rel="noopener noreferrer">{r.telefono}</a> : '—'}</dd>
               <dt>Actividad</dt><dd>{r.actividad || '—'}</dd>
@@ -97,7 +111,7 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
             </p>
           </div>
 
-          <div className="adm-caja">
+          {!r.esPlan && <div className="adm-caja">
             <h2>Pagos con tarjeta</h2>
             {pagos.length === 0 ? <p>Ninguno (reserva apuntada a mano o pagada por otra vía).</p> : (
               <table className="adm-tabla">
@@ -110,7 +124,7 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
               </table>
             )}
             <p style={{ marginTop: 10, fontSize: '0.85rem' }}>Las devoluciones se hacen desde el portal del TPV con el número de pedido.</p>
-          </div>
+          </div>}
 
           <div className="adm-caja">
             <h2>Historial</h2>
@@ -132,7 +146,9 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
 
           <div className="adm-caja">
             <h2>Factura</h2>
-            {factura ? (
+            {r.esPlan && !r.precioCent && !factura ? (
+              <p>Incluida en la suscripción: no lleva factura propia. Se factura la cuota del mes desde <Link href={sus ? `/admin/suscripciones/${sus.id}` : '/admin/suscripciones'} className="adm-enlace">su ficha</Link>.</p>
+            ) : factura ? (
               <>
                 <p>{factura.codigo} · {factura.total}{factura.enviadaEn ? ` · enviada a ${factura.enviadaA}` : ' · sin enviar'}</p>
                 <p style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -161,7 +177,7 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
             <Mensaje estado={eFactura} />
           </div>
 
-          {r.estado === 'cancelada' && r.pagoEstado === 'pagado' && !r.reembolso && (
+          {!r.esPlan && r.estado === 'cancelada' && r.pagoEstado === 'pagado' && !r.reembolso && (
             <div className="adm-caja">
               <h2>Reactivar</h2>
               <p>Esta reserva está cancelada pero pagada. Si el cliente sigue viniendo, reactívala (se comprueba que la hora siga libre); si no, devuelve el pago desde el TPV.</p>
@@ -172,7 +188,7 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
 
           {puedeCobrarse && (
             <div className="adm-caja">
-              <h2>Marcar como pagada</h2>
+              <h2>{r.esPlan ? 'Marcar las horas aparte como pagadas' : 'Marcar como pagada'}</h2>
               <div className="adm-form">
                 <label className="adm-ancho">Cómo ha pagado
                   <select value={pago.metodo} onChange={(e) => setPago({ ...pago, metodo: e.target.value })}>
@@ -190,7 +206,26 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
             </div>
           )}
 
-          {['confirmada', 'conflicto'].includes(r.estado) && (
+          {r.esPlan && r.estado === 'confirmada' && sus && (
+            <div className="adm-caja">
+              <h2>Cambiar día u hora</h2>
+              {movida && <p className="adm-mensaje">{movida}</p>}
+              <SesionPlan
+                susId={sus.id}
+                accion="mover"
+                reservaId={r.id}
+                excluirId={r.id}
+                textoBoton="Mover sesión"
+                inicial={{ fecha: r.fecha, desde: r.horaInicio, hasta: r.horaFin }}
+                datosExtra={{ enviarCorreo: mover.enviarCorreo }}
+                onHecho={() => { setMovida('Sesión movida.'); router.replace(router.asPath, undefined, { scroll: false }) }}
+              >
+                {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={mover.enviarCorreo} onChange={(e) => setMover({ ...mover, enviarCorreo: e.target.checked })} /> Avisarle por correo</label>}
+              </SesionPlan>
+            </div>
+          )}
+
+          {!r.esPlan && ['confirmada', 'conflicto'].includes(r.estado) && (
             <div className="adm-caja">
               <h2>{r.estado === 'conflicto' ? 'Confirmar en una hora libre' : 'Cambiar día u hora'}</h2>
               <div className="adm-form">
@@ -209,10 +244,16 @@ export default function FichaReserva({ r, pagos, eventos, enlaceCliente, factura
             <div className="adm-caja">
               <h2>Cancelar</h2>
               {factura && <p className="adm-mensaje is-error" style={{ marginTop: 0 }}>Tiene la factura {factura.codigo}: si devuelves dinero, hay que hacer una factura rectificativa (de momento, a mano).</p>}
-              {r.pagoEstado === 'pagado' && <p style={{ fontSize: '0.85rem', marginBottom: 10 }}>Hoy, según las condiciones, le corresponde el {r.reembolsoHoyPct} % ({formatoEuros(Math.round((r.precioCent * r.reembolsoHoyPct) / 100))}). Cambia el importe si acordáis otra cosa. La devolución hay que hacerla después en el TPV.</p>}
+              {r.esPlan && (
+                <p style={{ fontSize: '0.85rem', marginBottom: 10 }}>
+                  {r.pasada ? 'La sesión ya ha pasado.' : cuentaPorRegla ? `Faltan menos de ${sus.avisoCancelacionH} h: según las condiciones, cuenta como usada.` : `Faltan más de ${sus ? sus.avisoCancelacionH : 48} h: según las condiciones, no cuenta y recupera las horas.`}
+                </p>
+              )}
+              {!r.esPlan && r.pagoEstado === 'pagado' && <p style={{ fontSize: '0.85rem', marginBottom: 10 }}>Hoy, según las condiciones, le corresponde el {r.reembolsoHoyPct} % ({formatoEuros(Math.round((r.precioCent * r.reembolsoHoyPct) / 100))}). Cambia el importe si acordáis otra cosa. La devolución hay que hacerla después en el TPV.</p>}
               <div className="adm-form">
                 <label className="adm-ancho">Motivo<input value={cancel.motivo} onChange={(e) => setCancel({ ...cancel, motivo: e.target.value })} /></label>
-                {r.pagoEstado === 'pagado' && <label>Se devuelve (€)<input inputMode="decimal" value={cancel.reembolso} onChange={(e) => setCancel({ ...cancel, reembolso: e.target.value })} /></label>}
+                {r.esPlan && <label className="adm-check adm-ancho"><input type="checkbox" checked={cancel.cuentaComoUsada} onChange={(e) => setCancel({ ...cancel, cuentaComoUsada: e.target.checked })} /> Cuenta como usada (gasta sus horas del plan)</label>}
+                {r.pagoEstado === 'pagado' && r.precioCent > 0 && <label>Se devuelve (€){r.esPlan ? ' de las horas aparte' : ''}<input inputMode="decimal" value={cancel.reembolso} onChange={(e) => setCancel({ ...cancel, reembolso: e.target.value })} /></label>}
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={cancel.enviarCorreo} onChange={(e) => setCancel({ ...cancel, enviarCorreo: e.target.checked })} /> Avisar al cliente por correo</label>}
               </div>
               <Mensaje estado={eCancel} />
@@ -247,10 +288,11 @@ export async function getServerSideProps(ctx) {
   ctx.res.setHeader('Cache-Control', 'no-store')
   const reserva = await reservaPorId(ctx.params.id)
   if (!reserva) return { notFound: true }
-  const [pagos, eventos, factura] = await Promise.all([pagosDeReserva(reserva.id), eventosDeReserva(reserva.id), facturaDeReserva(reserva.id)])
+  const [pagos, eventos, factura, sus] = await Promise.all([pagosDeReserva(reserva.id), eventosDeReserva(reserva.id), facturaDeReserva(reserva.id), suscripcionCorta(reserva.suscripcionId)])
   return {
     props: {
       r: vistaAdmin(reserva),
+      sus,
       factura: factura ? { id: factura.id, codigo: factura.codigo, total: formatoEuros(factura.totalCent), enviadaEn: factura.enviadaEn, enviadaA: factura.enviadaA } : null,
       emisorListo: Boolean(emisor()),
       enlaceCliente: `${urlBase(ctx.req)}/reserva/${reserva.token}`,

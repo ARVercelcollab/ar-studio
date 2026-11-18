@@ -8,6 +8,7 @@ import { madridAInstante, fechaMadrid, sumarDias, textoFecha } from '../../lib/r
 import { formatoEuros } from '../../lib/reservas/config'
 import { urlBase } from '../../lib/http'
 import { avisosDeConfiguracion } from '../../lib/admin/configuracion'
+import { contarCuotasSinPagar } from '../../lib/suscripciones/servicio'
 
 const VISTAS = [
   ['proximas', 'Próximas'],
@@ -16,13 +17,20 @@ const VISTAS = [
   ['canceladas', 'Canceladas'],
 ]
 
-export default function Agenda({ vista, buscar, dias, cifras, calendario, avisos }) {
+export default function Agenda({ vista, buscar, dias, cifras, calendario, avisos, cuotasSinPagar }) {
   return (
     <Panel titulo="Agenda" acciones={<Link href="/admin/nueva" className="adm-boton">+ Nueva reserva</Link>}>
       {avisos.length > 0 && (
         <div className="adm-caja">
           <h2>Pendiente de configurar</h2>
           <ul style={{ listStyle: 'disc', marginLeft: 18, lineHeight: 1.6, fontWeight: 300 }}>{avisos.map((a) => <li key={a}>{a}</li>)}</ul>
+        </div>
+      )}
+
+      {cuotasSinPagar.n > 0 && (
+        <div className="adm-banner">
+          {cuotasSinPagar.n === 1 ? 'Hay 1 cuota de suscripción sin pagar' : `Hay ${cuotasSinPagar.n} cuotas de suscripción sin pagar`} ({formatoEuros(cuotasSinPagar.totalCent)}).
+          <Link href="/admin/suscripciones?vista=sin_pagar">Verlas</Link>
         </div>
       )}
 
@@ -49,13 +57,15 @@ export default function Agenda({ vista, buscar, dias, cifras, calendario, avisos
         <section key={fecha} className="adm-dia">
           <h3>{texto}</h3>
           {reservas.map((r) => (
-            <Link key={r.id} href={`/admin/reserva/${r.id}`} className="adm-fila">
+            <Link key={r.id} href={`/admin/reserva/${r.id}`} className={`adm-fila${r.esPlan ? ' adm-fila--plan' : ''}`}>
               <span className="adm-fila__hora">{r.horaInicio} – {r.horaFin}</span>
               <span className="adm-fila__quien">
                 {r.nombre} {r.apellidos}
-                <small>{r.duracionTexto} · {r.actividad || 'sin actividad'}{r.origen !== 'web' ? ` · ${r.origen}` : ''}{r.factura ? ' · pide factura' : ''}</small>
+                {r.esPlan
+                  ? <small>{r.duracionTexto} · {r.planTexto} · {r.horasPlanTexto}</small>
+                  : <small>{r.duracionTexto} · {r.actividad || 'sin actividad'}{r.origen !== 'web' ? ` · ${r.origen}` : ''}{r.factura ? ' · pide factura' : ''}</small>}
               </span>
-              <span>{r.importe}</span>
+              <span>{r.esPlan ? r.importePlan : r.importe}</span>
               {chipEstado(r)}
             </Link>
           ))}
@@ -126,6 +136,7 @@ export async function getServerSideProps(ctx) {
         revisar,
       },
       avisos: avisosDeConfiguracion(),
+      cuotasSinPagar: await contarCuotasSinPagar(hoy),
       calendario: token && token.length >= 24 ? `${urlBase(ctx.req)}/api/admin/calendario?clave=${token}` : null,
       hoyTexto: textoFecha(hoy),
     },
