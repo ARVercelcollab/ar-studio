@@ -11,7 +11,10 @@ const NAV = {
   anio: ['Año anterior', 'Año siguiente'],
 }
 
-export default function SelectorPeriodo({ periodo, hoy, ruta, extra = {}, children }) {
+const TIPOS = [['mes', 'Mes'], ['trimestre', 'Trimestre'], ['anio', 'Año']]
+
+// tipos: los botones que se ofrecen (el Inicio solo enseña Mes y Año)
+export default function SelectorPeriodo({ periodo, hoy, ruta, extra = {}, tipos = ['mes', 'trimestre', 'anio'] }) {
   const router = useRouter()
   const href = (p) => ({ pathname: ruta, query: { ...extra, ...(p ? { p } : {}) } })
   const ir = (p) => router.push(href(p), undefined, { scroll: false })
@@ -20,7 +23,7 @@ export default function SelectorPeriodo({ periodo, hoy, ruta, extra = {}, childr
   return (
     <div className="adm-periodo">
       <Segmento
-        opciones={[['mes', 'Mes'], ['trimestre', 'Trimestre'], ['anio', 'Año']]}
+        opciones={TIPOS.filter(([t]) => tipos.includes(t))}
         valor={periodo.tipo}
         onCambio={(t) => ir(cambiarTipoPeriodo(actual, t, hoy))}
       />
@@ -34,7 +37,6 @@ export default function SelectorPeriodo({ periodo, hoy, ruta, extra = {}, childr
           : <span className="adm-periodo__flecha is-off" aria-hidden="true">›</span>}
         {periodo.contieneHoy ? <span className="adm-chip adm-chip--gris">en curso</span> : <Link href={href(null)} scroll={false} className="adm-enlace">Ir a hoy</Link>}
       </div>
-      {children}
     </div>
   )
 }

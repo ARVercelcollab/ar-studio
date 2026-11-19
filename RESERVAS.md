@@ -203,7 +203,7 @@ Sin datos personales en el repositorio (es público): todo se mete desde el pane
 | *Inicio* | Hoy y lo que viene, «Para hacer» (cuotas sin pagar, avisos de finanzas y de suscripciones, configuración), cuatro cifras (ingresos, gastos, beneficio, ocupación) con su comparación, ingresos y gastos de los últimos 12 meses, cómo va el mes día a día, de lo que entra a lo que queda, de dónde vienen los ingresos, en qué se va el dinero, cuándo se usa el estudio (mapa por día y hora), reservas por duración, suscripciones, IVA del trimestre y próximos gastos fijos. «Ocultar importes» tapa las cifras de dinero (por si hay alguien delante) |
 | *Finanzas → Resumen* | Las cifras del periodo con y sin IVA, de dónde viene la facturación y en qué se va, mes a mes, **Para Hacienda** (IVA del trimestre, retenciones del alquiler y de profesionales) y **Para la gestoría** (CSV de ingresos, gastos y facturas emitidas) |
 | *Finanzas → Facturación* | Cada cobro y cada devolución, con su factura; lo cobrado por Calendly de cada mes; lo que falta por cobrar |
-| *Finanzas → Gastos* | Todos los gastos del periodo en tres grupos: **fijos** (alquiler, alarma, internet, seguro, gestoría, autónomos, programas), **variables** (luz, agua, Aquaservice, limpieza, reparaciones, comisiones, publicidad) y **herramientas y materiales** (fondos, material del estudio, equipo). Las categorías se pueden cambiar, añadir u ocultar |
+| *Finanzas → Gastos* | Todos los gastos del periodo en tres grupos: **fijos** (alquiler, alarma, internet, seguro, gestoría, programas), **variables** (luz, agua, Aquaservice, limpieza, reparaciones, comisiones, publicidad) y **herramientas y materiales** (fondos, material del estudio, equipo). Las categorías se pueden cambiar, añadir u ocultar. La cuota de autónomos no va aquí: es de la academia, no del estudio |
 | *Finanzas → Gastos fijos* | Lo que se paga cada mes (o cada 2, 3, 6 o 12 meses): se apunta solo en Gastos el mes que toca. Se puede programar una subida («desde enero son 950 €») o terminarlo |
 
 ### Qué cuenta y qué no
@@ -213,12 +213,12 @@ Sin datos personales en el repositorio (es público): todo se mete desde el pane
 - Las reservas por horas, las horas aparte de los planes y las cuotas cuentan solas. **Lo cobrado por Calendly no llega solo**: se apunta una vez al mes en *Facturación → Calendly* (con las pistas de lo que Stripe ya cobró y está en el panel, para no sumarlo dos veces). Las reservas de Calendly pasadas a la agenda no suman.
 - Las fianzas no son ingreso hasta que se resuelven: solo cuenta lo que el estudio se queda.
 - Cobros que no pasan por el panel (fondos o equipo del día, facturas hechas a mano AR-M, otros): *Facturación → + Apuntar otro ingreso*.
-- Gastos: con factura a nombre del estudio y su NIF, el IVA se descuenta; un ticket sin NIF cuenta entero; seguros, autónomos y banco no llevan IVA; las empresas de fuera de España (por ejemplo algunas apps) van aparte para la gestoría. El alquiler lleva normalmente una retención del 19 % que la gestoría ingresa con el modelo 115.
+- Gastos: con factura a nombre del estudio y su NIF, el IVA se descuenta; un ticket sin NIF cuenta entero; seguros y banco no llevan IVA; las empresas de fuera de España (por ejemplo algunas apps) van aparte para la gestoría. El alquiler lleva normalmente una retención del 19 % que la gestoría ingresa con el modelo 115.
 - El IVA del trimestre es **orientativo**: lo que vale es lo que presente la gestoría.
 
 ### Para empezar
 
-1. *Finanzas → Gastos fijos → + Nuevo gasto fijo*: alquiler (con su IVA y la retención si la lleva), alarma, internet, seguro, gestoría, cuota de autónomos y programas, cada uno con su día de cargo y desde qué mes.
+1. *Finanzas → Gastos fijos → + Nuevo gasto fijo*: alquiler (con su IVA y la retención si la lleva), alarma, internet, seguro, gestoría y programas, cada uno con su día de cargo y desde qué mes.
 2. Cada vez que llegue una factura variable (luz, agua, Aquaservice…) o se compre material, *+ Apuntar gasto*. Si se pega el enlace de Drive de la factura, la gestoría la tiene a mano.
 3. Al acabar cada mes, mientras se cobre por Calendly: *Facturación → Calendly* con lo cobrado, lo devuelto y las comisiones del informe de Stripe.
 4. Cada trimestre, *Finanzas → Resumen → Para la gestoría*: los tres CSV.

@@ -27,21 +27,10 @@ export default function Header() {
       <nav className="header__nav">
         <Link href="/#espacio">ESPACIO</Link>
         <Link href={hrefPlan}>PLAN MENSUAL</Link>
-        <a href="https://www.instagram.com/studioar.es/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
         <a href={URL_RESERVAR}>RESERVAR</a>
       </nav>
 
       <div className="header__mobile">
-        <Link
-          href="https://www.instagram.com/studioar.es/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="header__instagram"
-          aria-label="Instagram"
-        >
-          <Image className="header__instagram" src="/assets/instagram.svg" alt="AR Studio"  width={50} height={50}/>
-        </Link>
-
         <a
             href={URL_RESERVAR}
             className="header__menu"

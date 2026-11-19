@@ -1,502 +1,159 @@
-// Gráficas del panel, sin librerías. Colores comprobados (daltonismo y contraste) con el
-// validador: ingresos #8a4a1e, gastos #b9822f; ocupación en una escala de un solo tono.
-// Cada gráfica tiene su tabla con los mismos datos («Ver tabla»).
+// Gráficas e iconos del Inicio del panel, sin librerías y sin medir nada en JavaScript:
+// las barras van en porcentajes y variables CSS, así se ven bien desde el primer pintado.
 
-import { createContext, useContext, useEffect, useId, useRef, useState } from 'react'
-import { euros, escalaBonita } from '../../lib/finanzas/calculos'
-
-export const COLOR = {
-  ingresos: '#8a4a1e',
-  gastos: '#b9822f',
-  comparacion: '#b5a597',
-  texto: '#4b3828',
-  textoSuave: '#76675a',
-  rejilla: '#ece5dc',
-  base: '#8a7a6c',
-  bueno: '#4f6b3a',
-  malo: '#a33b2b',
-  banda: '#f6f3ef',
-}
-export const RAMPA_OCUPACION = ['#f6f3ef', '#c9a684', '#a97d55', '#83552f', '#5a3418'] // 0 %, 1–24, 25–49, 50–74, 75+
+import Link from 'next/link'
+import { createContext, useContext, useState } from 'react'
+import { euros, escalaBonita, textoMes } from '../../lib/finanzas/calculos'
 
 // ---------- Importes (con «Ocultar importes») ----------
 
 export const ImportesOcultos = createContext(false)
 
-// En el Inicio, euros sin céntimos (las cifras de detalle con céntimos están en Finanzas)
+// Céntimos redondeados a euros enteros (en céntimos). Un beneficio que se enseña se calcula
+// con los dos importes ya redondeados, así cuadra con lo que se lee: 123 € − 46 € = 77 €
+export const aEuros = (cent) => (cent === null || cent === undefined ? cent : Math.round(cent / 100) * 100)
+
+// En el Inicio, euros sin céntimos (las cifras con céntimos están en Finanzas).
+// signo: «+344 €» en los positivos
 export function useEuros() {
   const oculto = useContext(ImportesOcultos)
-  return (cent) => {
+  return (cent, { signo = false } = {}) => {
     if (cent === null || cent === undefined) return euros(cent)
-    return oculto ? '••• €' : euros(Math.round(cent / 100) * 100)
+    if (oculto) return '••• €'
+    const redondo = aEuros(cent)
+    return `${signo && redondo > 0 ? '+' : ''}${euros(redondo)}`
   }
 }
 
-// Eje: '5.000 €', '12 mil €'
-function eurosEje(cent, oculto) {
-  if (oculto) return '•••'
+// Eje: «2.000 €», «12 mil €». El tope decide el formato, igual para las tres marcas
+function eurosEje(cent, topeCent) {
   const e = Math.round(cent / 100)
-  if (Math.abs(e) >= 10000) return `${Math.round(e / 1000).toLocaleString('es-ES')} mil €`
-  return euros(e * 100)
+  if (e === 0 || Math.round(topeCent / 100) < 10000) return euros(e * 100)
+  return `${String(Math.round(e / 1000)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')} mil €`
 }
 
-// ---------- Ancho real del contenedor ----------
+const may = (t) => t.charAt(0).toUpperCase() + t.slice(1)
 
-export function useAncho(inicial = 720) {
-  const ref = useRef(null)
-  const [ancho, setAncho] = useState(inicial)
-  useEffect(() => {
-    if (!ref.current || typeof ResizeObserver === 'undefined') return undefined
-    const ro = new ResizeObserver(([e]) => setAncho(Math.max(240, Math.floor(e.contentRect.width))))
-    ro.observe(ref.current)
-    return () => ro.disconnect()
-  }, [])
-  return [ref, ancho]
+// ---------- Iconos (trazos de 24 × 24) ----------
+
+const ICONOS = {
+  sube: <path d="M12 19V5M6 11l6-6 6 6" />,
+  baja: <path d="M12 5v14M6 13l6 6 6-6" />,
+  flecha: <path d="M9 6l6 6-6 6" />,
+  error: <><circle cx="12" cy="12" r="9" /><path d="M12 7.5v5M12 16h.01" /></>,
+  aviso: <><path d="M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z" /><path d="M12 9.5v4M12 17h.01" /></>,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>,
+  calendario: <><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></>,
+  reloj: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  persona: <><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
+  ojo: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
+  ojoNo: <><path d="M3 3l18 18" /><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
 }
 
-const idSeguro = (id) => id.replace(/[^a-zA-Z0-9_-]/g, '')
+export function Icono({ nombre }) {
+  return <svg className="adm-inicio__ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{ICONOS[nombre]}</svg>
+}
 
-// ---------- Variación frente al periodo comparado ----------
+// ---------- Barra horizontal ----------
 
-// tipo: euros | unidades | horas | puntos; subeEsBueno: true/false
-export function Variacion({ actual, comp, tipo = 'euros', subeEsBueno = true, textoComp, estado = 'ok', conPorcentaje = true }) {
-  const e = useEuros()
-  if (estado === 'no') return null
-  if (estado === 'sin_datos' || comp === null || comp === undefined || actual === null || actual === undefined) {
-    // «el 1–18 oct» → «del 1–18 oct»
-    const de = /^el /.test(textoComp || '') ? `del ${textoComp.slice(3)}` : `de ${textoComp}`
-    return <span className="adm-var is-neutro">Sin datos {de}</span>
-  }
-  const d = actual - comp
-  const igual = d === 0 || (comp !== 0 && Math.abs(d / comp) < 0.01)
-  const chipIncompleta = estado === 'incompleta' ? <span className="adm-chip adm-chip--aviso" title="El panel no tiene datos de todo ese periodo">comparación incompleta</span> : null
-  if (igual) return <span className="adm-var is-neutro">= igual que {textoComp} {chipIncompleta}</span>
-  const sube = d > 0
-  const bueno = sube === subeEsBueno
-  const abs = Math.abs(d)
-  let txt
-  if (tipo === 'euros') {
-    txt = `${e(abs)} ${sube ? 'más' : 'menos'}`
-    if (conPorcentaje && comp >= 30000) txt += ` (${sube ? '+' : '−'}${Math.round((abs * 100) / comp)} %)`
-  } else if (tipo === 'horas') txt = `${String(abs).replace('.', ',')} h ${sube ? 'más' : 'menos'}`
-  else if (tipo === 'puntos') txt = `${abs} ${abs === 1 ? 'punto' : 'puntos'}`
-  else txt = `${abs} ${sube ? 'más' : 'menos'}`
+// partes: [[porcentaje, tipo], …] una detrás de otra. Los lectores de pantalla se la saltan:
+// el texto de al lado ya dice lo mismo.
+export function Medidor({ partes }) {
   return (
-    <span className={`adm-var ${bueno ? 'is-bueno' : 'is-malo'}`}>
-      <span aria-hidden="true">{sube ? '▲' : '▼'}</span> {txt} <span className="adm-var__comp">que {textoComp}</span> {chipIncompleta}
-    </span>
+    <div className="adm-inicio__medidor" aria-hidden="true">
+      {partes.map(([pct, tipo]) => (
+        <i key={tipo} className={`es-${tipo}${pct > 0 ? '' : ' es-cero'}`} style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+      ))}
+    </div>
   )
 }
 
-// ---------- Tabla con los datos de cada gráfica ----------
+// ---------- Ingresos y gastos por mes ----------
 
-export function VerTabla({ titulo, columnas, filas }) {
-  const [abierta, setAbierta] = useState(false)
+export const EN_MOVIL = 6 // en el móvil, solo los últimos 6 meses
+const MARCAS = [1, 0.5, 0] // líneas del eje: el tope, la mitad y el cero
+
+// meses: los del gráfico que ya tienen cuentas (ni los de antes del panel ni los que no han llegado)
+// mesPeriodo: el mes elegido arriba, si se mira un mes; hrefMes(mes): enlace para ir a ese mes
+export function GraficoMeses({ meses, mesPeriodo, hrefMes, hoy }) {
+  const e = useEuros()
+  const oculto = useContext(ImportesOcultos)
+  const [fijado, setFijado] = useState(meses.some((m) => m.mes === mesPeriodo) ? mesPeriodo : meses.at(-1).mes)
+  const [encima, setEncima] = useState(null) // el mes bajo el ratón o con el foco (manda mientras dura)
+  const visto = meses.find((m) => m.mes === (encima || fijado))
+  // Escala propia para el móvil (sus 6 meses) y para el resto; el CSS elige una u otra
+  const tope = (ms) => escalaBonita(Math.max(0, ...ms.flatMap((m) => [m.facturacionCent, m.gastosCent]))).topeCent
+  const topes = { ancho: tope(meses), movil: tope(meses.slice(-EN_MOVIL)) }
+  const nombre = (m) => may(m.mes.slice(0, 4) === hoy.slice(0, 4) ? textoMes(m.mes, { soloNombre: true }) : m.texto)
+  const enCurso = (m) => m.estado === 'en_curso'
+  const beneficio = (m) => aEuros(m.facturacionCent) - aEuros(m.gastosCent)
+  const b = beneficio(visto)
   return (
-    <div className="adm-vertabla">
-      <button type="button" className="adm-enlace" aria-expanded={abierta} onClick={() => setAbierta((a) => !a)}>{abierta ? 'Ocultar tabla' : 'Ver tabla'}</button>
-      <div className={abierta ? 'adm-scroll' : 'adm-solo-lector'}>
-        <table className="adm-tabla adm-tabla--num">
-          <caption className="adm-solo-lector">{titulo}</caption>
-          <thead><tr>{columnas.map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
-          <tbody>{filas.map((f, i) => <tr key={i}>{f.map((v, j) => (j === 0 ? <th key={j} scope="row">{v}</th> : <td key={j} className="num">{v}</td>))}</tr>)}</tbody>
+    <>
+      {/* Sin aria-live: cada mes ya lleva sus cifras en la etiqueta y están en la tabla de abajo */}
+      <div className="adm-inicio__lectura">
+        <p className="adm-inicio__lectura-mes">
+          <span>{nombre(visto)}{enCurso(visto) && ' · en curso'}</span>
+          {visto.mes !== mesPeriodo && <Link href={hrefMes(visto.mes)} scroll={false} className="adm-inicio__enlace">Ver ese mes<Icono nombre="flecha" /></Link>}
+        </p>
+        <div><span className="adm-inicio__etq"><i className="adm-inicio__muestra es-ing" />Ingresos</span><strong>{e(visto.facturacionCent)}</strong></div>
+        <div><span className="adm-inicio__etq"><i className="adm-inicio__muestra es-gas" />Gastos</span><strong>{e(visto.gastosCent)}</strong></div>
+        <div><span className="adm-inicio__etq">Beneficio</span><strong className={oculto ? '' : b < 0 ? 'es-neg' : b > 0 ? 'es-pos' : ''}>{e(b, { signo: true })}</strong></div>
+        {visto.faltaCalendly && (
+          <p className="adm-inicio__lectura-aviso"><Icono nombre="aviso" />Falta apuntar Calendly · <Link href={`/admin/finanzas/calendly?mes=${visto.mes}`}>Apuntarlo</Link></p>
+        )}
+      </div>
+
+      <div className="adm-inicio__grafica" style={{ '--tope-ancho': topes.ancho, '--tope-movil': topes.movil }}>
+        <div className="adm-inicio__eje" aria-hidden="true">
+          {MARCAS.map((f) => (
+            <span key={f} style={{ '--f': f }}>
+              {!oculto && <><b className="es-ancho">{eurosEje(topes.ancho * f, topes.ancho)}</b><b className="es-movil">{eurosEje(topes.movil * f, topes.movil)}</b></>}
+            </span>
+          ))}
+        </div>
+        <div className="adm-inicio__lienzo" role="group" aria-label="Meses" onPointerLeave={(ev) => { if (ev.pointerType === 'mouse') setEncima(null) }}>
+          {MARCAS.map((f) => <i key={f} className={`adm-inicio__rej${f ? '' : ' es-base'}`} style={{ '--f': f }} />)}
+          {meses.map((m, i) => (
+            <button
+              key={m.mes}
+              type="button"
+              className={`adm-inicio__mes${enCurso(m) ? ' es-curso' : ''}${m.mes === visto.mes ? ' is-sel' : ''}${i < meses.length - EN_MOVIL ? ' es-antiguo' : ''}`}
+              aria-pressed={m.mes === fijado}
+              aria-label={`${may(m.texto)}${enCurso(m) ? ', en curso' : ''}: ingresos ${e(m.facturacionCent)}, gastos ${e(m.gastosCent)}`}
+              onPointerEnter={(ev) => { if (ev.pointerType === 'mouse') setEncima(m.mes) }}
+              // Con el teclado, el foco solo enseña el mes; Intro o espacio lo eligen
+              onFocus={() => setEncima(m.mes)}
+              onBlur={() => setEncima(null)}
+              onClick={() => setFijado(m.mes)}
+            >
+              <span className="adm-inicio__barras">
+                <i className={`es-ing${m.facturacionCent > 0 ? '' : ' es-cero'}`} style={{ '--v': Math.max(0, m.facturacionCent) }} />
+                <i className={`es-gas${m.gastosCent > 0 ? '' : ' es-cero'}`} style={{ '--v': Math.max(0, m.gastosCent) }} />
+              </span>
+              <span className="adm-inicio__mes-etq">{m.corto}{enCurso(m) && <small>en curso</small>}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Las mismas cifras en una tabla, para lectores de pantalla */}
+      <div className="adm-solo-lector">
+        <table>
+          <caption>Ingresos y gastos por mes, sin IVA</caption>
+          <thead><tr><th scope="col">Mes</th><th scope="col">Ingresos</th><th scope="col">Gastos</th><th scope="col">Beneficio</th></tr></thead>
+          <tbody>
+            {meses.map((m) => (
+              <tr key={m.mes}>
+                <th scope="row">{may(m.texto)}{enCurso(m) && ' (en curso)'}</th>
+                <td>{e(m.facturacionCent)}</td>
+                <td>{e(m.gastosCent)}</td>
+                <td>{e(beneficio(m), { signo: true })}</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
-    </div>
-  )
-}
-
-function Leyenda({ series }) {
-  return (
-    <div className="adm-leyenda">
-      {series.map(([texto, color, tipo]) => (
-        <span key={texto}>
-          <i className={tipo === 'linea' ? 'is-linea' : tipo === 'rayado' ? 'is-rayado' : ''} style={{ '--c': color }} aria-hidden="true" />
-          {texto}
-        </span>
-      ))}
-    </div>
-  )
-}
-
-// Tooltip: valor primero, nombre después; en el móvil se queda como «línea de lectura»
-function Tooltip({ x, y, ancho, titulo, filas }) {
-  if (x === null || x === undefined) return null
-  const izq = x > ancho - 190
-  return (
-    <div className="adm-tooltip" style={{ left: izq ? undefined : x + 12, right: izq ? ancho - x + 12 : undefined, top: y }} role="presentation">
-      <strong>{titulo}</strong>
-      {filas.map(([nombre, valor, color]) => (
-        <div key={nombre}>{color && <i style={{ background: color }} aria-hidden="true" />}<b>{valor}</b><span>{nombre}</span></div>
-      ))}
-    </div>
-  )
-}
-
-// Barra con el extremo de datos redondeado (4 px) y recta en la base
-function barra(x, y0, ancho, alto) {
-  if (alto === 0) return ''
-  const r = Math.min(4, ancho / 2, Math.abs(alto))
-  if (alto > 0) {
-    const y = y0 - alto
-    return `M${x},${y0}V${y + r}Q${x},${y} ${x + r},${y}H${x + ancho - r}Q${x + ancho},${y} ${x + ancho},${y + r}V${y0}Z`
-  }
-  const y = y0 - alto
-  return `M${x},${y0}V${y - r}Q${x},${y} ${x + r},${y}H${x + ancho - r}Q${x + ancho},${y} ${x + ancho},${y - r}V${y0}Z`
-}
-
-// ---------- G1: ingresos y gastos por mes ----------
-
-export function BarrasMeses({ meses, onElegir, hoyTexto }) {
-  const oculto = useContext(ImportesOcultos)
-  const e = useEuros()
-  const [ref, ancho] = useAncho()
-  const uid = idSeguro(useId())
-  const [mesActivo, setMesActivo] = useState(null)
-  const movil = ancho < 560
-  const vista = movil ? meses.slice(-6) : meses
-  const activo = mesActivo === null ? null : vista.findIndex((m) => m.mes === mesActivo) >= 0 ? vista.findIndex((m) => m.mes === mesActivo) : null
-  const setActivo = (i) => setMesActivo(i === null ? null : vista[i]?.mes ?? null)
-  const valores = vista.flatMap((m) => [m.facturacionCent, m.gastosCent]).filter((v) => v !== null)
-  const max = Math.max(0, ...valores)
-  const min = Math.min(0, ...valores)
-  const { topeCent } = escalaBonita(max)
-  const fondo = min < 0 ? escalaBonita(-min).topeCent : 0
-  const ejeAncho = movil ? 44 : 56
-  const alto = movil ? 160 : 200
-  const plotW = ancho - ejeAncho
-  const slot = plotW / vista.length
-  const yCero = 10 + (alto * topeCent) / (topeCent + fondo)
-  const escala = alto / (topeCent + fondo)
-  const grupo = Math.min(slot * (movil ? 0.7 : 0.64), 52)
-  const bw = Math.min(24, (grupo - 2) / 2)
-  const ticks = [0, topeCent / 2, topeCent, ...(fondo ? [-fondo] : [])]
-  const alturaTotal = alto + 20 + 38 + 26
-  const actual = activo !== null ? vista[activo] : null
-  return (
-    <div className="adm-graf" ref={ref}>
-      <Leyenda series={[['Ingresos', COLOR.ingresos], ['Gastos', COLOR.gastos], ['Mes en curso', COLOR.ingresos, 'rayado']]} />
-      <div className="adm-graf__lienzo" style={{ height: alturaTotal }} onMouseLeave={() => setActivo(null)}>
-        <svg width={ancho} height={alturaTotal} aria-hidden="true" focusable="false">
-          <defs>
-            {[['i', COLOR.ingresos], ['g', COLOR.gastos]].map(([k, c]) => (
-              <pattern key={k} id={`${uid}${k}`} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <rect width="4" height="4" fill="#fff" /><line x1="0" y1="0" x2="0" y2="4" stroke={c} strokeWidth="1.5" />
-              </pattern>
-            ))}
-          </defs>
-          {ticks.map((t) => {
-            const y = Math.round(yCero - t * escala) + 0.5
-            return (
-              <g key={t}>
-                <line x1={ejeAncho} x2={ancho} y1={y} y2={y} stroke={t === 0 ? COLOR.base : COLOR.rejilla} strokeWidth="1" />
-                <text x={ejeAncho - 6} y={y + 4} textAnchor="end" className="adm-graf__eje">{eurosEje(t, oculto)}</text>
-              </g>
-            )
-          })}
-          {vista.map((m, i) => {
-            const x0 = ejeAncho + i * slot
-            const cx = x0 + slot / 2
-            const enCurso = m.estado === 'en_curso'
-            const vacio = m.estado === 'sin_datos' || m.estado === 'futuro'
-            const hI = vacio ? 0 : m.facturacionCent * escala
-            const hG = vacio ? 0 : m.gastosCent * escala
-            const xi = cx - bw - 1
-            const xg = cx + 1
-            return (
-              <g key={m.mes}>
-                {activo === i && <rect x={x0} y={8} width={slot} height={alto + 4} fill={COLOR.banda} />}
-                {!vacio && hI !== 0 && <path d={barra(xi, yCero, bw, hI)} fill={enCurso ? `url(#${uid}i)` : COLOR.ingresos} stroke={enCurso ? COLOR.ingresos : 'none'} strokeWidth="1" />}
-                {!vacio && hG !== 0 && <path d={barra(xg, yCero, bw, hG)} fill={enCurso ? `url(#${uid}g)` : COLOR.gastos} stroke={enCurso ? COLOR.gastos : 'none'} strokeWidth="1" />}
-                {vacio && <text x={cx} y={yCero - 6} textAnchor="middle" className="adm-graf__eje">—</text>}
-                {m.faltaCalendly && <circle cx={cx} cy={14} r={3.5} fill="#9a5b13"><title>Falta apuntar lo de Calendly</title></circle>}
-                <text x={cx} y={alto + 28} textAnchor="middle" className={`adm-graf__mes${m.elegido ? ' is-elegido' : ''}${m.estado === 'futuro' ? ' is-futuro' : ''}`}>
-                  {m.corto.split(' ')[0]}{enCurso ? '*' : ''}
-                </text>
-                {(m.corto.includes(' ') || i === 0) && <text x={cx} y={alto + 41} textAnchor="middle" className="adm-graf__anio">{m.mes.slice(0, 4)}</text>}
-                {m.elegido && <line x1={x0 + 2} x2={x0 + slot - 2} y1={alto + 46.5} y2={alto + 46.5} stroke={COLOR.texto} strokeWidth="2" />}
-                <text x={cx} y={alto + 70} textAnchor="middle" className={`adm-graf__benef${m.beneficioCent < 0 ? ' is-negativo' : ''}`}>
-                  {m.beneficioCent === null ? '—' : oculto ? '•••' : eurosEje(m.beneficioCent, false).replace(' €', '')}
-                </text>
-              </g>
-            )
-          })}
-          <text x={ejeAncho - 6} y={alto + 70} textAnchor="end" className="adm-graf__eje adm-graf__benefetq">BENEF.</text>
-        </svg>
-        {vista.map((m, i) => (
-          <button
-            key={m.mes}
-            type="button"
-            className="adm-graf__hit"
-            style={{ left: ejeAncho + i * slot, width: slot, height: alto + 50 }}
-            aria-label={`${m.texto}: ${m.facturacionCent === null ? 'sin datos' : `ingresos ${e(m.facturacionCent)}, gastos ${e(m.gastosCent)}, beneficio ${e(m.beneficioCent)}`}`}
-            onMouseEnter={() => setActivo(i)}
-            onFocus={() => setActivo(i)}
-            onBlur={() => setActivo(null)}
-            onClick={() => (m.estado === 'futuro' ? null : onElegir?.(m.mes))}
-            disabled={m.estado === 'futuro'}
-          />
-        ))}
-        {actual && !movil && (
-          <Tooltip
-            x={ejeAncho + activo * slot + slot / 2}
-            y={12}
-            ancho={ancho}
-            titulo={`${actual.texto.charAt(0).toUpperCase()}${actual.texto.slice(1)}${actual.estado === 'en_curso' ? ` · hasta ${hoyTexto}` : ''}`}
-            filas={actual.facturacionCent === null ? [['', actual.estado === 'futuro' ? 'Aún no ha llegado' : 'Sin datos', null]] : [
-              ['Ingresos', e(actual.facturacionCent), COLOR.ingresos],
-              ['Gastos', e(actual.gastosCent), COLOR.gastos],
-              ['Beneficio', e(actual.beneficioCent), null],
-              ...(actual.ocupacionPct !== null && actual.ocupacionPct !== undefined ? [['Ocupación', `${actual.ocupacionPct} %`, null]] : []),
-            ]}
-          />
-        )}
-      </div>
-      {movil && (
-        <p className="adm-graf__lectura" aria-live="polite">
-          {actual ? (actual.facturacionCent === null ? `${actual.texto}: sin datos` : `${actual.texto}: ingresos ${e(actual.facturacionCent)} · gastos ${e(actual.gastosCent)} · beneficio ${e(actual.beneficioCent)}`) : 'Toca un mes para ver sus cifras.'}
-        </p>
-      )}
-      <VerTabla
-        titulo="Ingresos y gastos por mes"
-        columnas={['Mes', 'Ingresos', 'Gastos', 'Beneficio', 'Ocupación']}
-        filas={meses.map((m) => [m.texto, m.facturacionCent === null ? '—' : e(m.facturacionCent), m.gastosCent === null ? '—' : e(m.gastosCent), m.beneficioCent === null ? '—' : e(m.beneficioCent), m.ocupacionPct === null || m.ocupacionPct === undefined ? '—' : `${m.ocupacionPct} %`])}
-      />
-    </div>
-  )
-}
-
-// ---------- G2: cómo va el periodo (acumulado) ----------
-
-export function LineasAcumuladas({ puntos, comparacion, porMes, cruce, textoComp, etiquetaPunto }) {
-  const oculto = useContext(ImportesOcultos)
-  const e = useEuros()
-  const [ref, ancho] = useAncho(560)
-  const [activo, setActivo] = useState(null)
-  const movil = ancho < 480
-  const alto = movil ? 150 : 180
-  const ejeAncho = movil ? 44 : 56
-  const n = Math.max(puntos.length, comparacion?.length || 0)
-  const vals = [...puntos.flatMap((p) => [p.ingresosCent, p.gastosCent]), ...(comparacion || [])].filter((v) => v !== null && v !== undefined)
-  const { topeCent } = escalaBonita(Math.max(0, ...vals))
-  const min = Math.min(0, ...vals)
-  const fondo = min < 0 ? escalaBonita(-min).topeCent : 0
-  const plotW = ancho - ejeAncho - (movil ? 8 : 92)
-  const x = (i) => ejeAncho + (n <= 1 ? plotW / 2 : (i * plotW) / (n - 1))
-  const esc = alto / (topeCent + fondo)
-  const yCero = 8 + topeCent * esc
-  const y = (v) => yCero - v * esc
-  const linea = (vals2, escalon = false) => {
-    let d = ''
-    vals2.forEach((v, i) => {
-      if (v === null || v === undefined) return
-      if (!d) d = `M${x(i)},${y(v)}`
-      else if (escalon) d += `H${x(i)}V${y(v)}`
-      else d += `L${x(i)},${y(v)}`
-    })
-    return d
-  }
-  const ing = puntos.map((p) => p.ingresosCent)
-  const gas = puntos.map((p) => p.gastosCent)
-  const ult = ing.reduce((a, v, i) => (v !== null ? i : a), -1)
-  const ultComp = comparacion ? comparacion.length - 1 : -1
-  const etiquetas = []
-  if (ult >= 0) {
-    etiquetas.push({ y: y(ing[ult]), texto: `Ingresos ${e(ing[ult])}`, color: COLOR.texto })
-    etiquetas.push({ y: y(gas[ult]), texto: `Gastos ${e(gas[ult])}`, color: COLOR.texto })
-  }
-  if (ultComp >= 0) etiquetas.push({ y: y(comparacion[ultComp]), texto: `${textoComp} ${e(comparacion[ultComp])}`, color: COLOR.textoSuave })
-  etiquetas.sort((a, b) => a.y - b.y)
-  for (let i = 1; i < etiquetas.length; i++) if (etiquetas[i].y - etiquetas[i - 1].y < 14) etiquetas[i].y = etiquetas[i - 1].y + 14
-  const ticksX = porMes ? puntos.map((_, i) => i) : puntos.map((p, i) => i).filter((i) => n <= 31 ? [0, 7, 14, 21, 28].includes(i) : puntos[i].clave.endsWith('-01'))
-  const iCruce = cruce ? puntos.findIndex((p) => p.clave === cruce) : -1
-  const altoTotal = alto + 30
-  const sel = activo !== null ? puntos[activo] : null
-  return (
-    <div className="adm-graf" ref={ref}>
-      {movil && <Leyenda series={[['Ingresos', COLOR.ingresos, 'linea'], ['Gastos', COLOR.gastos, 'linea'], ...(comparacion ? [[textoComp, COLOR.comparacion, 'linea']] : [])]} />}
-      <div className="adm-graf__lienzo" style={{ height: altoTotal }} onMouseLeave={() => setActivo(null)}
-        onMouseMove={(ev) => {
-          const r = ev.currentTarget.getBoundingClientRect()
-          const px = ev.clientX - r.left
-          const i = Math.round(((px - ejeAncho) / plotW) * (n - 1))
-          setActivo(i >= 0 && i < puntos.length ? i : null)
-        }}>
-        <svg width={ancho} height={altoTotal} aria-hidden="true" focusable="false">
-          {[0, topeCent / 2, topeCent].map((t) => (
-            <g key={t}>
-              <line x1={ejeAncho} x2={ejeAncho + plotW} y1={Math.round(y(t)) + 0.5} y2={Math.round(y(t)) + 0.5} stroke={t === 0 ? COLOR.base : COLOR.rejilla} />
-              <text x={ejeAncho - 6} y={y(t) + 4} textAnchor="end" className="adm-graf__eje">{eurosEje(t, oculto)}</text>
-            </g>
-          ))}
-          {ticksX.map((i) => <text key={i} x={x(i)} y={alto + 26} textAnchor="middle" className="adm-graf__eje">{etiquetaPunto(puntos[i])}</text>)}
-          {iCruce >= 0 && (
-            <g>
-              <line x1={Math.round(x(iCruce)) + 0.5} x2={Math.round(x(iCruce)) + 0.5} y1={8} y2={yCero} stroke={COLOR.base} strokeWidth="1" strokeDasharray="1 3" />
-              <text x={x(iCruce) + 4} y={16} className="adm-graf__eje">Gastos cubiertos</text>
-            </g>
-          )}
-          {comparacion && <path d={linea(comparacion)} fill="none" stroke={COLOR.comparacion} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
-          <path d={linea(gas, true)} fill="none" stroke={COLOR.gastos} strokeWidth="2" strokeLinejoin="round" />
-          <path d={linea(ing)} fill="none" stroke={COLOR.ingresos} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-          {ult >= 0 && <circle cx={x(ult)} cy={y(ing[ult])} r="4" fill={COLOR.ingresos} stroke="#fff" strokeWidth="2" />}
-          {activo !== null && <line x1={Math.round(x(activo)) + 0.5} x2={Math.round(x(activo)) + 0.5} y1={8} y2={yCero} stroke={COLOR.base} />}
-          {!movil && etiquetas.map((l) => <text key={l.texto} x={ejeAncho + plotW + 8} y={l.y + 4} className="adm-graf__fin" fill={l.color}>{l.texto}</text>)}
-        </svg>
-        {sel && !movil && (
-          <Tooltip x={x(activo)} y={10} ancho={ancho} titulo={etiquetaPunto(sel, true)} filas={[
-            ...(sel.ingresosCent === null ? [['', 'Aún no ha llegado', null]] : [['Ingresos', e(sel.ingresosCent), COLOR.ingresos], ['Gastos', e(sel.gastosCent), COLOR.gastos]]),
-            ...(comparacion && comparacion[activo] !== undefined ? [[textoComp, e(comparacion[activo]), COLOR.comparacion]] : []),
-          ]} />
-        )}
-      </div>
-      {movil && <p className="adm-graf__lectura" aria-live="polite">{sel && sel.ingresosCent !== null ? `${etiquetaPunto(sel, true)}: ingresos ${e(sel.ingresosCent)} · gastos ${e(sel.gastosCent)}` : 'Toca la gráfica para ver un día.'}</p>}
-      <VerTabla
-        titulo="Ingresos y gastos acumulados"
-        columnas={['Fecha', 'Ingresos', 'Gastos', ...(comparacion ? [textoComp] : [])]}
-        filas={puntos.filter((p, i) => porMes || i % 7 === 0 || i === ult).filter((p) => p.ingresosCent !== null).map((p) => {
-          const i = puntos.indexOf(p)
-          return [etiquetaPunto(p, true), e(p.ingresosCent), e(p.gastosCent), ...(comparacion ? [comparacion[i] === undefined ? '—' : e(comparacion[i])] : [])]
-        })}
-      />
-    </div>
-  )
-}
-
-// ---------- Barras horizontales (fuentes, gastos, duraciones) ----------
-
-export function BarrasH({ filas, color = COLOR.ingresos, max: maxDado }) {
-  const max = maxDado ?? Math.max(1, ...filas.map((f) => f.valor || 0))
-  return (
-    <div className="adm-barrash">
-      {filas.map((f) => (
-        <div key={f.clave || f.nombre} className={`adm-barrash__fila${f.valor ? '' : ' is-cero'}`}>
-          <span className="adm-barrash__nombre" title={f.nombre}>{f.enlace ? <a href={f.enlace}>{f.nombre}</a> : f.nombre}</span>
-          <span className="adm-barrash__pista"><span style={{ width: `${Math.max(f.valor > 0 ? 2 : 0, (100 * (f.valor || 0)) / max)}%`, background: color }} /></span>
-          <span className="adm-barrash__valor num">{f.texto}</span>
-          {f.extra !== undefined && <span className="adm-barrash__extra">{f.extra}</span>}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ---------- G3: de lo que entra a lo que queda ----------
-
-export function Cascada({ filas }) {
-  const vals = filas.map((f) => f.valor ?? 0)
-  const max = Math.max(1, ...filas.filter((f) => f.tipo !== 'resta').map((f) => f.valor ?? 0))
-  const min = Math.min(0, ...vals.filter((v, i) => filas[i].tipo === 'total'))
-  const rango = max - min
-  const pos = (v) => ((v - min) * 100) / rango
-  let acumulado = 0
-  return (
-    <div className="adm-cascada" role="table">
-      {filas.map((f) => {
-        let izq
-        let anc
-        if (f.tipo === 'resta') {
-          const a = acumulado - (f.valor || 0)
-          izq = pos(a)
-          anc = pos(acumulado) - pos(a)
-          acumulado = a
-        } else {
-          acumulado = f.valor || 0
-          izq = pos(Math.min(0, acumulado))
-          anc = Math.abs(pos(acumulado) - pos(0))
-        }
-        return (
-          <div key={f.nombre} role="row" className={`adm-cascada__fila is-${f.tipo}`}>
-            <span role="cell" className="adm-cascada__signo">{f.tipo === 'resta' ? '−' : f.tipo === 'total' ? '=' : ''}</span>
-            <span role="cell" className="adm-cascada__nombre">{f.enlace ? <a href={f.enlace}>{f.nombre}</a> : f.nombre}</span>
-            <span role="cell" className="adm-cascada__pista" aria-hidden="true">
-              {min < 0 && <i className="adm-cascada__cero" style={{ left: `${pos(0)}%` }} />}
-              <span style={{ left: `${izq}%`, width: `${Math.max(0, anc)}%`, background: f.tipo === 'resta' ? COLOR.gastos : f.negativo ? COLOR.malo : COLOR.ingresos }} />
-            </span>
-            <span role="cell" className={`adm-cascada__valor num${f.negativo ? ' is-negativo' : ''}`}>{f.texto}</span>
-            {f.comp !== undefined && <span role="cell" className="adm-cascada__comp num">{f.comp}</span>}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ---------- G6: mapa de calor de la ocupación ----------
-
-const tramoOcupacion = (pct) => (pct === null ? null : pct === 0 ? 0 : pct < 25 ? 1 : pct < 50 ? 2 : pct < 75 ? 3 : 4)
-
-export function MapaCalor({ celdas, porDia, porHora }) {
-  const [pos, setPos] = useState(null) // { d, h }
-  const activo = pos ? celdas[pos.d]?.[pos.h] || null : null
-  const setActivo = (c) => setPos(c ? { d: celdas.findIndex((f) => f[0].dia === c.dia), h: c.hora - celdas[0][0].hora } : null)
-  const nombres = { lun: 'Lunes', mar: 'Martes', mié: 'Miércoles', jue: 'Jueves', vie: 'Viernes', sáb: 'Sábado', dom: 'Domingo' }
-  const maxHora = Math.max(...porHora.map((h) => h.pct || 0))
-  const frase = (c) => (c.bloqueada ? `${nombres[c.dia]} de ${c.hora} a ${c.hora + 1} h: bloqueado` : `${nombres[c.dia]} de ${c.hora} a ${c.hora + 1} h: ocupado el ${c.pct ?? 0} %`)
-  return (
-    <div className="adm-calor">
-      <div className="adm-calor__rejilla" role="grid" aria-label="Ocupación por día de la semana y hora">
-        <span />
-        {porHora.map((h) => <span key={h.hora} className="adm-calor__hora" aria-hidden="true">{h.hora}</span>)}
-        <span className="adm-calor__hora" aria-hidden="true" />
-        {celdas.map((fila, d) => (
-          <div key={d} role="row" className="adm-calor__fila">
-            <span className="adm-calor__dia">{fila[0].dia}</span>
-            {fila.map((c) => {
-              const t = tramoOcupacion(c.pct)
-              return (
-                <button
-                  key={c.hora}
-                  type="button"
-                  role="gridcell"
-                  className={`adm-calor__celda${c.bloqueada ? ' is-bloqueada' : ''}${activo && activo.dia === c.dia && activo.hora === c.hora ? ' is-activa' : ''}`}
-                  style={{ background: c.bloqueada ? undefined : RAMPA_OCUPACION[t ?? 0] }}
-                  aria-label={frase(c)}
-                  onMouseEnter={() => setActivo(c)}
-                  onFocus={() => setActivo(c)}
-                  onClick={() => setActivo(c)}
-                />
-              )
-            })}
-            <span className="adm-calor__total">
-              <i style={{ width: `${Math.round(((porDia[d].pct || 0) * 60) / 100)}px` }} aria-hidden="true" />
-              {porDia[d].pct === null ? '—' : `${porDia[d].pct} %`}
-            </span>
-          </div>
-        ))}
-        <span />
-        {porHora.map((h) => <span key={h.hora} className={`adm-calor__pie${h.pct && h.pct === maxHora ? ' is-max' : ''}`}>{h.pct === null ? '' : h.pct}</span>)}
-        <span />
-      </div>
-      <p className="adm-graf__lectura" aria-live="polite">{activo ? frase(activo) : 'Pasa por una casilla (o tócala) para ver su ocupación.'}</p>
-      <div className="adm-leyenda adm-leyenda--calor">
-        {['0 %', '1–24 %', '25–49 %', '50–74 %', '75 % o más'].map((t, i) => <span key={t}><i style={{ '--c': RAMPA_OCUPACION[i] }} aria-hidden="true" />{t}</span>)}
-      </div>
-      <VerTabla
-        titulo="Ocupación por día y hora (%)"
-        columnas={['Día', ...porHora.map((h) => `${h.hora} h`), 'Total']}
-        filas={celdas.map((fila, d) => [nombres[fila[0].dia], ...fila.map((c) => (c.bloqueada ? 'bloq.' : c.pct ?? '—')), porDia[d].pct === null ? '—' : `${porDia[d].pct} %`])}
-      />
-    </div>
-  )
-}
-
-// Barra de capacidad: horas hechas, reservadas por venir y libres
-export function BarraCapacidad({ celebradas, futuras, posibles }) {
-  const uid = idSeguro(useId())
-  const p = (v) => (posibles > 0 ? (v * 100) / posibles : 0)
-  return (
-    <div className="adm-capacidad" aria-hidden="true">
-      <svg width="100%" height="12" preserveAspectRatio="none">
-        <defs>
-          <pattern id={`${uid}r`} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect width="4" height="4" fill="#fff" /><line x1="0" y1="0" x2="0" y2="4" stroke={COLOR.ingresos} strokeWidth="1.5" />
-          </pattern>
-        </defs>
-        <rect x="0" y="0" width="100%" height="12" fill={COLOR.banda} />
-        <rect x="0" y="0" width={`${p(celebradas)}%`} height="12" fill={COLOR.ingresos} />
-        <rect x={`${p(celebradas)}%`} y="0" width={`${p(futuras)}%`} height="12" fill={`url(#${uid}r)`} />
-      </svg>
-    </div>
+    </>
   )
 }

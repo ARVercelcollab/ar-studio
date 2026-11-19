@@ -21,7 +21,8 @@ const activo = (href, pathname) => {
   return pathname.startsWith(href)
 }
 
-export default function Panel({ titulo, children, acciones }) {
+// clase: una clase más en la raíz, para que una página ajuste solo su propio diseño
+export default function Panel({ titulo, children, acciones, clase }) {
   const { pathname } = useRouter()
   return (
     <>
@@ -29,7 +30,7 @@ export default function Panel({ titulo, children, acciones }) {
         <title>{`${titulo} · Panel AR Studio`}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <div className="adm">
+      <div className={clase ? `adm ${clase}` : 'adm'}>
         <header className="adm__barra">
           <Link href="/admin" className="adm__marca">
             {/* eslint-disable-next-line @next/next/no-img-element */}

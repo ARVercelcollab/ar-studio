@@ -122,7 +122,7 @@ export default function GastosFijos({ d, categorias, hoy }) {
         </div>
       )}
       <div style={{ marginTop: 14 }}>
-        {d.activos.length === 0 && !nuevo && <div className="adm-caja"><p>Aún no hay gastos fijos. Añade el alquiler, la alarma, internet, el seguro, la gestoría o la cuota de autónomos.</p></div>}
+        {d.activos.length === 0 && !nuevo && <div className="adm-caja"><p>Aún no hay gastos fijos. Añade el alquiler, la alarma, internet, el seguro o la gestoría.</p></div>}
         {d.activos.map((f) => <Fijo key={f.id} f={f} hoy={hoy} categorias={categorias} onAviso={avisar} />)}
       </div>
       {d.terminados.length > 0 && (

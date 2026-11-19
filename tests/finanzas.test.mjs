@@ -36,7 +36,7 @@ async function laborable(dias) {
 
 test('migración 7: categorías y restricciones', async () => {
   const { rows } = await query('SELECT grupo, count(*)::int AS n FROM gasto_categorias GROUP BY grupo ORDER BY grupo')
-  assert.deepEqual(rows.map((r) => [r.grupo, r.n]), [['fijo', 7], ['material', 3], ['variable', 8]])
+  assert.deepEqual(rows.map((r) => [r.grupo, r.n]), [['fijo', 6], ['material', 3], ['variable', 8]])
   const luz = await cat('luz')
   const mal = (sql, p) => assert.rejects(query(sql, p), (e) => e.code === '23514', sql)
   await mal(`INSERT INTO gastos (fecha, categoria_id, concepto, tipo_factura, base_cent, iva_cent, total_cent) VALUES ('2026-01-05', $1, 'x', 'nif', 100, 21, 120)`, [luz])

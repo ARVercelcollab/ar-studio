@@ -172,7 +172,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
 
   return (
     <form className="adm-caja adm-fin-form" onSubmit={(e) => { e.preventDefault(); guardar(false) }}>
-      {!fijo && <p className="adm-nota">No apuntes aquí el IVA ni el IRPF que pagáis a Hacienda: no son gastos. La cuota de autónomos sí.</p>}
+      {!fijo && <p className="adm-nota">No apuntes aquí el IVA ni el IRPF que pagáis a Hacienda, ni la cuota de autónomos: no son gastos del estudio.</p>}
       {fijo && <p className="adm-nota">Este cambio es solo para {textoMes(gasto.mes.slice(0, 7))}. Para cambiarlo todos los meses, ve a <Link href="/admin/finanzas/fijos" className="adm-enlace">Gastos fijos</Link>.</p>}
       <h2>¿Qué es?</h2>
       {fijo ? (

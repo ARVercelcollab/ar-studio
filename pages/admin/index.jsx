@@ -1,412 +1,467 @@
-// Inicio del panel: cómo va el estudio de un vistazo (reservas, dinero, ocupación y avisos)
+// Inicio del panel: cómo va el estudio de un vistazo. A la izquierda, el dinero del periodo;
+// a la derecha, el día a día (avisos, hoy, ocupación y próximos pagos).
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useContext, useEffect, useState } from 'react'
-import Panel, { Chip, chipEstado, ChipCuota, BarraHoras } from '../../components/admin/Panel'
+import Panel, { chipEstado, ChipCuota } from '../../components/admin/Panel'
 import SelectorPeriodo from '../../components/admin/Periodo'
-import {
-  ImportesOcultos, useEuros, Variacion, BarrasMeses, LineasAcumuladas, BarrasH, Cascada, MapaCalor, BarraCapacidad, COLOR,
-} from '../../components/admin/graficas'
+import { ImportesOcultos, useEuros, aEuros, GraficoMeses, EN_MOVIL, Medidor, Icono } from '../../components/admin/graficas'
 import { redirigirSiNoAdmin } from '../../lib/admin/auth'
 import { datosInicio } from '../../lib/admin/inicio'
-import { leerPeriodo, periodoActual, textoMes, listaMeses } from '../../lib/finanzas/calculos'
-import { fechaMadrid, textoFechaCorta } from '../../lib/reservas/tiempo'
+import { leerPeriodo, periodoActual, textoMes, textoTrimestre, mesDe } from '../../lib/finanzas/calculos'
+import { FILTROS_INGRESO } from '../../lib/finanzas/config'
+import { fechaMadrid, textoFechaCorta, textoDiaCorto } from '../../lib/reservas/tiempo'
 import { textoDuracion } from '../../lib/reservas/config'
 
 const h = (x) => textoDuracion(x, { corto: true })
-const NIVEL_CHIP = { error: 'error', aviso: 'aviso', info: 'gris' }
-const COMPARAR = [['anterior', 'Periodo anterior'], ['anio', 'Mismo periodo del año pasado'], ['no', 'Sin comparar']]
+// Horas como cifra sola («2,5»), para «2,5 de 4 h»
+const cifra = (x) => String(Math.round(x * 100) / 100).replace('.', ',')
+// Cifras dentro de un texto («3 cuotas sin pagar · 597 €»), para «Ocultar importes»
+const IMPORTE = /−?\d{1,3}(\.\d{3})*(,\d{1,2})? €/g
 
-function Info({ texto }) {
-  const [abierto, setAbierto] = useState(false)
+// «4.º trimestre» (sin el año)
+const trimestreCorto = (t) => textoTrimestre(t, { conRango: false }).replace(/ \d{4}$/, '')
+
+// Cómo se nombra el periodo en los títulos: «de noviembre», «del 4.º trimestre», «de 2026»
+// (con el año si no es el actual)
+function nombrePeriodo(periodo, hoy) {
+  const anio = periodo.desde.slice(0, 4)
+  const deOtroAnio = anio !== hoy.slice(0, 4) ? ` de ${anio}` : ''
+  if (periodo.tipo === 'anio') return { de: `de ${anio}`, en: `en ${anio}`, del: 'del año' }
+  if (periodo.tipo === 'trimestre') {
+    const t = `${trimestreCorto(periodo.clave)}${deOtroAnio}`
+    return { de: `del ${t}`, en: `en el ${t}`, del: 'del trimestre' }
+  }
+  const m = `${textoMes(periodo.clave, { soloNombre: true })}${deOtroAnio}`
+  return { de: `de ${m}`, en: `en ${m}`, del: 'del mes' }
+}
+
+// «de octubre» · «del 1–18 oct»
+const deTramo = (texto) => `${/^\d/.test(texto) ? 'del' : 'de'} ${texto}`
+
+// Desde cuándo lleva el panel las cuentas: «agosto de 2026»
+const textoDesde = (desde) => `${textoMes(desde, { soloNombre: true })} de ${desde.slice(0, 4)}`
+
+// Redondea a euros sin que cambie la suma: el euro que sobre o falte se lo lleva la fila
+// que más se desvió al redondear. Así las filas suman lo mismo que el total que se enseña.
+function redondearSumando(valores, totalCent) {
+  const r = valores.map((v) => Math.round(v / 100) * 100)
+  let falta = Math.round(totalCent / 100) * 100 - r.reduce((a, v) => a + v, 0)
+  const paso = Math.sign(falta) * 100
+  const orden = valores.map((_, i) => i).sort((a, b) => Math.sign(falta) * ((valores[b] - r[b]) - (valores[a] - r[a])))
+  for (const i of orden) {
+    if (!falta) break
+    r[i] += paso
+    falta -= paso
+  }
+  return r
+}
+
+// Página de cobros del periodo, con el filtro de esa fuente de ingreso (o 'devolucion')
+function cobrosDe(p, fuente) {
+  const filtro = Object.entries(FILTROS_INGRESO).find(([, fs]) => fs === fuente || (Array.isArray(fs) && fs.includes(fuente)))?.[0]
+  return `/admin/finanzas/ingresos?p=${p}${filtro ? `&filtro=${filtro}` : ''}`
+}
+
+// Marcas: van con mayúscula aunque estén en medio de la frase
+const NOMBRES_PROPIOS = /^(Aquaservice|Stripe|Calendly)$/
+
+// Nombre de categoría para ir en una frase: sin la aclaración del final y en minúscula
+// («Equipo (focos…)» → «equipo»), salvo siglas y marcas («IBI», «Aquaservice»)
+function nombreEnFrase(nombre) {
+  const corto = nombre.replace(/\s*\([^)]*\)\s*$/, '').trim() || nombre
+  const primera = corto.split(' ')[0]
+  const comun = /^\p{Lu}\P{Lu}*$/u.test(primera) && !NOMBRES_PROPIOS.test(primera)
+  return comun ? corto.charAt(0).toLowerCase() + corto.slice(1) : corto
+}
+
+// «alquiler del local, alarma y 2 más» (el «Otros (n)» que junta las últimas cuenta como n)
+function resumenCategorias(categorias) {
+  const nombres = categorias.filter((c) => c.id !== null).map((c) => nombreEnFrase(c.nombre))
+  const otros = categorias.find((c) => c.id === null)
+  const mas = Math.max(0, nombres.length - 2) + (otros ? Number(/\d+/.exec(otros.nombre)?.[0] || 1) : 0)
+  if (mas) return `${nombres.slice(0, 2).join(', ')} y ${mas} más`
+  return nombres.join(' y ')
+}
+
+// Último día para presentar el modelo 303 (el texto largo es plazoTrimestre)
+function fin303(trimestre) {
+  const [y, n] = trimestre.split('-T').map(Number)
+  return n === 4 ? `${y + 1}-01-30` : `${y}-${String(3 * n + 1).padStart(2, '0')}-20`
+}
+
+// ---------- Piezas ----------
+
+// junto: algo pequeño al lado del título (un contador, la fecha)
+function Tarjeta({ titulo, junto, enlace, ayuda, children }) {
   return (
-    <span className="adm-info">
-      <button type="button" aria-label="Qué es" aria-expanded={abierto} onClick={(e) => { e.preventDefault(); setAbierto((a) => !a) }}>i</button>
-      {abierto && <span className="adm-info__texto" role="note">{texto}</span>}
+    <section className="adm-inicio__tarjeta">
+      <div className="adm-inicio__cab">
+        <div>
+          <h2>{titulo}{junto}</h2>
+          {ayuda && <p className="adm-inicio__ayuda">{ayuda}</p>}
+        </div>
+        {enlace && <Link href={enlace[0]} className="adm-inicio__enlace">{enlace[1]}<Icono nombre="flecha" /></Link>}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+// Fila tipo app: a la izquierda un icono o una fecha, el texto con su línea de debajo y, al
+// final, un chip o un importe. Con enlace, toda la fila se puede tocar.
+function Fila({ inicio, titulo, sub, tonoSub, fin, href, apagada, separada }) {
+  const dentro = (
+    <>
+      {inicio}
+      <span className="adm-inicio__fila-texto">
+        <span className="adm-inicio__fila-titulo">{titulo}</span>
+        {sub && <span className={`adm-inicio__fila-sub${tonoSub ? ` es-${tonoSub}` : ''}`}>{sub}</span>}
+      </span>
+      <span className="adm-inicio__fila-fin">{fin}{href && <Icono nombre="flecha" />}</span>
+    </>
+  )
+  const clase = `adm-inicio__fila${apagada ? ' es-apagada' : ''}`
+  return (
+    <li className={separada ? 'es-separada' : undefined}>
+      {href ? <Link href={href} className={clase}>{dentro}</Link> : <div className={clase}>{dentro}</div>}
+    </li>
+  )
+}
+
+const Ico = ({ nombre, tono = 'neutro' }) => <span className={`adm-inicio__fila-ico es-${tono}`}><Icono nombre={nombre} /></span>
+
+function Dia({ fecha }) {
+  const [dia, mes] = textoFechaCorta(fecha).split(' ')
+  return <span className="adm-inicio__dia"><b>{dia}</b><i>{mes}</i></span>
+}
+
+// Pastilla con la diferencia: verde si es buena, roja si es mala. Con «Ocultar importes», solo la flecha.
+function Delta({ dif, subeEsBueno }) {
+  const e = useEuros()
+  const oculto = useContext(ImportesOcultos)
+  if (Math.round(dif / 100) === 0) return <span className="adm-inicio__var">= igual</span>
+  const sube = dif > 0
+  return (
+    <span className={`adm-inicio__var ${sube === subeEsBueno ? 'es-bien' : 'es-mal'}`}>
+      <Icono nombre={sube ? 'sube' : 'baja'} />
+      {oculto ? <span className="adm-solo-lector">{sube ? 'Sube' : 'Baja'}</span> : e(dif, { signo: true })}
     </span>
   )
 }
 
-function Kpi({ etiqueta, info, cifra, negativo, variacion, comp, pie, enlace, children }) {
+// ---------- Izquierda: el dinero ----------
+
+function Par({ etiqueta, tipo, valor, comp, subeEsBueno, comparado }) {
+  const e = useEuros()
   return (
-    <div className={`adm-kpi${negativo ? ' is-negativo' : ''}`}>
-      <span className="adm-kpi__etq">{etiqueta}<Info texto={info} /></span>
-      <strong className="adm-kpi__cifra">{cifra}</strong>
-      {children}
-      <span className="adm-kpi__var">{variacion}</span>
-      {comp && <span className="adm-kpi__comp">{comp}</span>}
-      {pie && <span className="adm-kpi__pie">{pie}</span>}
-      <a href={enlace} className="adm-kpi__flecha" aria-label={`Ver el detalle de ${etiqueta.toLowerCase()}`}>›</a>
+    <div className="adm-inicio__par">
+      <span className="adm-inicio__etq"><i className={`adm-inicio__muestra es-${tipo}`} />{etiqueta}</span>
+      <strong className="adm-inicio__par-v">{e(valor)}</strong>
+      {comparado && comparado.estado !== 'sin_datos' && comp !== null && (
+        <span className="adm-inicio__delta"><Delta dif={valor - comp} subeEsBueno={subeEsBueno} />vs {comparado.texto}</span>
+      )}
     </div>
   )
 }
 
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-// 'del 1 al 18 de noviembre' · 'del 1 de octubre al 18 de noviembre'
-// conAnio: escribe el año aunque el tramo no cambie de año (p. ej. al comparar con el año pasado)
-function rangoLargo(desde, hastaExcl, conAnio = false) {
-  const ult = new Date(`${hastaExcl}T12:00:00Z`)
-  ult.setUTCDate(ult.getUTCDate() - 1)
-  const h2 = ult.toISOString().slice(0, 10)
-  const [y1, m1, d1] = desde.split('-').map(Number)
-  const [y2, m2, d2] = h2.split('-').map(Number)
-  if (y1 === y2 && m1 === m2) return `del ${d1} al ${d2} de ${MESES[m2 - 1]}${conAnio ? ` de ${y2}` : ''}`
-  if (y1 === y2) return `del ${d1} de ${MESES[m1 - 1]} al ${d2} de ${MESES[m2 - 1]}${conAnio ? ` de ${y2}` : ''}`
-  return `del ${d1} de ${MESES[m1 - 1]} de ${y1} al ${d2} de ${MESES[m2 - 1]} de ${y2}`
-}
-
-function Caja({ id, titulo, subtitulo, resumen, children, acciones, className = '' }) {
+// antes: el periodo es de antes de que el panel llevara las cuentas («agosto de 2026»)
+function Beneficio({ kpis, comparado, tramo, nombre, desdeDatos, antes }) {
+  const e = useEuros()
+  const oculto = useContext(ImportesOcultos)
+  const { beneficio: b, ingresos, gastos } = kpis
+  if (antes) {
+    return (
+      <section className="adm-inicio__tarjeta adm-inicio__heroe">
+        <div className="adm-inicio__heroe-cab"><h2>Beneficio {nombre.de}</h2></div>
+        <strong className="adm-inicio__cifra">—</strong>
+        <p className="adm-inicio__nota">Sin datos: el panel lleva las cuentas desde {antes}.</p>
+      </section>
+    )
+  }
+  // Con los dos importes ya redondeados, para que cuadre con lo que se lee debajo
+  const bv = aEuros(ingresos.actual) - aEuros(gastos.actual)
+  // Una sola barra con su frase: cuánto cubren los ingresos o cuánto queda de cada 100 €
+  let medida = null
+  if (bv < 0 && gastos.actual > 0) {
+    // Con pérdidas, nunca «el 100 %»
+    const pct = Math.min(99, Math.max(0, Math.round((ingresos.actual * 100) / gastos.actual)))
+    medida = [pct, `Los ingresos cubren el ${pct} % de los gastos ${nombre.del}.`]
+  } else if (bv >= 0 && ingresos.actual >= 30000 && b.deCada100 !== null) {
+    medida = [b.deCada100, `De cada 100 € que entran, os quedan ${b.deCada100} €.`]
+  }
   return (
-    <figure className={`adm-caja adm-fig ${className}`} id={id}>
-      <figcaption>
-        <div className="adm-fig__cab">
-          <div>
-            <h2>{titulo}</h2>
-            {subtitulo && <p className="adm-fig__sub">{subtitulo}</p>}
-          </div>
-          {acciones}
-        </div>
-        {resumen && <p className="adm-fig__resumen">{resumen}</p>}
-      </figcaption>
-      {children}
-    </figure>
+    <section className="adm-inicio__tarjeta adm-inicio__heroe">
+      <div className="adm-inicio__heroe-cab">
+        <h2>Beneficio {nombre.de}</h2>
+        {tramo.enCurso && <span className="adm-inicio__pastilla">En curso · {tramo.texto}</span>}
+      </div>
+      <strong className={`adm-inicio__cifra${bv < 0 && !oculto ? ' es-neg' : ''}`}>{e(bv)}</strong>
+      {/* Con «Ocultar importes» no sale: la frase enseña el margen */}
+      {medida && !oculto && (
+        <>
+          <Medidor partes={[[medida[0], 'lleno']]} />
+          <p className="adm-inicio__ayuda">{medida[1]}</p>
+        </>
+      )}
+      <div className="adm-inicio__pares">
+        <Par etiqueta="Ingresos" tipo="ing" valor={ingresos.actual} comp={ingresos.comp} subeEsBueno comparado={comparado} />
+        <Par etiqueta="Gastos" tipo="gas" valor={gastos.actual} comp={gastos.comp} subeEsBueno={false} comparado={comparado} />
+      </div>
+      {comparado?.estado === 'sin_datos' && <p className="adm-inicio__nota">Sin datos {deTramo(comparado.texto)} para comparar.</p>}
+      {/* Incompleta: el tramo comparado empieza antes de que el panel llevara las cuentas */}
+      {comparado?.estado === 'incompleta' && <p className="adm-inicio__nota">Comparación incompleta: no hay datos de antes de {textoDesde(desdeDatos)}.</p>}
+    </section>
   )
 }
 
-function Contenido(d) {
-  const router = useRouter()
+function Meses({ d, extra }) {
   const e = useEuros()
-  const { kpis, comparado, tramo, periodo } = d
-  const [mapaElegido, setMapa] = useState(periodo.tipo === 'mes' && d.ocupacion.pocas ? 'tresMeses' : 'tramo')
-  useEffect(() => {
-    setMapa(periodo.tipo === 'mes' && d.ocupacion.pocas ? 'tresMeses' : 'tramo')
-  }, [periodo.clave]) // eslint-disable-line react-hooks/exhaustive-deps
-  const mapa = periodo.tipo === 'mes' ? mapaElegido : 'tramo'
-  const oculto = useContext(ImportesOcultos)
-  const tapar = (t) => (oculto ? String(t).replace(/−?\d{1,3}(\.\d{3})*(,\d{1,2})? €/g, '••• €') : t)
-  const textoComp = comparado?.texto || ''
-  const estadoComp = comparado ? comparado.estado : 'no'
-  const mesNombre = periodo.tipo === 'mes' ? textoMes(periodo.clave, { soloNombre: true }) : periodo.texto
-  const ir = (p) => router.push({ pathname: '/admin', query: { ...router.query, p } }, undefined, { scroll: false })
-  const enCurso = tramo.enCurso
-  const conComp = (v, f = (x) => e(x)) => (comparado && comparado.estado !== 'sin_datos' && v !== null && v !== undefined ? `${textoComp}: ${f(v)}` : null)
-  const varProps = { textoComp: textoComp ? `el ${textoComp}` : '', estado: estadoComp }
-
-  // G3
-  const ca = d.cascada.actual
-  const cc = d.cascada.comp
-  const sinGastos = !ca.gastosN
-  const filasCascada = [
-    { nombre: 'Cobrado (sin IVA)', tipo: 'inicio', valor: ca.cobradoCent, texto: e(ca.cobradoCent), comp: cc ? e(cc.cobradoCent) : undefined },
-    { nombre: 'Devoluciones', tipo: 'resta', valor: ca.devolucionesCent, texto: e(ca.devolucionesCent), comp: cc ? e(cc.devolucionesCent) : undefined },
-    { nombre: 'Ingresos', tipo: 'total', valor: ca.ingresosCent, texto: e(ca.ingresosCent), negativo: ca.ingresosCent < 0, comp: cc ? e(cc.ingresosCent) : undefined },
-    { nombre: 'Gastos fijos', tipo: 'resta', valor: ca.fijosCent, texto: sinGastos ? '—' : e(ca.fijosCent), enlace: `/admin/finanzas/gastos?p=${periodo.clave}&grupo=fijo`, comp: cc ? e(cc.fijosCent) : undefined },
-    { nombre: 'Gastos variables', tipo: 'resta', valor: ca.variablesCent, texto: sinGastos ? '—' : e(ca.variablesCent), enlace: `/admin/finanzas/gastos?p=${periodo.clave}&grupo=variable`, comp: cc ? e(cc.variablesCent) : undefined },
-    { nombre: 'Material y herramientas', tipo: 'resta', valor: ca.materialCent, texto: sinGastos ? '—' : e(ca.materialCent), enlace: `/admin/finanzas/gastos?p=${periodo.clave}&grupo=material`, comp: cc ? e(cc.materialCent) : undefined },
-    { nombre: 'Beneficio', tipo: 'total', valor: ca.beneficioCent, texto: e(ca.beneficioCent), negativo: ca.beneficioCent < 0, comp: cc ? e(cc.beneficioCent) : undefined },
-  ]
-
-  // G2
-  const ev = d.evolucion
-  const etiquetaPunto = (p, largo) => {
-    if (ev.porMes) return largo ? textoMes(p.clave) : textoMes(p.clave, { corto: true }).split(' ')[0]
-    const dia = Number(p.clave.slice(8, 10))
-    return largo ? textoFechaCorta(p.clave) : periodo.tipo === 'mes' ? String(dia) : textoFechaCorta(p.clave)
+  const { periodo } = d
+  const meses = d.grafico.filter((m) => m.estado === 'cerrado' || m.estado === 'en_curso')
+  const vacio = meses.every((m) => !m.facturacionCent && !m.gastosCent)
+  const nombreMes = (m) => (m.mes.slice(0, 4) === d.hoy.slice(0, 4) ? textoMes(m.mes, { soloNombre: true }) : m.texto)
+  const ben = (m) => aEuros(m.facturacionCent) - aEuros(m.gastosCent)
+  // El mejor de los meses ya cerrados que tienen cuentas (hacen falta dos para comparar)
+  const mejorDe = (ms) => {
+    const cerrados = ms.filter((m) => m.estado === 'cerrado' && (m.facturacionCent || m.gastosCent))
+    return cerrados.length >= 2 ? cerrados.reduce((a, m) => (ben(m) > ben(a) ? m : a)) : null
   }
-  let resumenG2
-  if (ev.ingresosCent === 0 && ev.gastosCent === 0) resumenG2 = `Aún no hay cobros ni gastos en ${mesNombre}.`
-  else if (ev.gastosCent > ev.ingresosCent) resumenG2 = enCurso ? `Faltan ${e(ev.gastosCent - ev.ingresosCent)} para cubrir los gastos${periodo.tipo === 'mes' ? ` de ${mesNombre}` : ''}.` : `${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)} cerró con ${e(ev.gastosCent - ev.ingresosCent)} de pérdida.`
-  else if (ev.cruce) resumenG2 = ev.porMes ? `Los ingresos cubren los gastos desde ${textoMes(ev.cruce, { soloNombre: true })}.` : `Los ingresos cubren los gastos desde el ${textoFechaCorta(ev.cruce)}.`
-
-  // G4 / G5
-  const totalFuentes = d.fuentes.reduce((a, f) => a + f.baseCent, 0)
-  const fuenteMax = [...d.fuentes].sort((a, b) => b.baseCent - a.baseCent)[0]
-  const maxGasto = Math.max(1, ...d.grupos.flatMap((g) => g.categorias.map((c) => c.costeCent)))
-
-  // G6
-  const o = d.ocupacion
-  const celdas = o.mapa[mapa]
-  const fraseOcup = o.frase[mapa]
-
-  // G7
-  const r = d.reservas
-  const durMax = [...r.porDuracion].sort((a, b) => b.n - a.n)[0]
-  const llegadaTotal = r.llegada.reduce((a, x) => a + x.n, 0)
-  const web = r.llegada.find((x) => x.id === 'web')
-
-  const iva = d.iva[0]
-
+  const frase = (m) => {
+    if (!m) return null
+    return ben(m) >= 0
+      ? `El mejor mes: ${nombreMes(m)}, con ${e(ben(m), { signo: true })} de beneficio.`
+      : `El mes con menos pérdida: ${nombreMes(m)} (${e(ben(m))}).`
+  }
+  // En el móvil la gráfica solo enseña los últimos meses: la frase habla de esos (el CSS elige)
+  const fAncho = frase(mejorDe(meses))
+  const fMovil = frase(mejorDe(meses.slice(-EN_MOVIL)))
+  const ayuda = fAncho === fMovil ? fAncho : (
+    <>{fAncho && <span className="es-ancho">{fAncho}</span>}{fMovil && <span className="es-movil">{fMovil}</span>}</>
+  )
   return (
-    <>
-      <div className="adm-dash__fila adm-dash__fila--hoy">
-        <section className="adm-caja adm-hoy">
-          <h2>Hoy · {d.hoyBloque.texto}</h2>
-          {d.hoyBloque.n > 0 ? (
-            <>
-              <p className="adm-nota">{d.hoyBloque.n === 1 ? '1 reserva' : `${d.hoyBloque.n} reservas`} · {h(d.hoyBloque.horas)} · el estudio está ocupado el {d.hoyBloque.ocupacionPct ?? 0} % del día</p>
-              {d.hoyBloque.reservas.map((x) => (
-                <Link key={x.id} href={`/admin/reserva/${x.id}`} className={`adm-fila${x.esPlan ? ' adm-fila--plan' : ''}${x.hecha ? ' is-hecha' : ''}`}>
-                  <span className="adm-fila__hora">{x.horaInicio} – {x.horaFin}</span>
-                  <span className="adm-fila__quien">{x.nombre}<small>{x.duracionTexto}{x.hecha ? ' · hecha' : ''}</small></span>
-                  <span />
-                  {chipEstado(x)}
-                </Link>
-              ))}
-              {d.hoyBloque.n > 3 && <p className="adm-nota">y {d.hoyBloque.n - 3} más</p>}
-            </>
-          ) : (
-            <p className="adm-nota">
-              Hoy no hay reservas.{' '}
-              {d.hoyBloque.proxima ? `La próxima: ${d.hoyBloque.proxima.fechaTexto} a las ${d.hoyBloque.proxima.hora} (${d.hoyBloque.proxima.nombre}, ${d.hoyBloque.proxima.duracionTexto}).` : 'No hay reservas próximas.'}
-            </p>
-          )}
-          <p className="adm-nota" style={{ marginTop: 8 }}>
-            {d.hoyBloque.manana ? `Mañana: ${d.hoyBloque.manana.n === 1 ? '1 reserva' : `${d.hoyBloque.manana.n} reservas`}, la primera a las ${d.hoyBloque.manana.primera} · ` : ''}
-            <Link href="/admin/agenda" className="adm-enlace">Ver agenda ›</Link>
-          </p>
-        </section>
-        <section className="adm-caja adm-parahacer">
-          <h2>Para hacer</h2>
-          {d.paraHacer.length === 0 ? <p className="adm-nota">Todo al día.</p> : (
-            <ul className="adm-parahacer__lista">
-              {d.paraHacer.slice(0, 5).map((t, i) => (
-                <li key={i}>
-                  <Chip tipo={NIVEL_CHIP[t.nivel]}>{t.chip}</Chip>
-                  {t.enlace ? <Link href={t.enlace}>{tapar(t.texto)} ›</Link> : <span>{tapar(t.texto)}</span>}
-                </li>
-              ))}
-            </ul>
-          )}
-          {d.paraHacer.length > 5 && (
-            <details>
-              <summary>y {d.paraHacer.length - 5} más</summary>
-              <ul className="adm-parahacer__lista">
-                {d.paraHacer.slice(5).map((t, i) => (
-                  <li key={i}><Chip tipo={NIVEL_CHIP[t.nivel]}>{t.chip}</Chip>{t.enlace ? <Link href={t.enlace}>{tapar(t.texto)} ›</Link> : <span>{tapar(t.texto)}</span>}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </section>
-      </div>
+    <Tarjeta titulo="Ingresos y gastos por mes" ayuda={ayuda}>
+      {vacio ? (
+        <p className="adm-inicio__vacio">
+          {periodo.antesDeDatos ? `El panel lleva las cuentas desde ${textoDesde(d.desdeDatos)}: antes no hay datos.` : 'Aún no hay cobros ni gastos apuntados.'}
+        </p>
+      ) : (
+        <>
+          <GraficoMeses
+            key={periodo.clave}
+            meses={meses}
+            mesPeriodo={periodo.tipo === 'mes' ? periodo.clave : null}
+            hrefMes={(mes) => ({ pathname: '/admin', query: { ...extra, p: mes } })}
+            hoy={d.hoy}
+          />
+          {d.calendlyEnCurso && <p className="adm-inicio__nota">Lo de Calendly de {textoMes(mesDe(d.hoy), { soloNombre: true })} se apunta al acabar el mes.</p>}
+          {meses.length < 2 && <p className="adm-inicio__nota">Cada mes nuevo aparecerá aquí.</p>}
+        </>
+      )}
+    </Tarjeta>
+  )
+}
 
-      <SelectorPeriodo periodo={periodo} hoy={d.hoy} ruta="/admin" extra={d.comparar !== 'anterior' ? { comparar: d.comparar } : {}}>
-        <label className="adm-periodo__comparar">Comparar con
-          <select value={d.comparar} onChange={(ev2) => router.push({ pathname: '/admin', query: { ...router.query, comparar: ev2.target.value === 'anterior' ? undefined : ev2.target.value } }, undefined, { scroll: false })}>
-            {COMPARAR.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
-          </select>
-        </label>
-      </SelectorPeriodo>
-      <p className="adm-nota adm-dash__contexto">
-        {enCurso ? `Del ${rangoLargo(tramo.desde, tramo.hasta).slice(4)}` : `${periodo.texto.charAt(0).toUpperCase() + periodo.texto.slice(1)} completo`}
-        {comparado ? `, comparado con ${enCurso ? `el periodo ${rangoLargo(comparado.desde, comparado.hasta, comparado.desde.slice(0, 4) !== tramo.desde.slice(0, 4))}` : `${comparado.texto} completo`}.` : '.'}
-        {periodo.antesDeDatos && ` El panel lleva las cuentas desde ${textoMes(d.desdeDatos)}: antes no hay datos de dinero.`}
-      </p>
-
-      <div className="adm-kpis">
-        <Kpi
-          etiqueta="Ingresos" enlace="#de-donde"
-          info="Lo que ha entrado en el periodo, sin IVA y descontando devoluciones. Cuenta el día en que se cobró, no el de la sesión. Las fianzas no cuentan."
-          cifra={e(kpis.ingresos.actual)}
-          variacion={<Variacion actual={kpis.ingresos.actual} comp={kpis.ingresos.comp} {...varProps} />}
-          comp={conComp(kpis.ingresos.comp)}
-          pie={`Con IVA han entrado ${e(kpis.ingresos.conIvaCent)}`}
-        />
-        <Kpi
-          etiqueta="Gastos" enlace="#en-que-se-va"
-          info="Gastos apuntados del periodo, sin IVA. Los fijos del mes cuentan desde el día 1."
-          cifra={e(kpis.gastos.actual)}
-          variacion={<Variacion actual={kpis.gastos.actual} comp={kpis.gastos.comp} subeEsBueno={false} {...varProps} />}
-          comp={conComp(kpis.gastos.comp)}
-          pie={kpis.gastos.n ? `De ellos, ${e(kpis.gastos.fijosCent)} fijos` : 'Aún no hay gastos apuntados'}
-        />
-        <Kpi
-          etiqueta="Beneficio" enlace="#lo-que-queda" negativo={kpis.beneficio.actual < 0}
-          info="Ingresos menos gastos, los dos sin IVA. No descuenta impuestos sobre el beneficio."
-          cifra={e(kpis.beneficio.actual)}
-          variacion={<Variacion actual={kpis.beneficio.actual} comp={kpis.beneficio.comp} conPorcentaje={false} {...varProps} />}
-          comp={conComp(kpis.beneficio.comp)}
-          pie={kpis.beneficio.actual < 0 ? 'Los gastos superan a los ingresos' : kpis.beneficio.ingresos >= 30000 && kpis.beneficio.deCada100 !== null ? `De cada 100 € que entran, os quedan ${kpis.beneficio.deCada100} €` : null}
-        />
-        <Kpi
-          etiqueta="Ocupación" enlace="#ocupacion"
-          info="Horas reservadas entre horas posibles (13 h al día, de 9 a 22, menos los bloqueos). Cuenta el día de la sesión. Los 30 minutos entre reservas no cuentan, así que el 100 % no se alcanza."
-          cifra={kpis.ocupacion.actual === null ? '—' : `${kpis.ocupacion.actual} %`}
-          variacion={<Variacion actual={kpis.ocupacion.actual} comp={kpis.ocupacion.comp} tipo="puntos" textoComp={varProps.textoComp} estado={comparado ? comparado.estadoSesiones : 'no'} />}
-          comp={`${h(kpis.ocupacion.horas)} de ${h(kpis.ocupacion.posibles)} posibles`}
-          pie={kpis.ocupacion.futurasPeriodo ? `Ya reservadas hasta fin de periodo: ${h(kpis.ocupacion.futurasPeriodo)}` : null}
-        >
-          <BarraHoras usadas={kpis.ocupacion.horas} total={kpis.ocupacion.posibles} conTexto={false} />
-        </Kpi>
-      </div>
-
-      <Caja
-        titulo="Ingresos y gastos por mes"
-        subtitulo="Últimos 12 meses · sin IVA · por fecha de cobro"
-        resumen={(() => {
-          const m = d.grafico.find((x) => x.mes === (periodo.tipo === 'mes' ? periodo.clave : null)) || d.grafico.filter((x) => x.facturacionCent !== null).at(-1)
-          if (!m || m.facturacionCent === null) return 'Aún no hay cobros ni gastos apuntados.'
-          return `${m.texto.charAt(0).toUpperCase() + m.texto.slice(1)}${m.estado === 'en_curso' ? ', hasta hoy' : ''}: ${e(m.facturacionCent)} de ingresos y ${e(m.gastosCent)} de gastos. ${m.beneficioCent >= 0 ? `Os quedan ${e(m.beneficioCent)}.` : `Faltan ${e(-m.beneficioCent)}.`}`
-        })()}
-      >
-        <BarrasMeses meses={d.grafico} onElegir={ir} hoyTexto={textoFechaCorta(d.hoy)} />
-        {d.grafico.filter((m) => m.facturacionCent !== null).length < 2 && (
-          <p className="adm-nota">El panel guarda datos desde {textoMes(d.desdeDatos)}. Cada mes nuevo aparecerá aquí.</p>
-        )}
-        {d.calendlyEnCurso && <p className="adm-notas">Lo cobrado por Calendly en {textoMes(d.hoy.slice(0, 7), { soloNombre: true })} se apunta al acabar el mes: hasta entonces, los ingresos de este mes se quedan cortos (en la comparación tampoco se cuenta el Calendly del mes anterior).</p>}
-        {d.grafico.some((m) => m.faltaCalendly) && <p className="adm-notas">El punto naranja marca los meses en los que falta apuntar lo cobrado por Calendly. <Link href="/admin/finanzas/ingresos" className="adm-enlace">Apuntarlo</Link></p>}
-      </Caja>
-
-      <div className="adm-caja adm-apoyo">
-        <div><span>Reservas por horas</span><strong>{d.apoyo.porHoras.n} · {h(d.apoyo.porHoras.horas)}</strong><Variacion actual={d.apoyo.porHoras.n} comp={d.apoyo.porHoras.comp} tipo="unidades" {...varProps} estado={comparado ? comparado.estadoSesiones : 'no'} /></div>
-        <div><span>Sesiones de suscripción</span><strong>{d.apoyo.plan.n} · {h(d.apoyo.plan.horas)}</strong><Variacion actual={d.apoyo.plan.n} comp={d.apoyo.plan.comp} tipo="unidades" {...varProps} estado={comparado ? comparado.estadoSesiones : 'no'} /></div>
-        <div><span>Miembros activos</span><strong>{d.apoyo.miembros.n}</strong><small>+{d.apoyo.miembros.altas} {d.apoyo.miembros.altas === 1 ? 'alta' : 'altas'} · {d.apoyo.miembros.bajas} {d.apoyo.miembros.bajas === 1 ? 'baja' : 'bajas'}</small></div>
-        <div><span>Cuotas sin pagar</span>{d.apoyo.cuotasSinPagar.n ? <strong className="is-malo">{d.apoyo.cuotasSinPagar.n} · {e(d.apoyo.cuotasSinPagar.totalCent)}</strong> : <strong className="is-bueno">Ninguna</strong>}<small>A día de hoy</small></div>
-      </div>
-
-      <div className="adm-dash__fila adm-dash__fila--7-5">
-        <Caja
-          titulo={`${enCurso ? 'Cómo va' : 'Cómo fue'} ${periodo.tipo === 'anio' ? periodo.texto : periodo.tipo === 'trimestre' ? 'el trimestre' : mesNombre}`}
-          subtitulo="Ingresos y gastos acumulados · sin IVA"
-          resumen={resumenG2}
-        >
-          <LineasAcumuladas puntos={ev.puntos} comparacion={ev.comparacion} porMes={ev.porMes} cruce={ev.cruce} textoComp={ev.textoComparacion ? ev.textoComparacion.charAt(0).toUpperCase() + ev.textoComparacion.slice(1) : ''} etiquetaPunto={etiquetaPunto} />
-        </Caja>
-        <Caja id="lo-que-queda" titulo="De lo que entra a lo que queda" subtitulo={`${tramo.texto} · sin IVA`}>
-          <Cascada filas={filasCascada} />
-          {sinGastos && <p className="adm-nota">Aún no hay gastos apuntados · <Link href="/admin/finanzas/gastos/nuevo?volver=/admin" className="adm-enlace">Apuntar gasto</Link></p>}
-          <p className="adm-nota">Sin IVA. El IVA va aparte, en «IVA del trimestre». Las fianzas no cuentan como ingreso.</p>
-        </Caja>
-      </div>
-
-      <div className="adm-dash__fila adm-dash__fila--6-6">
-        <Caja id="de-donde" titulo="De dónde vienen los ingresos" subtitulo={`${tramo.texto} · sin IVA`}
-          resumen={fuenteMax && totalFuentes > 0 ? `La mayor parte viene de ${fuenteMax.texto.toLowerCase()} (${Math.round((fuenteMax.baseCent * 100) / totalFuentes)} %).` : 'Aún no hay cobros en este periodo.'}>
-          <BarrasH color={COLOR.ingresos} filas={d.fuentes.map((f) => ({
-            clave: f.fuente, nombre: f.texto, valor: f.baseCent, texto: e(f.baseCent),
-            extra: `${totalFuentes > 0 ? Math.round((f.baseCent * 100) / totalFuentes) : 0} %`,
-            enlace: `/admin/finanzas/ingresos?p=${periodo.clave}`,
-          }))} />
-          {d.devoluciones.n > 0 && <p className="adm-nota">Devoluciones: −{e(d.devoluciones.baseCent)} (no están en las barras).</p>}
-          <p className="adm-nota"><Link href={`/admin/finanzas/ingresos?p=${periodo.clave}`} className="adm-enlace">Ver todos los cobros ›</Link></p>
-        </Caja>
-        <Caja id="en-que-se-va" titulo="En qué se va el dinero" subtitulo={`${tramo.texto} · sin IVA`}
-          acciones={<Link href={`/admin/finanzas/gastos/nuevo?volver=/admin`} className="adm-boton adm-boton--claro adm-mini">+ Apuntar gasto</Link>}>
-          {d.grupos.every((g) => !g.costeCent) ? (
-            <p className="adm-nota">Aún no hay gastos apuntados en {mesNombre}.</p>
-          ) : d.grupos.map((g) => (
-            <div key={g.grupo} className="adm-gastogrupo">
-              <div className="adm-gastogrupo__cab">
-                <strong>{g.texto}</strong>
-                <span className="num">{e(g.costeCent)}</span>
-                {comparado && <Variacion actual={g.costeCent} comp={g.comp} subeEsBueno={false} {...varProps} />}
-              </div>
-              {g.categorias.length > 0 && <BarrasH color={COLOR.gastos} max={maxGasto} filas={g.categorias.map((c) => ({ clave: c.id || c.nombre, nombre: c.nombre, valor: c.costeCent, texto: e(c.costeCent), enlace: c.id ? `/admin/finanzas/gastos?p=${periodo.clave}&categoria=${c.id}` : null }))} />}
-            </div>
+function Bloque({ titulo, total, filas, max, tipo, vacio, pie }) {
+  const e = useEuros()
+  return (
+    <div className="adm-inicio__bloque">
+      <p className="adm-inicio__bloque-cab"><span>{titulo}</span><strong>{e(total)}</strong></p>
+      {filas.length === 0 ? <p className="adm-inicio__vacio">{vacio}</p> : (
+        <ul className="adm-inicio__barras-h">
+          {filas.map((f) => (
+            <li key={f.clave}>
+              <Link href={f.href} className="adm-inicio__barra-fila">
+                <span className="adm-inicio__barra-nombre">{f.nombre}{f.detalle && <em> · {f.detalle}</em>}</span>
+                <span className="adm-inicio__barra-v">{e(f.cent)}</span>
+              </Link>
+              <Medidor partes={[[(Math.abs(f.cent) * 100) / max, f.cent < 0 ? 'resta' : tipo]]} />
+            </li>
           ))}
-          <p className="adm-nota"><Link href={`/admin/finanzas/gastos?p=${periodo.clave}`} className="adm-enlace">Ver todos los gastos ›</Link></p>
-        </Caja>
-      </div>
+        </ul>
+      )}
+      {pie}
+    </div>
+  )
+}
 
-      <Caja id="ocupacion" titulo="Ocupación" subtitulo="Por fecha de la sesión · de 9 a 22 h"
-        acciones={periodo.tipo === 'mes' ? (
-          <div className="adm-segmento adm-segmento--mini" role="radiogroup">
-            <button type="button" role="radio" aria-checked={mapa === 'tramo'} className={mapa === 'tramo' ? 'is-activo' : ''} onClick={() => setMapa('tramo')}>Este mes</button>
-            <button type="button" role="radio" aria-checked={mapa === 'tresMeses'} className={mapa === 'tresMeses' ? 'is-activo' : ''} onClick={() => setMapa('tresMeses')}>Últimos 3 meses</button>
-          </div>
-        ) : null}>
-        <div className="adm-ocup">
-          <div className="adm-ocup__a">
-            <p className="adm-grande">{o.tramo.pct === null ? '—' : `${o.tramo.pct} %`}</p>
-            <p className="adm-nota">{h(o.tramo.horas)} de {h(o.tramo.posibles)} posibles ({tramo.texto})</p>
-            <BarraCapacidad celebradas={o.periodo.celebradas} futuras={o.periodo.futuras} posibles={o.periodo.posibles} />
-            <p className="adm-leyenda adm-leyenda--texto">
-              <span><i style={{ '--c': COLOR.ingresos }} />{h(o.periodo.celebradas)} hechas</span>
-              <span><i className="is-rayado" style={{ '--c': COLOR.ingresos }} />{h(o.periodo.futuras)} reservadas por venir</span>
-              <span><i style={{ '--c': COLOR.banda }} />{h(Math.max(0, o.periodo.posibles - o.periodo.celebradas - o.periodo.futuras))} libres</span>
-            </p>
-            <p className="adm-ocup__meses">{o.meses.map((m) => <span key={m.mes} className={m.actual ? 'is-actual' : ''}>{m.corto.split(' ')[0]} {m.pct === null ? '—' : `${m.pct} %`}</span>)}</p>
-          </div>
-          <div className="adm-ocup__b">
-            <h3>Cuándo se usa el estudio{mapa === 'tresMeses' ? ' · últimos 3 meses' : ''}</h3>
-            {fraseOcup ? <p className="adm-fig__resumen">{fraseOcup}</p> : <p className="adm-nota">Aún no hay sesiones en este periodo.</p>}
-            {mapa === 'tresMeses' && o.pocas && periodo.tipo === 'mes' && <p className="adm-nota">Con pocas reservas, un solo mes todavía puede engañar.</p>}
-            <MapaCalor celdas={celdas} porDia={o.porDia[mapa]} porHora={o.porHora[mapa]} />
-          </div>
-        </div>
-      </Caja>
-
-      <div className="adm-dash__fila adm-dash__fila--6-6">
-        <Caja titulo="Reservas" subtitulo={tramo.texto}
-          resumen={r.total ? `${durMax?.n ? `La duración más pedida: ${durMax.etiqueta} (${durMax.n} ${durMax.n === 1 ? 'reserva' : 'reservas'}). ` : ''}${llegadaTotal ? `El ${Math.round((web.n * 100) / llegadaTotal)} % llega por la web.` : ''}` : 'Aún no hay reservas en este periodo.'}>
-          <h3 className="adm-fig__h3">Por duración (reservas por horas)</h3>
-          <BarrasH color={COLOR.ingresos} filas={r.porDuracion.map((x) => ({ clave: x.etiqueta, nombre: x.etiqueta, valor: x.n, texto: `${x.n} · ${h(x.horas)}`, extra: x.finde ? `${x.finde} finde` : '' }))} />
-          {r.plan.n > 0 && <p className="adm-nota">Además, {r.plan.n} {r.plan.n === 1 ? 'sesión' : 'sesiones'} de suscripción ({h(r.plan.horas)}).</p>}
-          <h3 className="adm-fig__h3">Cómo llegan</h3>
-          <BarrasH color={COLOR.ingresos} filas={r.llegada.map((x) => ({ clave: x.id, nombre: x.texto, valor: x.n, texto: `${x.n} · ${h(x.horas)}`, extra: llegadaTotal ? `${Math.round((x.n * 100) / llegadaTotal)} %` : '' }))} />
-        </Caja>
-        <Caja titulo="Suscripciones" acciones={<Link href="/admin/suscripciones" className="adm-enlace">Ver suscripciones ›</Link>}>
-          {d.suscripciones.n === 0 ? (
-            <>
-              <p className="adm-nota">Aún no hay miembros con plan. Aquí veréis sus horas y si han pagado la cuota.</p>
-              <p style={{ marginTop: 10 }}><Link href="/admin/suscripciones/nueva" className="adm-boton adm-mini">+ Nueva suscripción</Link></p>
-            </>
-          ) : (
-            <>
-              <p className="adm-grande">{d.suscripciones.n} {d.suscripciones.n === 1 ? 'miembro activo' : 'miembros activos'}</p>
-              <p className="adm-nota">+{d.suscripciones.altas} {d.suscripciones.altas === 1 ? 'alta' : 'altas'} · {d.suscripciones.bajas} {d.suscripciones.bajas === 1 ? 'baja' : 'bajas'} en {tramo.texto} · Cuotas al mes: {e(d.suscripciones.cuotasMesCent)} sin IVA</p>
-              <p className="adm-nota">En su periodo actual han usado {h(d.suscripciones.usadas)} de {h(d.suscripciones.incluidas)} incluidas.</p>
-              <div className="adm-miembros">
-                {d.suscripciones.lista.map((m) => (
-                  <Link key={m.id} href={`/admin/suscripciones/${m.id}`} className="adm-miembros__fila">
-                    <span>{m.nombre}<small>{m.planNombre}</small></span>
-                    <BarraHoras usadas={m.usadas} total={m.horas} />
-                    {m.cuota ? <ChipCuota chip={m.cuota.chip} /> : <span />}
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </Caja>
+function Detalle({ d, nombre, antes }) {
+  const { kpis, periodo } = d
+  const p = periodo.clave
+  const enlace = [`/admin/finanzas?p=${p}`, 'Finanzas']
+  if (antes) {
+    return <Tarjeta titulo={`Detalle ${nombre.de}`} enlace={enlace}><p className="adm-inicio__vacio">Sin datos {nombre.de}.</p></Tarjeta>
+  }
+  const entra = [
+    ...d.fuentes.filter((f) => f.baseCent).sort((a, b) => b.baseCent - a.baseCent).map((f) => ({
+      clave: f.fuente, nombre: f.texto, cent: f.baseCent, href: cobrosDe(p, f.fuente),
+    })),
+    // Las fuentes son lo cobrado; con las devoluciones restadas, las filas suman los ingresos
+    ...(d.devoluciones.n > 0 ? [{ clave: 'devoluciones', nombre: 'Devoluciones', cent: -d.devoluciones.baseCent, href: cobrosDe(p, 'devolucion') }] : []),
+  ]
+  const sale = d.grupos.filter((g) => g.costeCent).map((g) => ({
+    clave: g.grupo, nombre: g.texto, detalle: resumenCategorias(g.categorias), cent: g.costeCent,
+    href: `/admin/finanzas/gastos?p=${p}&grupo=${g.grupo}`,
+  }))
+  const redondeadas = (filas, total) => {
+    const r = redondearSumando(filas.map((f) => f.cent), total)
+    return filas.map((f, i) => ({ ...f, cent: r[i] }))
+  }
+  // Una sola escala para las dos mitades, así se comparan a simple vista
+  const max = Math.max(1, ...[...entra, ...sale].map((f) => Math.abs(f.cent)))
+  return (
+    <Tarjeta titulo={`Detalle ${nombre.de}`} enlace={enlace}>
+      <div className="adm-inicio__bloques">
+        <Bloque titulo="Entra" total={kpis.ingresos.actual} filas={redondeadas(entra, kpis.ingresos.actual)} max={max} tipo="ing" vacio={`Aún no hay cobros ${nombre.en}.`} />
+        <Bloque
+          titulo="Sale" total={kpis.gastos.actual} filas={redondeadas(sale, kpis.gastos.actual)} max={max} tipo="gas" vacio={`Aún no hay gastos apuntados ${nombre.en}.`}
+          pie={<Link href="/admin/finanzas/gastos/nuevo?volver=/admin" className="adm-inicio__mas">+ Apuntar gasto</Link>}
+        />
       </div>
+    </Tarjeta>
+  )
+}
 
-      <div className="adm-dash__fila adm-dash__fila--6-6">
-        <Caja titulo={periodo.tipo === 'anio' ? `IVA de ${periodo.clave}` : `IVA del ${iva.texto}`} acciones={<Chip tipo="gris">estimación</Chip>}>
-          {periodo.tipo === 'anio' ? (
-            <div className="adm-scroll">
-              <table className="adm-tabla adm-tabla--num">
-                <thead><tr><th>Trimestre</th><th>IVA cobrado</th><th>IVA de gastos</th><th>A pagar</th></tr></thead>
-                <tbody>{d.iva.map((t) => <tr key={t.trimestre}><th scope="row">{t.texto.split(' (')[0]}</th><td className="num">{t.futuro ? '—' : e(t.cobrado.ivaCent - t.devuelto.ivaCent)}</td><td className="num">{t.futuro ? '—' : e(t.gastos.ivaCent)}</td><td className="num">{t.futuro ? '—' : e(t.netoCent)}</td></tr>)}</tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="adm-iva">
-              <div><span>IVA que habéis cobrado a clientes</span><b className="num">{e(iva.cobrado.ivaCent - iva.devuelto.ivaCent)}</b></div>
-              <div><span>− IVA que habéis pagado en gastos con factura</span><b className="num">{e(iva.gastos.ivaCent)}</b></div>
-              <div className="is-total"><span>= {iva.netoCent >= 0 ? 'A pagar a Hacienda (aprox.)' : 'A compensar (aprox.)'}</span><b className="num">{e(Math.abs(iva.netoCent))}</b></div>
-            </div>
-          )}
-          <p className="adm-nota">Se declara con el modelo 303{periodo.tipo !== 'anio' ? `; el de este trimestre, ${iva.plazo}` : ''}. Este dinero no es del estudio: conviene apartarlo.</p>
-          {(() => {
-            const faltan = (periodo.tipo === 'anio' ? d.iva : [iva]).flatMap((t) => t.avisos.faltaCalendly)
-            return faltan.length > 0 ? <p className="adm-notas">Falta apuntar lo de Calendly de {listaMeses(faltan, d.hoy)}: el IVA se queda corto.</p> : null
-          })()}
-          <p className="adm-nota"><Link href={`/admin/finanzas?p=${periodo.clave}#hacienda`} className="adm-enlace">Ver el detalle para la gestoría ›</Link></p>
-        </Caja>
-        <Caja titulo="Próximos gastos fijos" subtitulo="Próximos 30 días">
-          {d.proximosFijos.length === 0 ? (
-            <p className="adm-nota">No hay gastos fijos en los próximos 30 días. <Link href="/admin/finanzas/fijos" className="adm-enlace">Añadir gastos fijos</Link></p>
-          ) : (
-            <>
-              <ul className="adm-proximos">
-                {d.proximosFijos.slice(0, 4).map((f) => <li key={`${f.fijoId}-${f.fecha}`}><span>{textoFechaCorta(f.fecha)}</span><span>{f.concepto}</span><b className="num">{e(f.totalCent)}</b></li>)}
-              </ul>
-              <p className="adm-nota">Próximos 30 días: {e(d.proximosFijos.reduce((a, f) => a + f.totalCent, 0))} <Link href="/admin/finanzas/fijos" className="adm-enlace">Ver gastos fijos ›</Link></p>
-            </>
-          )}
-        </Caja>
+// ---------- Derecha: el día a día ----------
+
+function ParaHacer({ tareas }) {
+  const oculto = useContext(ImportesOcultos)
+  const tapar = (t) => (oculto ? String(t).replace(IMPORTE, '••• €') : t)
+  const fila = (t, i) => <Fila key={i} inicio={<Ico nombre={t.nivel} tono={t.nivel} />} titulo={tapar(t.texto)} sub={t.chip} tonoSub={t.nivel} href={t.enlace} />
+  return (
+    <Tarjeta titulo="Para hacer" junto={<span className={`adm-inicio__contador es-${tareas[0].nivel}`}>{tareas.length}</span>}>
+      <ul className="adm-inicio__filas">{tareas.slice(0, 5).map(fila)}</ul>
+      {tareas.length > 5 && (
+        <details className="adm-inicio__mas-tareas">
+          <summary>y {tareas.length - 5} más</summary>
+          <ul className="adm-inicio__filas">{tareas.slice(5).map(fila)}</ul>
+        </details>
+      )}
+    </Tarjeta>
+  )
+}
+
+// «Ana · 0 de 4 h usadas» · con varios: «Ana: 0 de 4 h · Luis: 3 de 8 h y 1 más»
+function usoMiembros(s) {
+  const uso = (m) => `${cifra(m.usadas)} de ${cifra(m.horas)} h`
+  if (s.n === 1) return `${s.lista[0].nombre} · ${uso(s.lista[0])} usadas`
+  const dos = s.lista.slice(0, 2).map((m) => `${m.nombre}: ${uso(m)}`).join(' · ')
+  return s.n > 2 ? `${dos} y ${s.n - 2} más` : dos
+}
+
+function Hoy({ d }) {
+  const hb = d.hoyBloque
+  const s = d.suscripciones
+  const manana = hb.manana ? `Mañana hay ${hb.manana.n === 1 ? '1 reserva' : `${hb.manana.n} reservas`}` : null
+  return (
+    <Tarjeta titulo="Hoy" junto={<small>{textoDiaCorto(d.hoy)}</small>} enlace={['/admin/agenda', 'Agenda']}>
+      <ul className="adm-inicio__filas">
+        {hb.n > 0 ? hb.reservas.map((r) => (
+          <Fila
+            key={r.id} inicio={<Ico nombre="reloj" />} href={`/admin/reserva/${r.id}`} apagada={r.hecha}
+            titulo={<span className="adm-inicio__franja">{`${r.horaInicio} – ${r.horaFin}`}</span>} sub={`${r.nombre} · ${r.duracionTexto}${r.hecha ? ' · hecha' : ''}`} fin={chipEstado(r)}
+          />
+        )) : (
+          <Fila inicio={<Ico nombre="calendario" />} titulo="Hoy no hay reservas" sub={manana || (hb.proxima ? null : 'No hay reservas próximas')} />
+        )}
+        {hb.n > 3 && <li className="adm-inicio__fila-mas"><Link href="/admin/agenda">y {hb.n - 3} más</Link></li>}
+        {hb.n === 0 && hb.proxima && (
+          <Fila inicio={<Ico nombre="reloj" />} href="/admin/agenda" titulo={`Próxima: ${textoDiaCorto(hb.proxima.fecha)}, ${hb.proxima.hora}`} sub={`${hb.proxima.nombre} · ${hb.proxima.duracionTexto}`} />
+        )}
+        {s.n > 0 && (
+          <Fila
+            separada inicio={<Ico nombre="persona" />} href="/admin/suscripciones"
+            titulo={s.n === 1 ? '1 miembro activo' : `${s.n} miembros activos`} sub={usoMiembros(s)}
+            fin={s.n === 1 && s.lista[0].cuota ? <ChipCuota chip={s.lista[0].cuota.chip} /> : null}
+          />
+        )}
+      </ul>
+      {s.n === 0 && <Link href="/admin/suscripciones/nueva" className="adm-inicio__mas">+ Nueva suscripción</Link>}
+    </Tarjeta>
+  )
+}
+
+function Ocupacion({ d, nombre }) {
+  const o = d.kpis.ocupacion
+  return (
+    <section className="adm-inicio__tarjeta">
+      <div className="adm-inicio__ocup-cab">
+        <h2>Ocupación {nombre.de}</h2>
+        <strong>{o.actual === null ? '—' : `${o.actual} %`}</strong>
       </div>
-    </>
+      {/* El %, la barra y la frase salen de las mismas horas: hasta hoy (incluido) o el periodo
+          entero si ya acabó. Lo reservado de mañana en adelante va solo en la frase. */}
+      <Medidor partes={[[o.actual ?? 0, 'lleno']]} />
+      {o.actual !== null && (
+        <p className="adm-inicio__ayuda">
+          {h(o.horas)} de {h(o.posibles)} {d.tramo.enCurso ? 'hasta hoy' : 'posibles'}
+          {o.futurasPeriodo > 0 && ` · ${h(o.futurasPeriodo)} más ya reservadas`}
+        </p>
+      )}
+    </section>
+  )
+}
+
+function ProximosPagos({ d }) {
+  const e = useEuros()
+  const fijos = d.proximosFijos
+  const vistos = fijos.slice(0, 5)
+  const resto = fijos.slice(5)
+  const suma = (fs) => fs.reduce((a, f) => a + f.totalCent, 0)
+  const totalCent = suma(fijos)
+  // Las filas (con la de «y N más») suman lo mismo que el total de arriba
+  const cifras = redondearSumando([...vistos.map((f) => f.totalCent), ...(resto.length ? [suma(resto)] : [])], totalCent)
+  // El IVA se calcula para el periodo elegido: solo el trimestre de hoy es un pago que viene
+  const iva = d.iva.find((t) => t.enCurso)
+  return (
+    <Tarjeta titulo="Próximos pagos" ayuda={fijos.length ? `${e(totalCent)} en los próximos 30 días, IVA incluido` : null}>
+      {fijos.length === 0 && <p className="adm-inicio__vacio">No hay gastos fijos en los próximos 30 días.</p>}
+      {(fijos.length > 0 || iva) && (
+        <ul className="adm-inicio__filas">
+          {vistos.map((f, i) => (
+            <Fila key={`${f.fijoId}-${f.fecha}`} inicio={<Dia fecha={f.fecha} />} titulo={f.concepto} fin={<span className="adm-inicio__importe">{e(cifras[i])}</span>} />
+          ))}
+          {resto.length > 0 && (
+            <Fila
+              inicio={<Ico nombre="calendario" />} href="/admin/finanzas/fijos" titulo={`y ${resto.length} más`}
+              fin={<span className="adm-inicio__importe">{e(cifras[vistos.length])}</span>}
+            />
+          )}
+          {iva && (
+            <Fila
+              separada={fijos.length > 0} inicio={<Dia fecha={fin303(iva.trimestre)} />} href={`/admin/finanzas?p=${iva.trimestre}#hacienda`}
+              titulo={`IVA del ${trimestreCorto(iva.trimestre)}`}
+              sub={`Estimado${iva.netoCent < 0 ? ': sale a compensar' : ''} · modelo 303, del 1 al ${textoFechaCorta(fin303(iva.trimestre))}`}
+              fin={<span className="adm-inicio__importe">≈ {e(Math.max(0, iva.netoCent))}</span>}
+            />
+          )}
+        </ul>
+      )}
+      <Link href="/admin/finanzas/fijos" className="adm-inicio__mas">Ver gastos fijos<Icono nombre="flecha" /></Link>
+    </Tarjeta>
+  )
+}
+
+// ---------- Página ----------
+
+function Contenido({ d, extra }) {
+  const nombre = nombrePeriodo(d.periodo, d.hoy)
+  // Un periodo de antes de que el panel llevara las cuentas: sin cifras (no son ceros de verdad)
+  const antes = d.periodo.antesDeDatos ? textoDesde(d.desdeDatos) : null
+  return (
+    <div className="adm-inicio__rejilla">
+      <div className="adm-inicio__col">
+        <Beneficio kpis={d.kpis} comparado={d.comparado} tramo={d.tramo} nombre={nombre} desdeDatos={d.desdeDatos} antes={antes} />
+        <Meses d={d} extra={extra} />
+        <Detalle d={d} nombre={nombre} antes={antes} />
+      </div>
+      <div className="adm-inicio__col">
+        {d.paraHacer.length > 0 && <ParaHacer tareas={d.paraHacer} />}
+        <Hoy d={d} />
+        <Ocupacion d={d} nombre={nombre} />
+        <ProximosPagos d={d} />
+      </div>
+    </div>
   )
 }
 
@@ -427,6 +482,8 @@ export default function Inicio(d) {
       router.events.off('routeChangeError', fin)
     }
   }, [router.events])
+  // Si llega ?comparar= en la URL, se mantiene al cambiar de periodo
+  const extra = d.comparar !== 'anterior' ? { comparar: d.comparar } : {}
   // Se recuerda en este navegador (cookie), también al recargar o volver otro día
   const alternar = () => {
     const nuevo = !oculto
@@ -436,16 +493,23 @@ export default function Inicio(d) {
   return (
     <Panel
       titulo="Inicio"
+      clase="adm-inicio"
       acciones={(
-        <div className="adm-dash__acciones">
-          <span className="adm-nota">Actualizado a las {d.actualizado} · <button type="button" className="adm-enlace" onClick={() => router.replace(router.asPath, undefined, { scroll: false })}>Recargar</button></span>
-          <button type="button" className="adm-boton adm-boton--claro adm-mini" aria-pressed={oculto} onClick={alternar}>{oculto ? 'Ver importes' : 'Ocultar importes'}</button>
-        </div>
+        <>
+          <p className="adm-inicio__sub">
+            Importes sin IVA
+            <span className="adm-inicio__hora"> · Actualizado a las {d.actualizado} · <button type="button" onClick={() => router.replace(router.asPath, undefined, { scroll: false })}>Recargar</button></span>
+          </p>
+          <SelectorPeriodo periodo={d.periodo} hoy={d.hoy} ruta="/admin" extra={extra} tipos={['mes', 'anio']} />
+          <button type="button" className="adm-inicio__ojo" onClick={alternar}>
+            <Icono nombre={oculto ? 'ojoNo' : 'ojo'} />{oculto ? 'Mostrar importes' : 'Ocultar importes'}
+          </button>
+        </>
       )}
     >
       <ImportesOcultos.Provider value={oculto}>
-        <div className={`adm-dash${cargando ? ' is-cargando' : ''}`}>
-          <Contenido {...d} />
+        <div className={`adm-inicio__contenido${cargando ? ' is-cargando' : ''}`}>
+          <Contenido d={d} extra={extra} />
         </div>
       </ImportesOcultos.Provider>
     </Panel>
