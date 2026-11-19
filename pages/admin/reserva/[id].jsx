@@ -99,6 +99,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
         </div>
       )}
     >
+      {r.esPlan && sus?.impago && ['pendiente', 'confirmada'].includes(r.estado) && <p className="adm-mensaje is-error">{sus.impago}</p>}
       <div className="adm-dos">
         <div>
           <div className="adm-caja">

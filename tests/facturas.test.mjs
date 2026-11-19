@@ -105,16 +105,24 @@ test('la completa sustituye a la simplificada: nunca dos vigentes', async () => 
   const csv = await FIN.exportarCsv(C.leerPeriodo(C.mesDe(HOY), HOY), { tipo: 'facturas' })
   const fila = (codigo) => csv.contenido.split('\r\n').find((l) => l.startsWith(`${codigo};`)) || ''
   assert.match(fila(simple.codigo), /;AR-QS;Simplificada;/)
-  assert.ok(fila(simple.codigo).endsWith(`;;${completa.codigo}`))
-  assert.ok(fila(completa.codigo).endsWith(`;${simple.codigo};`))
+  // La sustituida sale con los importes a 0 (sumar las columnas no cuenta dos veces) y el original aparte
+  assert.ok(fila(simple.codigo).endsWith(`;;Sustituida por ${completa.codigo};145,20`), fila(simple.codigo))
+  assert.match(fila(simple.codigo), /;0,00;21;0,00;0,00;/)
+  assert.match(fila(completa.codigo), /;120,00;21;25,20;145,20;/)
+  assert.ok(fila(completa.codigo).endsWith(`;${simple.codigo};;`))
 })
 
-test('con datos dados al reservar y una simplificada ya hecha, se puede sustituir sin volver a pedirlos', async () => {
+test('con datos guardados después, «Reenviar» manda la simplificada que hay; solo se sustituye pidiéndolo', async () => {
   const fecha = await laborable(34)
   const r = await S.crearReservaManual({ ...CLIENTE(), fecha, desde: '10:00', hasta: '12:00', pagoEstado: 'pagado' })
   const simple = (await F.emitirFactura(r.id)).factura
-  await query('UPDATE reservas SET factura = $2 WHERE id = $1', [r.id, JSON.stringify({ nombre: 'Persona Prueba', nif: '00000000T', direccion: 'Calle 3' })])
-  const { factura, nueva } = await F.emitirFactura(r.id)
+  const guardados = { nombre: 'Persona Prueba', nif: '00000000T', direccion: 'Calle 3' }
+  await query('UPDATE reservas SET factura = $2 WHERE id = $1', [r.id, JSON.stringify(guardados)])
+  const otra = await F.emitirFactura(r.id)
+  assert.equal(otra.nueva, false)
+  assert.equal(otra.factura.codigo, simple.codigo)
+  // Pidiéndolo con los datos, sí
+  const { factura, nueva } = await F.emitirFactura(r.id, guardados)
   assert.equal(nueva, true)
   assert.equal(factura.sustituye.codigo, simple.codigo)
 })

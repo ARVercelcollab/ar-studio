@@ -2,10 +2,11 @@
 // - GET: el cliente descarga su factura (la vigente)
 // - POST: pide la factura completa con sus datos; si ya tiene la simplificada, la nueva la sustituye
 import { reservaPorToken } from '../../../../lib/reservas/servicio.js'
-import { facturaDeReserva, datosCompletos, seFactura } from '../../../../lib/facturas/servicio.js'
+import { facturaDeReserva, datosCompletos, seFactura, facturasAutomaticas } from '../../../../lib/facturas/servicio.js'
 import { pdfFactura } from '../../../../lib/facturas/pdf.js'
 import { emitirYEnviar } from '../../../../lib/facturas/envio.js'
-import { urlReserva } from '../../../../lib/reservas/flujo.js'
+import { urlReserva, urlPanel } from '../../../../lib/reservas/flujo.js'
+import { avisoFacturaFallida } from '../../../../lib/reservas/correos.js'
 import { sincronizarTrasCambio } from '../../../../lib/google/calendario.js'
 import { soloMetodos, sinCache, mismoOrigen, limitar, urlBase, responderError } from '../../../../lib/http.js'
 
@@ -29,11 +30,16 @@ export default async function handler(req, res) {
     const r = await reservaPorToken(String(req.query.token))
     if (!r) return res.status(404).json({ error: 'no_existe', mensaje: 'No encontramos esa reserva.' })
     if (!seFactura(r) || r.pagoEstado !== 'pagado') return res.status(409).json({ error: 'estado', mensaje: 'Esta reserva no tiene un pago por el que hacer factura. Escríbenos si la necesitas.' })
+    // Con las facturas automáticas apagadas las hace el estudio (p. ej. a mano, serie AR-M)
+    if (!facturasAutomaticas()) return res.status(409).json({ error: 'manual', mensaje: 'Escríbenos con tus datos y te hacemos la factura.' })
     const datos = { nombre: texto(req.body?.nombre, 120), nif: texto(req.body?.nif, 20).toUpperCase(), direccion: texto(req.body?.direccion, 200) }
     if (!datosCompletos(datos)) return res.status(400).json({ error: 'datos', mensaje: 'Para la factura hacen falta el nombre o razón social, el NIF o CIF y la dirección.' })
     const actual = await facturaDeReserva(r.id)
     if (actual && !actual.simplificada) return res.status(409).json({ error: 'ya', mensaje: `Ya tienes la factura ${actual.codigo} con tus datos. Si hay que corregir algo, escríbenos.` })
-    const { factura, enviada } = await emitirYEnviar(r, { datosCliente: datos, urlReserva: urlReserva(urlBase(req), r) })
+    const { factura, enviada, nueva, errorEnvio } = await emitirYEnviar(r, { datosCliente: datos, urlReserva: urlReserva(urlBase(req), r), soloSiNueva: true })
+    // Otra petición a la vez ya la ha hecho (doble clic): no se manda dos veces
+    if (!nueva && !factura.simplificada) return res.status(200).json({ ok: true, codigo: factura.codigo, enviada: Boolean(factura.enviadaEn) })
+    if (errorEnvio) await avisoFacturaFallida(r, `emitida (${factura.codigo}) pero no enviada: ${errorEnvio}`, { urlPanel: urlPanel(urlBase(req)) }).catch(() => {})
     await sincronizarTrasCambio(urlBase(req)) // sus datos de factura salen en el evento del calendario
     res.status(200).json({ ok: true, codigo: factura.codigo, enviada })
   } catch (e) {

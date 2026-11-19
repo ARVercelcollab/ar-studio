@@ -56,7 +56,7 @@ El sistema de notificaciones detecta automáticamente dos tipos de errores:
 1. **Errores de la API de OpenAI**: Cuando OpenAI devuelve un error (problemas con la key, límite de rate, etc.)
 2. **Errores Internos del Servidor**: Cualquier error no esperado en el código
 
-Cuando ocurre un error, recibirás un email en `angelcamacho1708@gmail.com` con:
+Cuando ocurre un error, recibirás un email en la dirección de `AVISOS_ERRORES_EMAIL` (por defecto, el correo del estudio) con:
 - Tipo de error
 - Mensaje de error detallado
 - Último mensaje del usuario

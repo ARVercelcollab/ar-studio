@@ -13,6 +13,7 @@ async function facturar(id, opciones = {}) {
   try {
     const r = await emitirYEnviarCuota(id, opciones)
     const queEs = r.factura.sustituye ? `Factura ${r.factura.codigo} (sustituye a la simplificada ${r.factura.sustituye.codigo})` : `${r.factura.simplificada ? 'Factura simplificada' : 'Factura'} ${r.factura.codigo}`
+    if (r.errorEnvio) return { ok: false, texto: `${queEs} emitida, pero no se ha podido enviar (${r.errorEnvio}). Reenvíala desde la cuota.` }
     return { ok: true, texto: `${queEs} ${r.enviada ? 'enviada' : 'emitida'}.` }
   } catch (e) {
     const f = await facturaDeCuota(id).catch(() => null)

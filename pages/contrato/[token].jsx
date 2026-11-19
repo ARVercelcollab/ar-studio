@@ -31,13 +31,13 @@ function EsperandoPago({ alta, token, pago }) {
   const [pagando, setPagando] = useState(false)
   const fallido = alta.estado === 'fallida' || pago === 'ko'
   useEffect(() => {
-    if (fallido || intentos >= 15) return
+    if (fallido || alta.estado === 'duplicada' || intentos >= 15) return
     const t = setTimeout(() => {
       setIntentos((n) => n + 1)
       router.replace(router.asPath, undefined, { scroll: false })
     }, 4000)
     return () => clearTimeout(t)
-  }, [fallido, intentos, router])
+  }, [fallido, alta.estado, intentos, router])
   const reintentar = async () => {
     setPagando(true)
     setError(null)
@@ -48,6 +48,17 @@ function EsperandoPago({ alta, token, pago }) {
       setPagando(false)
       setError(e.message)
     }
+  }
+  // Ya tenía una suscripción activa con ese correo: no se ha creado otra y se le devuelve el pago
+  if (alta.estado === 'duplicada') {
+    return (
+      <>
+        <span className="rsv-ficha__estado is-aviso">Ya eres miembro</span>
+        <h1>Ya tienes una suscripción activa</h1>
+        <p className="rsv__intro">Con este correo ya hay una suscripción en marcha, así que no hemos creado otra. Te devolvemos este pago en los próximos días.</p>
+        <p className="rsv__nota">Si querías cambiar de plan o es un error, escríbenos por <a className="rsv-enlace" href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>
+      </>
+    )
   }
   if (fallido) {
     return (
@@ -156,7 +167,7 @@ function Contrato({ token, pago, contrato, sus, c, estudio, iban, titular, onFir
           </>
         )}
 
-        {fianzaPendiente && <FianzaTransferencia importeCent={sus.fianzaCent} iban={iban} titular={titular} codigo={sus.codigo} />}
+        {fianzaPendiente && <FianzaTransferencia importeCent={sus.fianzaCent} iban={iban} titular={titular} codigo={sus.codigo} limite={sus.fianzaLimite || null} />}
 
         {!firmado && (
           <section className="rsv__paso">
@@ -242,7 +253,7 @@ export async function getServerSideProps({ params, query, res }) {
       contrato: { estado: contrato.estado, firmadoEn: contrato.firmadoEn, datos: contrato.datos, version: contrato.version },
       sus: {
         codigo: sus.codigo, plan: sus.plan, nombre: sus.nombre, apellidos: sus.apellidos, email: sus.email, telefono: sus.telefono,
-        cuotaCent: sus.cuotaCent, fianzaCent: sus.fianzaCent, fianzaEstado: sus.fianzaEstado,
+        cuotaCent: sus.cuotaCent, fianzaCent: sus.fianzaCent, fianzaEstado: sus.fianzaEstado, fianzaLimite: sus.fianzaLimite || null,
       },
       c: condicionesDeSuscripcion(sus),
       estudio,

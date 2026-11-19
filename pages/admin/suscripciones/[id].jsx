@@ -479,7 +479,7 @@ function Fianza({ sus, hoy }) {
   const recomendacion = sus.ultimoDia ? consecuenciasBaja(sus, sus.ultimoDia, sus.bajaAvisadaEn).fianza : null
   const poner = (k) => (e) => setF({ ...f, [k]: e.target.value })
   let resumen
-  if (sus.fianzaEstado === 'pendiente') resumen = `Sin cobrar (${formatoEuros(sus.fianzaCent)}).`
+  if (sus.fianzaEstado === 'pendiente') resumen = `Sin cobrar (${formatoEuros(sus.fianzaCent)}).${sus.fianzaLimite ? ` Plazo para la transferencia: hasta el ${fecha(sus.fianzaLimite)}${sus.fianzaLimite < hoy ? ' (ya ha pasado)' : ''}.` : ''}`
   else if (sus.fianzaEstado === 'cobrada') resumen = `Cobrada: ${formatoEuros(sus.fianzaCent)}${sus.fianzaMetodo ? ` por ${(METODOS[sus.fianzaMetodo] || sus.fianzaMetodo).toLowerCase()}` : ''}${sus.fianzaCobradaEn ? ` el ${fecha(sus.fianzaCobradaEn)}` : ''}.`
   else if (sus.fianzaEstado === 'devuelta') resumen = `Devuelta: ${formatoEuros(sus.fianzaDevueltaCent ?? sus.fianzaCent)} el ${fecha(sus.fianzaResueltaEn)}.`
   else if (sus.fianzaEstado === 'retenida') resumen = `Os la quedasteis (${formatoEuros(sus.fianzaCent)}) el ${fecha(sus.fianzaResueltaEn)}.`
@@ -657,6 +657,7 @@ export default function FichaSuscripcion(p) {
       )}
     >
       {ok && avisos[ok] && <p className={`adm-mensaje${ok === 'sesion_sin_correo' ? ' is-error' : ''}`}>{avisos[ok]}</p>}
+      {p.impago && estado !== 'finalizada' && <p className="adm-mensaje is-error">{p.impago} Sus sesiones siguen en la agenda: decide si las mantienes.</p>}
       <p style={{ marginBottom: 16, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
         <Chip tipo="plan">{sus.planNombre}</Chip>
         <Chip tipo={estado === 'activa' ? 'ok' : estado === 'baja_avisada' ? 'aviso' : 'gris'}>{ESTADOS_SUSCRIPCION[estado]}</Chip>
@@ -771,6 +772,7 @@ export async function getServerSideProps(ctx) {
       ultimoDiaPermanencia: ficha.ultimoDiaPermanencia,
       contrato: contrato ? { estado: contrato.estado, version: contrato.version, firmadoEn: contrato.firmadoEn, enviadoEn: contrato.enviadoEn, recordadoEn: contrato.recordadoEn, url: urlContrato(urlBase(ctx.req), contrato.token) } : null,
       puedeBorrarse: ficha.puedeBorrarse,
+      impago: ficha.impago || null,
       cobros: await historialCobros(sus.id),
       cobroDisponible: cobroAutomaticoActivo(),
       condiciones: ficha.condiciones,

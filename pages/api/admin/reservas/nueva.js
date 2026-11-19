@@ -1,6 +1,6 @@
 // Reserva apuntada a mano por el estudio
 import { rutaAdmin } from '../../../../lib/admin/api.js'
-import { crearReservaManual } from '../../../../lib/reservas/servicio.js'
+import { crearReservaManual, registrarEvento } from '../../../../lib/reservas/servicio.js'
 import { validarCliente } from '../../../../lib/reservas/validacion.js'
 import { correoConfirmacion } from '../../../../lib/reservas/correos.js'
 import { urlReserva, urlPanel } from '../../../../lib/reservas/flujo.js'
@@ -35,8 +35,17 @@ export default rutaAdmin(async (req, res) => {
   })
   const base = urlBase(req)
   const conFactura = reserva.pagoEstado === 'pagado' && seFactura(reserva) && facturasAutomaticas()
-  if (b.enviarCorreo && reserva.email) await correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: conFactura })
-  // Apuntada ya pagada: lleva su factura (se manda solo si se avisa al cliente)
+  // La reserva ya está guardada: si falla el correo se apunta y se dice, sin dar error
+  let mensaje = null
+  if (b.enviarCorreo && reserva.email) {
+    try {
+      await correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: conFactura })
+    } catch (e) {
+      mensaje = 'No se ha podido mandar el correo al cliente: avísale por WhatsApp.'
+      await registrarEvento(reserva.id, 'correo_fallido', { error: String(e.message || e) }, { autor: 'panel' }).catch(() => {})
+    }
+  }
+  // Apuntada ya pagada: lleva su factura siempre (se manda solo si se avisa al cliente)
   if (conFactura) await facturarAlCobrar(reserva, { urlPanel: urlPanel(base), urlReserva: urlReserva(base, reserva), enviar: Boolean(b.enviarCorreo) })
-  res.status(200).json({ id: reserva.id })
+  res.status(200).json({ id: reserva.id, mensaje })
 })

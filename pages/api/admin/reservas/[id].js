@@ -28,6 +28,13 @@ export default rutaAdmin(async (req, res) => {
       await registrarEvento(reserva.id, 'correo_fallido', { error: String(e.message || e) }, { suscripcionId: reserva.suscripcionId ?? null, autor: 'panel' }).catch(() => {})
     }
   }
+  // Un pago que llegó con la reserva en revisión o cancelada no se facturó: al resolverla
+  // (moverla a otra hora o reactivarla) sale su factura, si aún no la tiene
+  const facturaPendiente = async (enviar) => {
+    if (reserva?.estado !== 'confirmada') return
+    const r = await facturarAlCobrar(reserva, { urlPanel: urlPanel(base), urlReserva: urlReserva(base, reserva), enviar: enviar && Boolean(reserva.email) })
+    if (r?.nueva) mensaje = [mensaje, `Factura ${r.factura.codigo} emitida${r.enviada ? ' y enviada' : ''}.`].filter(Boolean).join(' ')
+  }
   switch (b.accion) {
     case 'pagada':
       reserva = await marcarPagada(id, { metodo: b.metodo, nota: b.nota, fecha: b.fecha || null })
@@ -52,10 +59,12 @@ export default rutaAdmin(async (req, res) => {
         ? await moverSesionPlan(id, { fecha: b.fecha, desde: b.desde, hasta: b.hasta, horasPlan: b.horasPlan ?? null, precioExtraCent: b.precioExtra === undefined ? null : aCentONulo(b.precioExtra), avisosAceptados: b.avisosAceptados || [] })
         : await reprogramar(id, { fecha: b.fecha, desde: b.desde || b.hora, hasta: b.hasta, horas: b.horas ? Number(b.horas) : undefined })
       if (b.enviarCorreo && reserva.email) await correo(() => correoCambio(reserva, { urlReserva: urlReserva(base, reserva) }))
+      await facturaPendiente(Boolean(b.enviarCorreo))
       break
     }
     case 'reactivar':
       reserva = await reactivar(id)
+      await facturaPendiente(true)
       break
     case 'notas':
       reserva = await guardarNotas(id, b.notas)
@@ -66,7 +75,9 @@ export default rutaAdmin(async (req, res) => {
       const datos = b.nombre || b.nif || b.direccion ? { nombre: b.nombre, nif: b.nif, direccion: b.direccion } : null
       const r = await emitirYEnviar(reserva, { datosCliente: datos, reenviar: true, urlReserva: urlReserva(base, reserva) })
       const queEs = r.factura.sustituye ? `Factura ${r.factura.codigo} (sustituye a la simplificada ${r.factura.sustituye.codigo})` : `${r.factura.simplificada ? 'Factura simplificada' : 'Factura'} ${r.factura.codigo}`
-      mensaje = `${queEs} ${r.enviada ? `enviada a ${reserva.email}` : 'emitida (sin correo del cliente: descárgala y envíala tú)'}.`
+      mensaje = r.errorEnvio
+        ? `${queEs} emitida, pero no se ha podido enviar (${r.errorEnvio}). Descárgala y envíala tú, o vuelve a intentarlo.`
+        : `${queEs} ${r.enviada ? `enviada a ${reserva.email}` : 'emitida (sin correo del cliente: descárgala y envíala tú)'}.`
       break
     }
     default:
