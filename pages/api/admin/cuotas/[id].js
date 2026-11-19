@@ -4,7 +4,7 @@ import * as SUS from '../../../../lib/suscripciones/servicio.js'
 import { emitirYEnviarCuota } from '../../../../lib/facturas/envio.js'
 import { facturaDeCuota, facturasAutomaticas } from '../../../../lib/facturas/servicio.js'
 import { registrarEvento } from '../../../../lib/reservas/servicio.js'
-import { enviarEnlaceCuota } from '../../../../lib/suscripciones/alta.js'
+import { enviarEnlaceCuota, cobrarCuotaAutomatica, resolverCobroRevisar } from '../../../../lib/suscripciones/alta.js'
 import { urlBase } from '../../../../lib/http.js'
 
 // Emitir y mandar la factura de una cuota. Si se emite pero falla el correo, lo dice
@@ -58,6 +58,20 @@ export default rutaAdmin(async (req, res) => {
       if (r.error) throw r.error
       return res.status(200).json({ ok: r.ok, mensaje: r.texto })
     }
+    case 'cobrar_ahora': {
+      const r = await cobrarCuotaAutomatica(id, urlBase(req), { forzar: true, autor: 'panel' })
+      const textos = {
+        cobrada: 'Cobrada en la tarjeta. Le llega la factura por correo.',
+        rechazada: 'El banco ha rechazado el cobro. Le hemos mandado el enlace para pagarla.',
+        agotada: 'El banco ha rechazado el cobro. Le hemos mandado el enlace para pagarla.',
+        revisar: 'No sabemos si se ha cobrado (sin respuesta del banco). Compruébalo en el portal del TPV antes de nada.',
+        saltada: `No se ha cobrado: ${r.motivo}`,
+      }
+      return res.status(200).json({ ok: r.resultado === 'cobrada', mensaje: textos[r.resultado] || 'Hecho.' })
+    }
+    case 'no_cobrado':
+      await resolverCobroRevisar(id)
+      return res.status(200).json({ ok: true, mensaje: 'Apuntado: no se cobró. Ya puedes volver a cobrarla o marcarla pagada.' })
     case 'enlace_pago': {
       await enviarEnlaceCuota(id, urlBase(req))
       return res.status(200).json({ ok: true, mensaje: 'Enlace de pago enviado por correo.' })

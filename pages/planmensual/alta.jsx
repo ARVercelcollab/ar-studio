@@ -1,11 +1,11 @@
-// Alta en un plan mensual: elige plan, deja sus datos, lee las condiciones y el modelo de
-// contrato y paga el primer mes en el TPV. Después firma el contrato en /contrato/<token>.
+// Alta en un plan mensual: elige plan, deja sus datos y paga el primer mes en el TPV. El
+// contrato no se enseña antes de pagar (menos fricción): junto al botón va el resumen de las
+// condiciones. Después de pagar, firma el contrato en /contrato/<token>.
 import Head from 'next/head'
 import Link from 'next/link'
 import { useState } from 'react'
 import { PLANES, PLAN_COMUN, formatoEuros, textoDuracion } from '../../lib/reservas/config'
 import { irAlTpv, pedirJson } from '../../lib/reservas/navegador'
-import { PLAZAS_LIBRES, textoPlazasPlan } from '../../lib/plazas'
 
 function Campo({ etiqueta, error, ancho, children }) {
   return (
@@ -24,9 +24,9 @@ function textoSesiones(p) {
   return `sesiones de ${p.sesionMinH} a ${p.sesionMaxH} horas`
 }
 
-export default function Alta({ planInicial }) {
+export default function Alta({ planInicial, cobroAuto }) {
   const [plan, setPlan] = useState(planInicial)
-  const [d, setD] = useState({ nombre: '', apellidos: '', email: '', telefono: '', acepta: false })
+  const [d, setD] = useState({ nombre: '', apellidos: '', email: '', telefono: '' })
   const [errores, setErrores] = useState({})
   const [aviso, setAviso] = useState(null)
   const [enviando, setEnviando] = useState(false)
@@ -41,7 +41,6 @@ export default function Alta({ planInicial }) {
     if (!d.apellidos.trim()) e.apellidos = 'Escribe tus apellidos.'
     if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(d.email.trim())) e.email = 'Revisa el correo.'
     if (d.telefono.replace(/\D/g, '').length < 9) e.telefono = 'Escribe un teléfono de contacto.'
-    if (!d.acepta) e.acepta = 'Marca la casilla para seguir.'
     setErrores(e)
     if (Object.keys(e).length) return
     setEnviando(true)
@@ -64,23 +63,20 @@ export default function Alta({ planInicial }) {
       </Head>
       <main className="rsv">
         <h1>Hazte miembro</h1>
-        <p className="rsv__intro">Elige tu plan y paga el primer mes. Justo después firmas tu contrato aquí mismo, desde el móvil o el ordenador.</p>
+        <p className="rsv__intro">Elige tu plan y paga el primer mes. Justo después rellenas y firmas tu contrato aquí mismo, desde el móvil o el ordenador.</p>
         <div className="rsv__grid">
           <div>
             <section className="rsv__paso">
               <h2><span className="rsv__num">1</span> Elige tu plan</h2>
               <div className="rsv-alta__planes">
-                {Object.entries(PLANES).map(([id, x]) => {
-                  const libres = PLAZAS_LIBRES[id] ?? 0
-                  return (
-                    <button key={id} type="button" disabled={libres <= 0} className={`rsv__duracion${plan === id ? ' is-activo' : ''}`} onClick={() => setPlan(id)}>
-                      <span>{x.nombre}</span>
-                      <strong>{formatoEuros(x.cuotaCent)}<small>/mes</small></strong>
-                      <span>{h(x.horasPeriodo)} al mes · {textoSesiones(x)}</span>
-                      <span className="rsv__finde">L–V de {x.franja[0]} a {x.franja[1]} · {textoPlazasPlan(libres)}</span>
-                    </button>
-                  )
-                })}
+                {Object.entries(PLANES).map(([id, x]) => (
+                  <button key={id} type="button" className={`rsv__duracion${plan === id ? ' is-activo' : ''}`} onClick={() => setPlan(id)}>
+                    <span>{x.nombre}</span>
+                    <strong>{formatoEuros(x.cuotaCent)}<small>/mes</small></strong>
+                    <span>{h(x.horasPeriodo)} al mes · {textoSesiones(x)}</span>
+                    <span className="rsv__finde">L–V de {x.franja[0]} a {x.franja[1]}</span>
+                  </button>
+                ))}
               </div>
               {errores.plan && <span className="rsv__error">{errores.plan}</span>}
             </section>
@@ -104,22 +100,6 @@ export default function Alta({ planInicial }) {
               <p className="rsv__nota">El contrato y la factura te llegan a este correo. El DNI y la dirección los pones al firmar el contrato.</p>
             </section>
 
-            <section className="rsv__paso">
-              <h2><span className="rsv__num">3</span> Antes de pagar</h2>
-              <ul className="rsv-alta__lista">
-                <li>Hoy pagas el <strong>primer mes{p ? ` (${formatoEuros(p.cuotaCent)}, IVA incluido)` : ''}</strong> con tarjeta o Bizum. Tu suscripción empieza hoy.</li>
-                <li>Los meses siguientes te llega un <strong>enlace de pago por correo</strong> al empezar cada mes.</li>
-                <li><strong>Permanencia mínima de {PLAN_COMUN.permanenciaMeses} meses.</strong> Las horas son de cada mes: las que no uses se pierden.</li>
-                <li>Reservas tus sesiones con al menos {PLAN_COMUN.antelacionH} horas de antelación; si cancelas con menos de {PLAN_COMUN.avisoCancelacionH} horas, cuenta como usada.</li>
-                <li><strong>Fianza de {formatoEuros(PLAN_COMUN.fianzaCent)}</strong> por transferencia al firmar el contrato (no se paga aquí). Se devuelve al terminar si el estudio queda bien; si te das de baja antes de los {PLAN_COMUN.permanenciaMeses} meses, se pierde.</li>
-                <li>Léelo todo en el <Link href={`/planmensual/contrato${plan ? `?plan=${plan}` : ''}`} target="_blank">modelo de contrato</Link>, en las <Link href="/planmensual#condiciones" target="_blank">condiciones del plan mensual</Link> y en las <Link href="/condiciones" target="_blank">normas del estudio</Link>.</li>
-              </ul>
-              <label className="rsv__check">
-                <input type="checkbox" checked={d.acepta} onChange={(e) => cambiar('acepta', e.target.checked)} />
-                <span>He leído las condiciones y el modelo de contrato, y la <Link href="/privacidad" target="_blank">política de privacidad</Link>.</span>
-              </label>
-              {errores.acepta && <span className="rsv__error">{errores.acepta}</span>}
-            </section>
           </div>
 
           <aside className="rsv__resumen">
@@ -142,7 +122,12 @@ export default function Alta({ planInicial }) {
             <button type="button" className="rsv__boton" disabled={!p || enviando} onClick={pagar}>
               {enviando ? 'Abriendo el pago…' : p ? `Pagar ${formatoEuros(p.cuotaCent)}` : 'Pagar'}
             </button>
-            <p className="rsv__seguro">Pagarás en la pasarela segura del banco. Después firmas tu contrato.</p>
+            <p className="rsv__seguro">
+              {p ? `${formatoEuros(p.cuotaCent)} al mes (IVA incluido). ` : ''}Permanencia de {PLAN_COMUN.permanenciaMeses} meses.{' '}
+              {cobroAuto ? 'Pagas con tarjeta y cada mes se cobra sola en esa tarjeta hasta que te des de baja.' : 'Los meses siguientes te llega un enlace de pago por correo.'}{' '}
+              Fianza de {formatoEuros(PLAN_COMUN.fianzaCent)} por transferencia después, al firmar el contrato.{' '}
+              Al pagar aceptas las <Link href="/condiciones" target="_blank">condiciones</Link> y la <Link href="/privacidad" target="_blank">privacidad</Link>.
+            </p>
           </aside>
         </div>
       </main>
@@ -153,6 +138,7 @@ export default function Alta({ planInicial }) {
 export async function getServerSideProps({ query }) {
   const { reservasAbiertas } = await import('../../lib/http')
   if (!reservasAbiertas()) return { redirect: { destination: '/planmensual', permanent: false } }
-  const plan = typeof query.plan === 'string' && PLANES[query.plan] && (PLAZAS_LIBRES[query.plan] ?? 0) > 0 ? query.plan : null
-  return { props: { planInicial: plan } }
+  const { cobroAutomaticoActivo } = await import('../../lib/suscripciones/alta')
+  const plan = typeof query.plan === 'string' && PLANES[query.plan] ? query.plan : null
+  return { props: { planInicial: plan, cobroAuto: cobroAutomaticoActivo() } }
 }

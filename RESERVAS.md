@@ -21,7 +21,7 @@ apuntan a Calendly y `/reservar` redirige allí.
 | Inicio | `/admin` | Cómo va el estudio de un vistazo: reservas de hoy, lo que hay que hacer, ingresos, gastos, beneficio y ocupación con gráficas, comparado con el mes (o trimestre, o año) anterior |
 | Finanzas | `/admin/finanzas` | Facturación, gastos (fijos, variables y materiales), gastos fijos que se apuntan solos, lo cobrado por Calendly, IVA orientativo y CSV para la gestoría. Ver «Finanzas» más abajo |
 | Suscripciones | `/admin/suscripciones` | Planes mensuales (Starter, Creator, Pro): altas, horas de cada mes, sesiones, cuotas, fianza y bajas. Ver «Suscripciones» más abajo |
-| Alta de miembros | `/planmensual/alta` | La persona elige plan, paga el primer mes en el TPV y firma su contrato en la web (`/contrato/[enlace privado]`); los meses siguientes paga con un enlace (`/cuota/[enlace privado]`). Ver «Alta de miembros por la web» más abajo |
+| Alta de miembros | `/planmensual/alta` | La persona elige plan, paga el primer mes con tarjeta y después firma su contrato en la web (`/contrato/[enlace privado]`); las cuotas siguientes se cobran solas cada mes en esa tarjeta (si falla, le llega un enlace: `/cuota/[enlace privado]`). Ver «Alta de miembros por la web» más abajo |
 
 Reglas copiadas de Calendly (se cambian en `lib/reservas/config.js`):
 
@@ -73,7 +73,7 @@ Comercia ofrece dos pasarelas y el código tiene las dos. Pregunta:
    - Addon Payments, URL de respuesta: `https://www.studioar.es/api/pagos/addon/respuesta`
    - Las URL de vuelta (OK/KO) van en cada pago; no hay que configurarlas.
 5. **Devoluciones:** se hacen desde su portal con el número de pedido que sale en el panel.
-6. **¿Pagos recurrentes (COF / pago por referencia)?** Para que las cuotas de los planes se cobren solas cada mes en la tarjeta. Si no lo activan, el sistema manda cada mes un enlace de pago por correo (es lo que hace ahora). Bizum no admite cobros automáticos.
+6. **Cobros recurrentes: pedid exactamente «pago por referencia / COF para cobros recurrentes MIT, también por REST (trataPeticionREST)».** Es lo que hace que las cuotas de los planes se cobren solas cada mes en la tarjeta del alta: el primer pago guarda la tarjeta en Redsys (`DS_MERCHANT_IDENTIFIER=REQUIRED`, `DS_MERCHANT_COF_INI=S`, `DS_MERCHANT_COF_TYPE=R`) y cada mes el servidor cobra con esa referencia sin que la persona esté delante (`DS_MERCHANT_EXCEP_SCA=MIT`, `DS_MERCHANT_DIRECTPAYMENT=true`). Cuando lo confirmen, poned `REDSYS_COBRO_RECURRENTE=1`. Si no lo activan, el sistema manda cada mes un enlace de pago por correo. Bizum no admite cobros automáticos: con el cobro recurrente, el alta se paga solo con tarjeta.
 
 > Redsys está probado de principio a fin contra su entorno de pruebas público. Addon Payments
 > está escrito según su especificación, pero falta un pago de prueba con las credenciales de
@@ -97,6 +97,7 @@ producción queda marcada y rechaza cualquier pago hecho con un TPV en modo prue
 | `PAGOS_PROVEEDOR` | `addon` o `redsys` |
 | `ADDON_COMERCIO`, `ADDON_CUENTA`, `ADDON_SECRETO`, `ADDON_ENTORNO` | Si es Addon Payments (`ADDON_ENTORNO` = `pruebas` o `real`) |
 | `REDSYS_COMERCIO`, `REDSYS_TERMINAL`, `REDSYS_CLAVE`, `REDSYS_ENTORNO`, `REDSYS_METODOS` | Si es Redsys (`REDSYS_ENTORNO` = `pruebas` o `real`) |
+| `REDSYS_COBRO_RECURRENTE` | `1` = las cuotas de los planes se cobran solas cada mes en la tarjeta del alta. **Solo cuando Comercia haya activado el pago por referencia (COF)**; sin ella, enlace de pago por correo cada mes |
 | `ADMIN_PASSWORD` | Contraseña del panel, de 12 caracteres o más (si es más corta, el panel no deja entrar) |
 | `SESSION_SECRET` | Texto aleatorio de 32 caracteres o más (firma la sesión del panel) |
 | `CRON_SECRET` | Texto aleatorio: Vercel lo usa para lanzar el recordatorio diario |
@@ -212,7 +213,7 @@ nadie puede reservar encima.
 ### Cómo funciona
 
 - **Periodo** = el mes de cobro: del día del primer cobro al mismo día del mes siguiente. Las horas que no se usan se pierden al acabar el periodo.
-- **Cuotas:** cada periodo tiene su cuota, que aparece sola cuando empieza. El panel **no cobra**: se marca como pagada cuando llega la transferencia o el Bizum. A quien paga con **Stripe**, Stripe le sigue cobrando solo; aquí solo se apunta, y **al darle de baja hay que cancelarle la suscripción en Stripe a mano** (el panel lo recuerda).
+- **Cuotas:** cada periodo tiene su cuota, que aparece sola cuando empieza. A los miembros dados de alta por la web con la tarjeta guardada se les cobra sola (ver «Alta de miembros por la web»); al resto, se marca como pagada cuando llega la transferencia o el Bizum. A quien paga con **Stripe**, Stripe le sigue cobrando solo; aquí solo se apunta, y **al darle de baja hay que cancelarle la suscripción en Stripe a mano** (el panel lo recuerda).
 - **Horas aparte de los miembros:** si las pide el mismo día de la sesión, 50 €/h + IVA entre semana y 60 €/h + IVA en finde y festivos (como en las condiciones). Si las pide con días de antelación, el precio normal de la web para esas horas. El panel lo propone solo y se puede cambiar en cada sesión (0 = de regalo).
 - **Facturas de cuotas:** al marcar la cuota pagada se emite y se le envía la factura, con las mismas series que las reservas: completa (AR-W) si el miembro tiene sus datos de facturación y simplificada (AR-S) si no. Si luego los da, desde la cuota se hace la completa que sustituye a la simplificada. Las cuotas de 0 € y las sesiones incluidas no se facturan; las horas aparte, sí.
 - **Reglas** que comprueba el panel (se pueden saltar con «Reservar igualmente» cuando son avisos): 72 h de antelación, su horario de lunes a viernes, duración de sesión, máximo de sesiones al mes y horas que le quedan. Fines de semana y festivos van siempre aparte. Chocar con otra reserva o un bloqueo no se puede saltar.
@@ -229,19 +230,25 @@ nadie puede reservar encima.
 
 Con `NEXT_PUBLIC_RESERVAS_PROPIAS=1`, los botones de `/planmensual` llevan a `/planmensual/alta` (sin la variable siguen yendo a WhatsApp).
 
-1. **Antes de pagar:** elige plan, pone nombre, apellidos, correo y WhatsApp, y ve el resumen (cuota, horas, permanencia de 3 meses, fianza de 100 € por transferencia) con enlaces al **modelo de contrato** (`/planmensual/contrato?plan=…`), a las condiciones del plan y a las normas del estudio. Tiene que marcar «He leído las condiciones y el modelo de contrato». Se guarda cuándo lo marcó y qué versión del contrato tenía delante.
-2. **Paga el primer mes** en el TPV (tarjeta o Bizum). Cuando el banco lo confirma, se crea la suscripción: empieza ese día, la primera cuota queda pagada (con su factura, simplificada si no ha dado datos de empresa), y sale **«Contrato pendiente»** y **«Fianza pendiente»** en el *Para hacer*. Le llega un correo con el enlace para firmar y al estudio un aviso.
-3. **Firma el contrato** en `/contrato/[enlace]` (la web le lleva ahí al volver del banco): rellena nombre, DNI/NIE, dirección y teléfono (y, si quiere, datos de empresa para las facturas), lee el contrato ya rellenado y firma con el dedo o el ratón. En esa misma página tiene, bien visible, **la transferencia de la fianza** (IBAN, importe y concepto «Fianza SUS-…», con botón para copiar).
+1. **Antes de pagar:** elige plan y pone nombre, apellidos, correo y WhatsApp. **No se le enseña el contrato** (para no meter fricción) ni hay casillas: junto al botón de pagar, en una línea, va lo esencial (cuota al mes, permanencia de 3 meses, cobro mensual automático en la tarjeta hasta la baja, fianza de 100 € por transferencia después) y «Al pagar aceptas las condiciones», con enlace a `/condiciones`. Se guarda cuándo pulsó pagar y la versión del contrato de ese momento.
+2. **Paga el primer mes** en el TPV. Con el cobro recurrente activo (`REDSYS_COBRO_RECURRENTE=1`), **solo con tarjeta** y la tarjeta queda guardada en Redsys: guardamos la referencia que da Redsys, los 4 últimos dígitos y la caducidad, **nunca el número**. Sin el cobro recurrente, tarjeta o Bizum. Cuando el banco lo confirma, se crea la suscripción: empieza ese día, la primera cuota queda pagada (con su factura, simplificada si no ha dado datos de empresa), y sale **«Contrato pendiente»** y **«Fianza pendiente»** en el *Para hacer*. Le llega un correo con el enlace para firmar y al estudio un aviso. Si se pidió guardar la tarjeta y el banco no la devuelve, el estudio recibe un aviso y sus cuotas van con enlace.
+3. **Firma el contrato** en `/contrato/[enlace]` (la web le lleva ahí al volver del banco; antes de pagar no se puede): rellena nombre, DNI/NIE, dirección y teléfono (y, si quiere, datos de empresa para las facturas), lee el contrato ya rellenado y firma con el dedo o el ratón. En esa misma página tiene, bien visible, **la transferencia de la fianza** (IBAN, importe y concepto «Fianza SUS-…», con botón para copiar).
 4. **Al firmar** se guarda el PDF (con la fecha y hora, la versión del contrato y una huella cifrada de su conexión, nunca la IP) y le llega por correo con copia oculta al estudio. Si dio datos de empresa, la factura del primer mes pasa a completa (sustituye a la simplificada).
 5. **Si a las 48 h no ha firmado**, el cron diario le manda un recordatorio (una vez) y avisa al estudio.
 6. **Fianza:** cuando llegue la transferencia, en su ficha *Fianza → Ya cobrada* (transferencia).
-7. **Cuotas siguientes:** al empezar cada periodo, el cron diario le manda un correo con un enlace para pagar con tarjeta o Bizum (`/cuota/[enlace]`). Al pagarse se marca sola como pagada y le llega la factura. Desde la ficha se puede **reenviar el enlace de pago** de una cuota (también a miembros dados de alta a mano) o marcarla pagada a mano si paga por transferencia.
+7. **Cuotas siguientes, cobro automático:** el cron diario cobra cada cuota el día que empieza su periodo, con la tarjeta guardada (cobro MIT por la API REST de Redsys). Si sale, la cuota queda pagada y le llega la factura. **Nunca se cobra dos veces la misma cuota**: mientras se cobra está «cobrando» y la base de datos no deja un segundo cobro automático de la misma cuota, aunque el cron corra dos veces a la vez.
+   - **Si el banco lo rechaza** (tarjeta caducada, sin fondos…): se reintenta solo **al día siguiente y a los 3 días** del primer intento. En el primer rechazo le llega un correo con el enlace para pagarla (`/cuota/[enlace]`) o poner otra tarjeta (la nueva queda guardada para los meses siguientes); al estudio, un aviso y una tarea en el *Para hacer*. Si falla las 3 veces, ya no se reintenta: se le vuelve a mandar el enlace.
+   - **Si el banco no contesta** (no sabemos si cobró): la cuota queda en **«revisar»**, no se reintenta sola y no se puede pagar con el enlace. Mírala en el portal del TPV: si no se cobró, en la cuota pulsa **«No se cobró»** (y luego «Cobrar ahora»); si se cobró, **«Marcar pagada»**. Un cobro que se corta a medias pasa también a «revisar».
+   - **Baja:** al apuntarla, se borran las cuotas pendientes de después del último día, así que no se cobran.
+   - **Sin cobro recurrente** (o para miembros dados de alta a mano), al empezar cada periodo le llega un correo con un enlace para pagar (`/cuota/[enlace]`); desde la ficha se puede reenviar o marcar la cuota pagada a mano.
+
+En la ficha de cada miembro, el recuadro **Cobro mensual** enseña la tarjeta guardada (···· 1234, caducidad), si se cobra sola, la fecha del próximo cobro y los intentos de cobro con su resultado; tiene **«Dejar de cobrar»** (las cuotas siguientes se marcan a mano) y **«Volver a cobrar solo»**. En cada cuota pendiente: **«Cobrar ahora»** (pide confirmación) y, si hay un cobro por comprobar, **«No se cobró»**. El *Para hacer* avisa también si **la tarjeta caduca antes del próximo cobro**.
 
 En la ficha de cada miembro, el recuadro **Contrato** dice si está pendiente o firmado, deja descargar el PDF, reenviar o copiar el enlace, y a los miembros dados de alta a mano se les puede **enviar el contrato para firmar** desde ahí.
 
 El texto del contrato está en `lib/suscripciones/contrato.js` (plantilla sin datos personales, con las condiciones de cada plan). Si se cambia, hay que subir `CONTRATO_VERSION`: cada contrato firmado guarda la suya. Quien firma por el estudio sale de `FACTURA_EMISOR_NOMBRE` (sin firma dibujada ni DNI: no pueden estar en el repositorio).
 
-**Pendiente:** el cobro automático de las cuotas en la tarjeta (pagos recurrentes de Redsys) necesita que Comercia lo active y una integración aparte; hoy se paga con el enlace de cada mes.
+**Probado** contra el entorno de pruebas público de Redsys (comercio 999008881): el primer pago con la tarjeta guardada (COF, con 3DS) devuelve la referencia, y el cobro MIT por REST con esa referencia sale autorizado; una referencia que no existe da `SIS0321` (se trata como rechazo). **Pendiente de Comercia:** que activen el pago por referencia/COF y los cobros MIT por REST en el TPV del estudio, y entonces `REDSYS_COBRO_RECURRENTE=1`.
 
 ### Pasar al panel a la clienta que ya tiene contrato
 

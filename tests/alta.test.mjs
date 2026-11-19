@@ -42,11 +42,12 @@ async function altaPagada(plan = 'creator') {
   return { alta, r }
 }
 
-test('validar el alta: plan, datos y casilla obligatoria', () => {
-  const mal = A.validarAlta({ plan: 'nada', nombre: '', apellidos: '', email: 'x', telefono: '12', acepta: false })
+test('validar el alta: plan y datos (sin casillas: el contrato se firma después de pagar)', () => {
+  const mal = A.validarAlta({ plan: 'nada', nombre: '', apellidos: '', email: 'x', telefono: '12' })
   assert.equal(mal.ok, false)
-  assert.deepEqual(Object.keys(mal.errores).sort(), ['acepta', 'apellidos', 'email', 'nombre', 'plan', 'telefono'])
+  assert.deepEqual(Object.keys(mal.errores).sort(), ['apellidos', 'email', 'nombre', 'plan', 'telefono'])
   assert.ok(A.validarAlta(DATOS()).ok)
+  assert.ok(A.validarAlta({ ...DATOS(), acepta: undefined }).ok)
 })
 
 test('el modelo de contrato sale con las condiciones del plan y sin datos de nadie', () => {

@@ -1,4 +1,5 @@
-// Pagar la cuota de un mes de suscripción (el enlace llega por correo al empezar el mes)
+// Pagar la cuota de un mes de suscripción (el enlace llega por correo al empezar el mes, o si
+// el banco rechaza el cobro automático con la tarjeta guardada)
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
@@ -8,7 +9,7 @@ import { irAlTpv, pedirJson } from '../../lib/reservas/navegador'
 
 const wa = `https://wa.me/${ESTUDIO.whatsapp}`
 
-export default function PaginaCuota({ token, pago, cuota, sus, pagable }) {
+export default function PaginaCuota({ token, pago, cuota, sus, pagable, enCurso, guardaTarjeta }) {
   const router = useRouter()
   const [intentos, setIntentos] = useState(0)
   const [error, setError] = useState(null)
@@ -60,8 +61,14 @@ export default function PaginaCuota({ token, pago, cuota, sus, pagable }) {
             {pagando ? 'Abriendo el pago…' : `Pagar ${formatoEuros(cuota.importeCent)}`}
           </button>
         )}
-        {cuota.estado !== 'pagada' && !pagable && <p className="rsv__nota">Esta cuota ya no se puede pagar desde aquí.</p>}
-        <p className="rsv__nota">Pagas con tarjeta o Bizum en la pasarela segura del banco. ¿Dudas? Escríbenos por <a className="rsv-enlace" href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>
+        {cuota.estado !== 'pagada' && !pagable && enCurso && <p className="rsv__nota">Estamos cobrando esta cuota en tu tarjeta. Si en unas horas no te llega la factura, escríbenos.</p>}
+        {cuota.estado !== 'pagada' && !pagable && !enCurso && <p className="rsv__nota">Esta cuota ya no se puede pagar desde aquí.</p>}
+        <p className="rsv__nota">
+          {guardaTarjeta
+            ? 'Pagas con tarjeta en la pasarela segura del banco. La tarjeta queda guardada para cobrar solas las cuotas siguientes, hasta que te des de baja.'
+            : 'Pagas con tarjeta o Bizum en la pasarela segura del banco.'}{' '}
+          ¿Dudas? Escríbenos por <a className="rsv-enlace" href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>.
+        </p>
       </main>
     </>
   )
@@ -69,10 +76,10 @@ export default function PaginaCuota({ token, pago, cuota, sus, pagable }) {
 
 export async function getServerSideProps({ params, query, res }) {
   res.setHeader('Cache-Control', 'no-store')
-  const { paginaCuota } = await import('../../lib/suscripciones/alta')
+  const { paginaCuota, cobroAutomaticoActivo } = await import('../../lib/suscripciones/alta')
   const p = await paginaCuota(params.token)
   if (!p) return { notFound: true }
-  const { cuota, sus, pagable } = p
+  const { cuota, sus, pagable, enCurso, guardaTarjeta } = p
   return {
     props: {
       token: params.token,
@@ -80,6 +87,8 @@ export async function getServerSideProps({ params, query, res }) {
       cuota: { estado: cuota.estado, importeCent: cuota.importeCent, planNombre: cuota.planNombre, texto: cuota.texto, pagadaEn: cuota.pagadaEn },
       sus: { codigo: sus.codigo },
       pagable,
+      enCurso: Boolean(enCurso),
+      guardaTarjeta: Boolean(guardaTarjeta && cobroAutomaticoActivo()),
     },
   }
 }

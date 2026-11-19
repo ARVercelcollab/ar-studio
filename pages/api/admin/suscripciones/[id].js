@@ -8,6 +8,7 @@ import { facturarAlCobrar } from '../../../../lib/facturas/envio.js'
 import { urlBase } from '../../../../lib/http.js'
 import { textoDuracion } from '../../../../lib/reservas/config.js'
 import { registrarEvento } from '../../../../lib/reservas/servicio.js'
+import { cambiarCobroAutomatico } from '../../../../lib/suscripciones/alta.js'
 
 const numero = (v) => (v === '' || v === null || v === undefined ? null : Number(String(v).replace(',', '.')))
 
@@ -75,6 +76,9 @@ export default rutaAdmin(async (req, res) => {
     case 'deshacer_baja':
       await SUS.deshacerBaja(id)
       return res.status(200).json({ ok: true, mensaje: 'Baja deshecha. Las sesiones canceladas hay que reservarlas de nuevo.' })
+    case 'cobro_auto':
+      await cambiarCobroAutomatico(id, Boolean(b.activar))
+      return res.status(200).json({ ok: true, mensaje: b.activar ? 'Las cuotas vuelven a cobrarse solas en su tarjeta.' : 'Ya no se cobra sola: las cuotas siguientes se marcan a mano o con el enlace de pago.' })
     case 'cobro_externo_cancelado':
       await SUS.marcarCobroExternoCancelado(id)
       return res.status(200).json({ ok: true, mensaje: 'Apuntado: el cobro automático está cancelado.' })

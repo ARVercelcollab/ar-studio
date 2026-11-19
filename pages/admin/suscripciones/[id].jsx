@@ -8,7 +8,7 @@ import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
 import { vistaAdmin, enlaceWhatsApp, fechaHoraTexto } from '../../../lib/admin/vista'
 import { fichaSuscripcion } from '../../../lib/suscripciones/servicio'
 import {
-  ESTADOS_SUSCRIPCION, propuestaBaja, consecuenciasBaja, periodoNumero, textoPeriodo, textoRecordatorioCuota,
+  ESTADOS_SUSCRIPCION, propuestaBaja, consecuenciasBaja, periodoNumero, textoPeriodo, textoRecordatorioCuota, proximoCobro, finCaducidad,
 } from '../../../lib/suscripciones/reglas'
 import { PLANES, METODOS_CUOTA, formatoEuros, textoDuracion } from '../../../lib/reservas/config'
 import { fechaMadrid, horaMadrid, textoFechaCorta } from '../../../lib/reservas/tiempo'
@@ -32,9 +32,18 @@ const EVENTOS = {
   correos_confirmacion: 'Correo de confirmación', correo_fallido: 'Fallo al enviar un correo', recordatorio: 'Recordatorio enviado',
   solicitud_cliente: 'Pide un cambio', alta_web: 'Alta por la web (primer mes pagado)', contrato_firmado: 'Contrato firmado',
   contrato_enviado: 'Enlace del contrato enviado', contrato_recordado: 'Recordatorio del contrato', enlace_cuota: 'Enlace de pago enviado',
-  pago_revisar: 'Pago que revisar',
+  pago_revisar: 'Pago que revisar', tarjeta_guardada: 'Tarjeta guardada para los cobros', tarjeta_no_guardada: 'El banco no guardó la tarjeta',
+  cobro_intento: 'Cobro automático', cobro_rechazado: 'Cobro rechazado por el banco', cobro_agotado: 'Cobro rechazado (sin más intentos)',
+  cobro_revisar: 'Cobro sin confirmar (revisar)', cobro_no_cobrado: 'Cobro comprobado: no se cobró', cobro_activado: 'Cobro automático activado',
+  cobro_desactivado: 'Cobro automático parado',
 }
 const FIANZA_ACCION = { cobrada: 'cobrada', devolver: 'devuelta', retener: 'retenida', sin_fianza: 'sin fianza' }
+const TEXTO_COBRO = {
+  cobrando: 'Cobrando ahora en la tarjeta…', rechazado: 'El banco rechazó el cobro', agotado: 'Rechazado en todos los intentos',
+  revisar: 'No sabemos si se cobró: míralo en el portal del TPV',
+}
+const ESTADO_PAGO = { pagado: 'Cobrado', fallido: 'Rechazado', iniciado: 'Sin confirmar' }
+const caducidad = (aamm) => (aamm ? `${aamm.slice(2)}/${aamm.slice(0, 2)}` : '—')
 
 function textoEvento(e) {
   const d = e.detalle || {}
@@ -53,6 +62,11 @@ function textoEvento(e) {
   if (e.tipo === 'factura_emitida') partes.push(d.codigo)
   if (e.tipo === 'pago_revisar') partes.push(d.motivo === 'duplicado' ? 'pago repetido' : d.motivo === 'sin_cuota' ? 'la cuota ya no estaba pendiente' : 'importe distinto', d.pedido ? `pedido ${d.pedido}` : null)
   if (e.tipo === 'alta_web' && d.pedido) partes.push(`pedido ${d.pedido}`)
+  if (e.tipo === 'tarjeta_guardada' && d.ultimos) partes.push(`···· ${d.ultimos}`)
+  if (e.tipo === 'cobro_intento') partes.push(`intento ${d.intento}`, d.pedido ? `pedido ${d.pedido}` : null)
+  if (['cobro_rechazado', 'cobro_agotado'].includes(e.tipo)) partes.push(d.codigo ? `código ${d.codigo}` : null, d.proximo ? `reintento el ${fecha(d.proximo, false)}` : null)
+  if (e.tipo === 'cobro_revisar') partes.push(d.error === 'cortado' ? 'se cortó a medias' : d.error)
+  if (e.tipo === 'cuota_pagada' && d.automatico) partes.push('cobro automático')
   if (e.tipo === 'correo_fallido' || e.tipo === 'factura_fallida') partes.push(d.error)
   if (d.nota && e.tipo !== 'fianza') partes.push(d.nota)
   return partes.filter(Boolean).join(' · ')
@@ -94,7 +108,7 @@ const facturaDe = (sus) => ({ nombre: sus.factura?.nombre || '', nif: sus.factur
 // «Referencia o enlace»: si es una dirección https, va como enlace (justificante)
 const referenciaOEnlace = (v) => (/^https:\/\//i.test(String(v || '').trim()) ? { enlace: String(v).trim(), referencia: '' } : { referencia: v, enlace: '' })
 
-function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
+function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy, cobroDisponible }) {
   const [abierto, setAbierto] = useState(null) // 'pagar' | 'mas' | 'factura'
   const [pago, setPago] = useState(() => pagoDe(sus, emisorListo, facturasAuto, hoy))
   const [edicion, setEdicion] = useState(() => edicionDe(c))
@@ -142,9 +156,19 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
             </small>
           )}
           {c.estado === 'devuelta' && c.devueltaEn && <small style={{ display: 'block', color: '#8a7a6c' }}>Devuelta el {fecha(c.devueltaEn, false)}</small>}
+          {pendiente && c.cobroEstado && <small style={{ display: 'block', color: c.cobroEstado === 'rechazado' ? '#8a7a6c' : '#a33' }}>{TEXTO_COBRO[c.cobroEstado]}{c.cobroEstado === 'rechazado' && c.cobroProximo ? ` · reintento el ${fecha(c.cobroProximo, false)}` : ''}{c.cobroError ? ` · ${c.cobroError}` : ''}</small>}
+          {pendiente && !c.cobroEstado && sus.cobroAuto && c.importeCent > 0 && <small style={{ display: 'block', color: '#8a7a6c' }}>Se cobra sola en la tarjeta</small>}
         </td>
         <td>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {cobrable && sus.cobroAuto && cobroDisponible && !['cobrando', 'revisar'].includes(c.cobroEstado) && c.desde <= hoy && (
+              <button type="button" className="adm-boton adm-mini" disabled={estado.enviando}
+                onClick={() => { if (window.confirm(`¿Cobrar ahora ${formatoEuros(c.importeCent)} en la tarjeta ${sus.tarjeta?.ultimos ? `···· ${sus.tarjeta.ultimos}` : 'guardada'}?`)) hacer({ accion: 'cobrar_ahora' }) }}>Cobrar ahora</button>
+            )}
+            {cobrable && c.cobroEstado === 'revisar' && (
+              <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando}
+                onClick={() => { if (window.confirm('¿Has comprobado en el portal del TPV que este cobro NO se hizo? Si se cobró, usa «Marcar pagada».')) hacer({ accion: 'no_cobrado' }) }}>No se cobró</button>
+            )}
             {cobrable && <button type="button" className="adm-boton adm-mini" onClick={() => alternar('pagar')}>Marcar pagada</button>}
             {cobrable && c.recordatorio && <a className="adm-boton adm-boton--claro adm-mini" href={c.recordatorio} target="_blank" rel="noopener noreferrer">Recordar por WhatsApp</a>}
             {cobrable && sus.email && <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => hacer({ accion: 'enlace_pago' })} title={c.avisoPagoEn ? `Enviado el ${fechaHoraCorta(c.avisoPagoEn)}` : 'Le llega un correo con un enlace para pagar con tarjeta o Bizum'}>{c.avisoPagoEn ? 'Reenviar enlace de pago' : 'Enviar enlace de pago'}</button>}
@@ -405,6 +429,49 @@ function Contrato({ sus, contrato }) {
   )
 }
 
+function CobroMensual({ sus, cuotas, cobros, cobroDisponible, hoy }) {
+  const [estado, ejecutar] = useAccion()
+  const url = `/api/admin/suscripciones/${sus.id}`
+  const prox = proximoCobro(sus, cuotas, hoy)
+  const fin = sus.tarjeta?.caduca ? finCaducidad(sus.tarjeta.caduca) : null
+  if (!sus.tarjeta && !sus.cobroAuto && sus.origen !== 'web') return null
+  return (
+    <div className="adm-caja">
+      <h2>Cobro mensual</h2>
+      <dl className="adm-datos">
+        <dt>Tarjeta</dt>
+        <dd>{sus.tarjeta ? <>Tarjeta guardada {sus.tarjeta.ultimos ? `···· ${sus.tarjeta.ultimos}` : ''} (caduca {caducidad(sus.tarjeta.caduca)}){fin && prox && fin < prox ? <> <Chip tipo="aviso">Caduca antes del próximo cobro</Chip></> : null}</> : 'Sin tarjeta guardada'}</dd>
+        <dt>Cobro</dt>
+        <dd>{sus.cobroAuto ? (cobroDisponible ? 'Se cobra sola cada mes' : 'Automático, pero el TPV no tiene activado el cobro recurrente') : sus.cobroEnlace ? 'Con enlace de pago por correo cada mes' : 'Parado: las cuotas se marcan a mano'}</dd>
+        {sus.cobroAuto && <><dt>Próximo cobro</dt><dd>{prox ? fecha(prox) : '—'}</dd></>}
+      </dl>
+      <p className="adm-acciones">
+        {sus.cobroAuto && (
+          <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando}
+            onClick={() => { if (window.confirm('¿Dejar de cobrar solo? Las cuotas siguientes habrá que marcarlas a mano (o mandar el enlace de pago).')) ejecutar(url, { accion: 'cobro_auto', activar: false }) }}>Dejar de cobrar</button>
+        )}
+        {!sus.cobroAuto && sus.tarjeta && cobroDisponible && (
+          <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => ejecutar(url, { accion: 'cobro_auto', activar: true })}>Volver a cobrar solo</button>
+        )}
+      </p>
+      {cobros.length > 0 && (
+        <>
+          <p className="adm-nota">Intentos de cobro automático</p>
+          <ul className="adm-historial">
+            {cobros.map((x) => (
+              <li key={x.pedido}>
+                <time>{fechaHoraCorta(x.cuando)}</time>
+                <span>Periodo {x.periodo} · {formatoEuros(x.importeCent)} · {ESTADO_PAGO[x.estado] || x.estado}{x.codigo && x.estado !== 'pagado' ? ` (código ${x.codigo})` : ''} · pedido {x.pedido}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <Mensaje estado={estado} />
+    </div>
+  )
+}
+
 function Fianza({ sus, hoy }) {
   const [f, setF] = useState({ euros: (sus.fianzaCent / 100).toFixed(2).replace('.', ','), metodo: 'transferencia', fecha: hoy, nota: '' })
   const [estado, ejecutar] = useAccion()
@@ -623,7 +690,7 @@ export default function FichaSuscripcion(p) {
               <table className="adm-tabla adm-tabla--cuotas">
                 <thead><tr><th>Periodo</th><th>Importe</th><th>Estado</th><th /></tr></thead>
                 <tbody>
-                  {[...cuotas].reverse().map((c) => <FilaCuota key={c.id} c={c} sus={sus} emisorListo={emisorListo} facturasAuto={p.facturasAuto} hoy={hoy} />)}
+                  {[...cuotas].reverse().map((c) => <FilaCuota key={c.id} c={c} sus={sus} emisorListo={emisorListo} facturasAuto={p.facturasAuto} hoy={hoy} cobroDisponible={p.cobroDisponible} />)}
                 </tbody>
               </table>
             </div>
@@ -655,6 +722,7 @@ export default function FichaSuscripcion(p) {
         <div>
           <Baja sus={sus} sesiones={sesiones} hoy={hoy} estado={estado} puedeBorrarse={p.puedeBorrarse} />
           <Contrato sus={sus} contrato={p.contrato} />
+          <CobroMensual sus={sus} cuotas={cuotas} cobros={p.cobros} cobroDisponible={p.cobroDisponible} hoy={hoy} />
           <Fianza sus={sus} hoy={hoy} />
           <Condiciones sus={sus} condiciones={p.condiciones} periodoActual={p.periodoActual} estado={estado} />
           <Datos sus={sus} />
@@ -679,7 +747,7 @@ export async function getServerSideProps(ctx) {
   }
   const { sus } = ficha
   const iban = process.env.ESTUDIO_IBAN || null
-  const { contratoDeSuscripcion, urlContrato } = await import('../../../lib/suscripciones/alta')
+  const { contratoDeSuscripcion, urlContrato, historialCobros, cobroAutomaticoActivo } = await import('../../../lib/suscripciones/alta')
   const { urlBase } = await import('../../../lib/http')
   const contrato = await contratoDeSuscripcion(sus.id)
   const sesion = (s) => vistaAdmin({ ...s, planSuscripcion: sus.plan })
@@ -703,6 +771,8 @@ export async function getServerSideProps(ctx) {
       ultimoDiaPermanencia: ficha.ultimoDiaPermanencia,
       contrato: contrato ? { estado: contrato.estado, version: contrato.version, firmadoEn: contrato.firmadoEn, enviadoEn: contrato.enviadoEn, recordadoEn: contrato.recordadoEn, url: urlContrato(urlBase(ctx.req), contrato.token) } : null,
       puedeBorrarse: ficha.puedeBorrarse,
+      cobros: await historialCobros(sus.id),
+      cobroDisponible: cobroAutomaticoActivo(),
       condiciones: ficha.condiciones,
       hoy: fechaMadrid(new Date()),
       emisorListo: Boolean(emisor()),
