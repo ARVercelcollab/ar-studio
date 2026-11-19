@@ -147,7 +147,7 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 - **Devoluciones:** desde el portal del TPV; el panel solo apunta el importe.
 - **Límites antiabuso:** cada conexión puede tener como mucho 2 horas guardadas sin pagar (12 en total a la vez) y 4 intentos de pago por reserva; si alguien vuelve atrás desde el banco y reserva otra vez, se suelta su hora anterior. En el panel, 8 contraseñas falsas seguidas bloquean esa conexión 15 minutos.
 - **Cambios del cliente:** el cliente los pide desde su página y el estudio los hace en el panel.
-- **Política de privacidad:** menciona Calendly como proveedor; al activar, cambiarla por el TPV de Comercia, Neon (base de datos), Resend (correos) y Google (Google Calendar, donde se copian los datos de cada reserva para el estudio).
+- **Política de privacidad:** ya preparada. Con `NEXT_PUBLIC_RESERVAS_PROPIAS=1` nombra a Comercia (Redsys/Bizum), Stripe (planes antiguos), Neon, Vercel, Resend, Google Calendar y OpenAI; sin la variable sigue nombrando a Calendly.
 - **Área de clientes** (que los miembros vean sus horas y reserven solos): fase 3. Los planes ya se llevan desde el panel.
 
 ## Google Calendar
