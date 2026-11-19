@@ -6,13 +6,17 @@ import YoutubeCard from '../components/YoutubeCard'
 import InstagramCard from '../components/InstagramCard'
 import { POSTS_IG } from '../lib/instagram'
 import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
+import { RESERVAS_PROPIAS } from '../lib/enlaces'
 
 const WA = 'https://wa.me/34613395533?text='
 const wa = (texto) => WA + encodeURIComponent(texto)
-const waGeneral = wa('Hola, quiero una plaza del plan mensual de AR Studio')
-const waStarter = wa('Hola, quiero reservar la plaza del plan Starter de AR Studio.')
-const waCreator = wa('Hola, quiero reservar la plaza del plan Creator de AR Studio.')
-const waPro = wa('Hola, quiero reservar la plaza del plan Pro de AR Studio.')
+// Con las reservas propias activas (NEXT_PUBLIC_RESERVAS_PROPIAS=1), los botones llevan al
+// alta por la web (pago del primer mes y contrato); sin ellas, a WhatsApp como hasta ahora.
+const alta = (plan) => (RESERVAS_PROPIAS ? `/planmensual/alta${plan ? `?plan=${plan}` : ''}` : null)
+const waGeneral = alta() || wa('Hola, quiero una plaza del plan mensual de AR Studio')
+const waStarter = alta('starter') || wa('Hola, quiero reservar la plaza del plan Starter de AR Studio.')
+const waCreator = alta('creator') || wa('Hola, quiero reservar la plaza del plan Creator de AR Studio.')
+const waPro = alta('pro') || wa('Hola, quiero reservar la plaza del plan Pro de AR Studio.')
 const waGrabacion = wa('Hola, quiero información sobre la grabación con cámara profesional en AR Studio.')
 
 // Marcas personales en el estudio (carrusel de fotos)
@@ -340,14 +344,14 @@ export default function PlanMensual() {
         {/* CIERRE */}
         <section className="planmensual__contacto" id="unirte">
           <h2>Da el paso</h2>
-          <p>Escríbenos por WhatsApp indicando qué plan te interesa y te contamos los siguientes pasos para reservar tu plaza.</p>
+          <p>{RESERVAS_PROPIAS ? 'Elige tu plan, paga el primer mes y firma tu contrato online en un par de minutos.' : 'Escríbenos por WhatsApp indicando qué plan te interesa y te contamos los siguientes pasos para reservar tu plaza.'}</p>
           <div className="planmensual__cierre_cta">
             <ButtonArrow texto="SOLICITAR PLAZA" href={waGeneral} />
           </div>
         </section>
 
         {/* CONDICIONES (plegadas, después del cierre) */}
-        <section className="planmensual__condiciones">
+        <section className="planmensual__condiciones" id="condiciones">
           <details>
             <summary>Condiciones completas del plan mensual</summary>
             <div className="planmensual__cond_grid">
@@ -397,7 +401,7 @@ export default function PlanMensual() {
       </main>
 
       {fijo === 'solicitar' ? (
-        <a className="planmensual__sticky visible" href={waGeneral} target="_blank" rel="noopener noreferrer">Solicitar plaza</a>
+        <a className="planmensual__sticky visible" href={waGeneral} {...(RESERVAS_PROPIAS ? {} : { target: '_blank', rel: 'noopener noreferrer' })}>Solicitar plaza</a>
       ) : (
         <a className={`planmensual__sticky ${fijo === 'planes' ? 'visible' : ''}`} href="#planes">Ver planes</a>
       )}

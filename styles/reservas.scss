@@ -661,3 +661,212 @@ $error: #a33b2b;
     width: 200px;
   }
 }
+
+// ---------- Alta de miembros, contrato y cuotas ----------
+
+.rsv-alta__planes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+
+  @include media600px {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rsv__duracion small {
+    font-size: 0.8rem;
+    font-weight: 200;
+    opacity: 0.8;
+  }
+
+  .rsv__duracion:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.rsv-alta__lista {
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1.55;
+  margin: 4px 0 18px;
+
+  li {
+    list-style: disc;
+    margin-left: 18px;
+    margin-bottom: 4px;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+}
+
+.rsv-contrato {
+  border: 1px solid $borde;
+  background: $white;
+  padding: 26px 26px 18px;
+  font-weight: 300;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  max-height: 520px;
+  overflow-y: auto;
+
+  @include media600px {
+    padding: 18px 16px 10px;
+    max-height: 440px;
+  }
+
+  &.is-completo {
+    max-height: none;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.2rem;
+  }
+
+  h3 {
+    font-size: 0.98rem;
+    font-weight: 400;
+    margin: 16px 0 6px;
+  }
+
+  p {
+    margin-bottom: 8px;
+  }
+
+  ul {
+    margin: 0 0 8px;
+
+    li {
+      list-style: disc;
+      margin-left: 18px;
+    }
+  }
+
+  // (más específico que el «dl» de .rsv-ficha)
+  dl,
+  .rsv-ficha & dl {
+    display: block;
+    border: 0;
+    padding: 0;
+    margin: 4px 0 6px;
+    font-size: inherit;
+
+    div {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      margin-bottom: 4px;
+      gap: 8px;
+
+      @include media500px {
+        grid-template-columns: 1fr;
+        gap: 0;
+        margin-bottom: 6px;
+      }
+    }
+
+    dt {
+      color: $gris;
+    }
+  }
+
+  .rsv-contrato__sub {
+    color: $gris;
+    margin-bottom: 14px;
+  }
+}
+
+.rsv-firma {
+  .rsv-firma__lienzo {
+    display: block;
+    width: 100%;
+    height: 180px;
+    border: 1px dashed $beige;
+    background: $white;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  &.is-error .rsv-firma__lienzo {
+    border-color: $error;
+  }
+
+  .rsv-firma__pie {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 200;
+    color: $gris;
+    margin-top: 6px;
+
+    button {
+      text-decoration: underline;
+      color: $brown;
+    }
+  }
+}
+
+.rsv-fianza {
+  border: 2px solid $brown;
+  background: #fbf7f2;
+  padding: 20px 22px;
+  margin: 0 0 28px;
+
+  h2 {
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-weight: 300;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 10px 12px;
+    margin-top: 14px;
+    font-weight: 300;
+
+    @include media500px {
+      grid-template-columns: 1fr;
+      gap: 2px;
+
+      dd {
+        margin-bottom: 10px;
+      }
+    }
+  }
+
+  dt {
+    color: $gris;
+  }
+
+  dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+  }
+
+  .rsv-fianza__iban {
+    font-size: 1.08rem;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    word-break: break-all;
+  }
+
+  .rsv-fianza__copiar {
+    border: 1px solid $brown;
+    padding: 5px 10px 4px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: $white;
+    color: $brown;
+  }
+}

@@ -10,7 +10,7 @@ function pagina(titulo, texto, enlace) {
 <title>${esc(titulo)}</title>${enlace ? `<meta http-equiv="refresh" content="1;url=${esc(enlace)}">` : ''}</head>
 <body style="font-family:Helvetica,Arial,sans-serif;color:#4b3828;max-width:480px;margin:60px auto;padding:0 20px">
 <h1 style="font-weight:400">${esc(titulo)}</h1><p>${esc(texto)}</p>
-${enlace ? `<p><a href="${esc(enlace)}" style="color:#4b3828">Ver mi reserva</a></p><script>window.top.location.href=${JSON.stringify(enlace)}</script>` : ''}
+${enlace ? `<p><a href="${esc(enlace)}" style="color:#4b3828">Continuar</a></p><script>window.top.location.href=${JSON.stringify(enlace)}</script>` : ''}
 </body></html>`
 }
 
@@ -19,9 +19,10 @@ export default async function handler(req, res) {
   const base = urlBase(req)
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   try {
-    const { reserva, resultado } = await recibirResultado('addon', req.body || {}, base)
-    const enlace = `${urlReserva(base, reserva)}?pago=${resultado.pagado ? 'ok' : 'ko'}`
-    res.status(200).send(pagina(resultado.pagado ? 'Pago recibido' : 'El pago no se ha completado', 'Te llevamos a tu reserva…', enlace))
+    const r = await recibirResultado('addon', req.body || {}, base)
+    const pagado = r.resultado.pagado
+    const enlace = `${r.tipo === 'suscripcion' ? r.destino : urlReserva(base, r.reserva)}?pago=${pagado ? 'ok' : 'ko'}`
+    res.status(200).send(pagina(pagado ? 'Pago recibido' : 'El pago no se ha completado', r.tipo === 'suscripcion' ? 'Te llevamos a tu suscripción…' : 'Te llevamos a tu reserva…', enlace))
   } catch (e) {
     console.error('[pagos] respuesta de Addon rechazada', e.message)
     res.status(200).send(pagina('No hemos podido comprobar el pago', `Escríbenos por WhatsApp al ${ESTUDIO.whatsappVisible} y lo miramos.`, null))

@@ -4,6 +4,8 @@ import * as SUS from '../../../../lib/suscripciones/servicio.js'
 import { emitirYEnviarCuota } from '../../../../lib/facturas/envio.js'
 import { facturaDeCuota, facturasAutomaticas } from '../../../../lib/facturas/servicio.js'
 import { registrarEvento } from '../../../../lib/reservas/servicio.js'
+import { enviarEnlaceCuota } from '../../../../lib/suscripciones/alta.js'
+import { urlBase } from '../../../../lib/http.js'
 
 // Emitir y mandar la factura de una cuota. Si se emite pero falla el correo, lo dice
 // claro (la factura ya existe: se reenvía desde la ficha) y lo apunta en el historial.
@@ -55,6 +57,10 @@ export default rutaAdmin(async (req, res) => {
       const r = await facturar(id, { datosCliente: datos, reenviar: true })
       if (r.error) throw r.error
       return res.status(200).json({ ok: r.ok, mensaje: r.texto })
+    }
+    case 'enlace_pago': {
+      await enviarEnlaceCuota(id, urlBase(req))
+      return res.status(200).json({ ok: true, mensaje: 'Enlace de pago enviado por correo.' })
     }
     default:
       return res.status(400).json({ error: 'accion', mensaje: 'Acción desconocida.' })

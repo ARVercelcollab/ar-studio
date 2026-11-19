@@ -11,7 +11,7 @@ import {
   ESTADOS_SUSCRIPCION, propuestaBaja, consecuenciasBaja, periodoNumero, textoPeriodo, textoRecordatorioCuota,
 } from '../../../lib/suscripciones/reglas'
 import { PLANES, METODOS_CUOTA, formatoEuros, textoDuracion } from '../../../lib/reservas/config'
-import { fechaMadrid, textoFechaCorta } from '../../../lib/reservas/tiempo'
+import { fechaMadrid, horaMadrid, textoFechaCorta } from '../../../lib/reservas/tiempo'
 import { pedirJson } from '../../../lib/reservas/navegador'
 import { ErrorReserva } from '../../../lib/reservas/servicio'
 import { emisor, facturasAutomaticas } from '../../../lib/facturas/servicio'
@@ -20,6 +20,7 @@ const h = (x) => textoDuracion(x, { corto: true })
 const METODOS = Object.fromEntries(METODOS_CUOTA)
 const METODOS_A_MANO = METODOS_CUOTA.filter(([id]) => id !== 'stripe')
 const fecha = (f, anio = true) => (f ? textoFechaCorta(f, { anio }) : '—')
+const fechaHoraCorta = (iso) => `${textoFechaCorta(fechaMadrid(iso), { anio: false })}, ${horaMadrid(iso)}`
 
 const EVENTOS = {
   alta: 'Alta', editada: 'Datos cambiados', condiciones: 'Condiciones cambiadas', cuota_pagada: 'Cuota pagada',
@@ -29,7 +30,9 @@ const EVENTOS = {
   creada: 'Sesión reservada', movida: 'Sesión movida', cancelada: 'Sesión cancelada', pagada_a_mano: 'Horas aparte pagadas',
   factura_emitida: 'Factura emitida', factura_enviada: 'Factura enviada', factura_fallida: 'Fallo con la factura',
   correos_confirmacion: 'Correo de confirmación', correo_fallido: 'Fallo al enviar un correo', recordatorio: 'Recordatorio enviado',
-  solicitud_cliente: 'Pide un cambio',
+  solicitud_cliente: 'Pide un cambio', alta_web: 'Alta por la web (primer mes pagado)', contrato_firmado: 'Contrato firmado',
+  contrato_enviado: 'Enlace del contrato enviado', contrato_recordado: 'Recordatorio del contrato', enlace_cuota: 'Enlace de pago enviado',
+  pago_revisar: 'Pago que revisar',
 }
 const FIANZA_ACCION = { cobrada: 'cobrada', devolver: 'devuelta', retener: 'retenida', sin_fianza: 'sin fianza' }
 
@@ -48,6 +51,8 @@ function textoEvento(e) {
   if (e.tipo === 'fianza') partes.push(FIANZA_ACCION[d.accion] || d.accion, d.importeCent ? formatoEuros(d.importeCent) : null, d.nota)
   if (e.tipo === 'factura_enviada') partes.push(`${d.codigo} a ${d.a}`)
   if (e.tipo === 'factura_emitida') partes.push(d.codigo)
+  if (e.tipo === 'pago_revisar') partes.push(d.motivo === 'duplicado' ? 'pago repetido' : d.motivo === 'sin_cuota' ? 'la cuota ya no estaba pendiente' : 'importe distinto', d.pedido ? `pedido ${d.pedido}` : null)
+  if (e.tipo === 'alta_web' && d.pedido) partes.push(`pedido ${d.pedido}`)
   if (e.tipo === 'correo_fallido' || e.tipo === 'factura_fallida') partes.push(d.error)
   if (d.nota && e.tipo !== 'fianza') partes.push(d.nota)
   return partes.filter(Boolean).join(' · ')
@@ -142,6 +147,7 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {cobrable && <button type="button" className="adm-boton adm-mini" onClick={() => alternar('pagar')}>Marcar pagada</button>}
             {cobrable && c.recordatorio && <a className="adm-boton adm-boton--claro adm-mini" href={c.recordatorio} target="_blank" rel="noopener noreferrer">Recordar por WhatsApp</a>}
+            {cobrable && sus.email && <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => hacer({ accion: 'enlace_pago' })} title={c.avisoPagoEn ? `Enviado el ${fechaHoraCorta(c.avisoPagoEn)}` : 'Le llega un correo con un enlace para pagar con tarjeta o Bizum'}>{c.avisoPagoEn ? 'Reenviar enlace de pago' : 'Enviar enlace de pago'}</button>}
             {c.factura && <a className="adm-boton adm-boton--claro adm-mini" href={`/api/admin/facturas/${c.factura.id}`} target="_blank" rel="noopener noreferrer">{c.factura.simplificada ? 'Simplificada' : 'Factura'} {c.factura.codigo}</a>}
             {c.factura && <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => hacer({ accion: 'factura' })}>{c.factura.enviada ? 'Reenviar' : 'Enviar factura'}</button>}
             {(!c.factura || c.factura.simplificada) && c.estado === 'pagada' && c.importeCent > 0 && emisorListo && (
@@ -346,6 +352,53 @@ function Condiciones({ sus, condiciones, periodoActual, estado: estadoSus }) {
             <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => ejecutar(`/api/admin/suscripciones/${sus.id}`, { accion: 'condiciones', plan, desdePeriodo: Number(desde), condiciones: form })}>Guardar condiciones</button>
           </p>
         </details>
+      )}
+      <Mensaje estado={estado} />
+    </div>
+  )
+}
+
+function Contrato({ sus, contrato }) {
+  const [estado, ejecutar] = useAccion()
+  const [copiado, setCopiado] = useState(false)
+  const url = `/api/admin/contratos/${sus.id}`
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(contrato.url)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      setCopiado(false)
+    }
+  }
+  return (
+    <div className="adm-caja">
+      <h2>Contrato</h2>
+      {!contrato && (
+        <>
+          <p>{sus.contratoUrl ? 'Tiene el contrato enlazado en sus datos.' : 'Sin contrato en la web.'}</p>
+          {sus.email && (
+            <p className="adm-acciones">
+              <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => ejecutar(url, {})}>Enviarle el contrato para firmar</button>
+            </p>
+          )}
+          <p className="adm-nota">Le llega un correo con un enlace para rellenar sus datos y firmar desde el móvil.</p>
+        </>
+      )}
+      {contrato && contrato.estado === 'pendiente' && (
+        <>
+          <p><Chip tipo="aviso">Pendiente de firmar</Chip>{contrato.enviadoEn ? <span className="adm-nota"> · enlace enviado el {fechaHoraCorta(contrato.enviadoEn)}</span> : null}{contrato.recordadoEn ? <span className="adm-nota"> · recordado el {fechaHoraCorta(contrato.recordadoEn)}</span> : null}</p>
+          <p className="adm-acciones">
+            <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => ejecutar(url, {})}>Reenviar el enlace</button>
+            <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={copiar}>{copiado ? 'Copiado' : 'Copiar enlace'}</button>
+          </p>
+        </>
+      )}
+      {contrato && contrato.estado === 'firmado' && (
+        <>
+          <p><Chip tipo="ok">Firmado</Chip> <span className="adm-nota">el {fechaHoraCorta(contrato.firmadoEn)} · versión {contrato.version}</span></p>
+          <p className="adm-acciones"><a className="adm-boton adm-boton--claro adm-mini" href={url} target="_blank" rel="noopener noreferrer">Descargar el PDF</a></p>
+        </>
       )}
       <Mensaje estado={estado} />
     </div>
@@ -601,6 +654,7 @@ export default function FichaSuscripcion(p) {
 
         <div>
           <Baja sus={sus} sesiones={sesiones} hoy={hoy} estado={estado} puedeBorrarse={p.puedeBorrarse} />
+          <Contrato sus={sus} contrato={p.contrato} />
           <Fianza sus={sus} hoy={hoy} />
           <Condiciones sus={sus} condiciones={p.condiciones} periodoActual={p.periodoActual} estado={estado} />
           <Datos sus={sus} />
@@ -625,6 +679,9 @@ export async function getServerSideProps(ctx) {
   }
   const { sus } = ficha
   const iban = process.env.ESTUDIO_IBAN || null
+  const { contratoDeSuscripcion, urlContrato } = await import('../../../lib/suscripciones/alta')
+  const { urlBase } = await import('../../../lib/http')
+  const contrato = await contratoDeSuscripcion(sus.id)
   const sesion = (s) => vistaAdmin({ ...s, planSuscripcion: sus.plan })
   return {
     props: {
@@ -644,6 +701,7 @@ export async function getServerSideProps(ctx) {
       eventos: ficha.eventos.map((e) => ({ tipo: e.tipo, detalle: e.detalle, cuando: fechaHoraTexto(e.creadoEn), reservaId: e.reservaId, codigo: e.codigo }))
         .map((e) => ({ tipo: e.tipo, cuando: e.cuando, reservaId: e.reservaId ?? null, texto: textoEvento(e) || null })),
       ultimoDiaPermanencia: ficha.ultimoDiaPermanencia,
+      contrato: contrato ? { estado: contrato.estado, version: contrato.version, firmadoEn: contrato.firmadoEn, enviadoEn: contrato.enviadoEn, recordadoEn: contrato.recordadoEn, url: urlContrato(urlBase(ctx.req), contrato.token) } : null,
       puedeBorrarse: ficha.puedeBorrarse,
       condiciones: ficha.condiciones,
       hoy: fechaMadrid(new Date()),

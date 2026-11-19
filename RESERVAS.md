@@ -21,6 +21,7 @@ apuntan a Calendly y `/reservar` redirige allí.
 | Inicio | `/admin` | Cómo va el estudio de un vistazo: reservas de hoy, lo que hay que hacer, ingresos, gastos, beneficio y ocupación con gráficas, comparado con el mes (o trimestre, o año) anterior |
 | Finanzas | `/admin/finanzas` | Facturación, gastos (fijos, variables y materiales), gastos fijos que se apuntan solos, lo cobrado por Calendly, IVA orientativo y CSV para la gestoría. Ver «Finanzas» más abajo |
 | Suscripciones | `/admin/suscripciones` | Planes mensuales (Starter, Creator, Pro): altas, horas de cada mes, sesiones, cuotas, fianza y bajas. Ver «Suscripciones» más abajo |
+| Alta de miembros | `/planmensual/alta` | La persona elige plan, paga el primer mes en el TPV y firma su contrato en la web (`/contrato/[enlace privado]`); los meses siguientes paga con un enlace (`/cuota/[enlace privado]`). Ver «Alta de miembros por la web» más abajo |
 
 Reglas copiadas de Calendly (se cambian en `lib/reservas/config.js`):
 
@@ -72,6 +73,7 @@ Comercia ofrece dos pasarelas y el código tiene las dos. Pregunta:
    - Addon Payments, URL de respuesta: `https://www.studioar.es/api/pagos/addon/respuesta`
    - Las URL de vuelta (OK/KO) van en cada pago; no hay que configurarlas.
 5. **Devoluciones:** se hacen desde su portal con el número de pedido que sale en el panel.
+6. **¿Pagos recurrentes (COF / pago por referencia)?** Para que las cuotas de los planes se cobren solas cada mes en la tarjeta. Si no lo activan, el sistema manda cada mes un enlace de pago por correo (es lo que hace ahora). Bizum no admite cobros automáticos.
 
 > Redsys está probado de principio a fin contra su entorno de pruebas público. Addon Payments
 > está escrito según su especificación, pero falta un pago de prueba con las credenciales de
@@ -110,7 +112,8 @@ producción queda marcada y rechaza cualquier pago hecho con un TPV en modo prue
 | `RESEND_API_KEY` | Ya existe |
 | `RESERVAS_EMAIL_FROM` | Opcional. Por defecto `AR Studio <reservas@studioar.es>` |
 | `RESERVAS_EMAIL_ESTUDIO` | Opcional. A dónde llegan los avisos; por defecto `arstudiospain@gmail.com` |
-| `ESTUDIO_IBAN` | Opcional. Si se pone, el recordatorio de cuota por WhatsApp incluye el IBAN y el concepto |
+| `ESTUDIO_IBAN` | Número de cuenta del estudio. Sale en la página del contrato y en los correos para que transfieran la fianza, y en el recordatorio de cuota por WhatsApp. Sin él, se les pide que escriban para pedirlo |
+| `CONTRATO_INCLUIR_NIF` | Opcional. `1` para que el contrato firmado ponga el NIF de quien firma por el estudio (`FACTURA_EMISOR_NIF`). Por defecto solo pone el nombre (`FACTURA_EMISOR_NOMBRE`) |
 | `NEXT_PUBLIC_RESERVAS_PROPIAS` | `1` para activar. **Solo en Producción y el día del cambio** |
 
 Textos aleatorios: `openssl rand -base64 32`.
@@ -221,6 +224,24 @@ nadie puede reservar encima.
 
 - Si una **fianza que os quedáis** necesita factura (que lo diga el gestor).
 - Añadir la **renovación y el preaviso** a las condiciones de la web si se usan en algún contrato.
+
+### Alta de miembros por la web
+
+Con `NEXT_PUBLIC_RESERVAS_PROPIAS=1`, los botones de `/planmensual` llevan a `/planmensual/alta` (sin la variable siguen yendo a WhatsApp).
+
+1. **Antes de pagar:** elige plan, pone nombre, apellidos, correo y WhatsApp, y ve el resumen (cuota, horas, permanencia de 3 meses, fianza de 100 € por transferencia) con enlaces al **modelo de contrato** (`/planmensual/contrato?plan=…`), a las condiciones del plan y a las normas del estudio. Tiene que marcar «He leído las condiciones y el modelo de contrato». Se guarda cuándo lo marcó y qué versión del contrato tenía delante.
+2. **Paga el primer mes** en el TPV (tarjeta o Bizum). Cuando el banco lo confirma, se crea la suscripción: empieza ese día, la primera cuota queda pagada (con su factura, simplificada si no ha dado datos de empresa), y sale **«Contrato pendiente»** y **«Fianza pendiente»** en el *Para hacer*. Le llega un correo con el enlace para firmar y al estudio un aviso.
+3. **Firma el contrato** en `/contrato/[enlace]` (la web le lleva ahí al volver del banco): rellena nombre, DNI/NIE, dirección y teléfono (y, si quiere, datos de empresa para las facturas), lee el contrato ya rellenado y firma con el dedo o el ratón. En esa misma página tiene, bien visible, **la transferencia de la fianza** (IBAN, importe y concepto «Fianza SUS-…», con botón para copiar).
+4. **Al firmar** se guarda el PDF (con la fecha y hora, la versión del contrato y una huella cifrada de su conexión, nunca la IP) y le llega por correo con copia oculta al estudio. Si dio datos de empresa, la factura del primer mes pasa a completa (sustituye a la simplificada).
+5. **Si a las 48 h no ha firmado**, el cron diario le manda un recordatorio (una vez) y avisa al estudio.
+6. **Fianza:** cuando llegue la transferencia, en su ficha *Fianza → Ya cobrada* (transferencia).
+7. **Cuotas siguientes:** al empezar cada periodo, el cron diario le manda un correo con un enlace para pagar con tarjeta o Bizum (`/cuota/[enlace]`). Al pagarse se marca sola como pagada y le llega la factura. Desde la ficha se puede **reenviar el enlace de pago** de una cuota (también a miembros dados de alta a mano) o marcarla pagada a mano si paga por transferencia.
+
+En la ficha de cada miembro, el recuadro **Contrato** dice si está pendiente o firmado, deja descargar el PDF, reenviar o copiar el enlace, y a los miembros dados de alta a mano se les puede **enviar el contrato para firmar** desde ahí.
+
+El texto del contrato está en `lib/suscripciones/contrato.js` (plantilla sin datos personales, con las condiciones de cada plan). Si se cambia, hay que subir `CONTRATO_VERSION`: cada contrato firmado guarda la suya. Quien firma por el estudio sale de `FACTURA_EMISOR_NOMBRE` (sin firma dibujada ni DNI: no pueden estar en el repositorio).
+
+**Pendiente:** el cobro automático de las cuotas en la tarjeta (pagos recurrentes de Redsys) necesita que Comercia lo active y una integración aparte; hoy se paga con el enlace de cada mes.
 
 ### Pasar al panel a la clienta que ya tiene contrato
 
