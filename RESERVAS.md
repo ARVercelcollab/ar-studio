@@ -164,6 +164,7 @@ nadie puede reservar encima.
 
 - **Periodo** = el mes de cobro: del día del primer cobro al mismo día del mes siguiente. Las horas que no se usan se pierden al acabar el periodo.
 - **Cuotas:** cada periodo tiene su cuota, que aparece sola cuando empieza. El panel **no cobra**: se marca como pagada cuando llega la transferencia o el Bizum. A quien paga con **Stripe**, Stripe le sigue cobrando solo; aquí solo se apunta, y **al darle de baja hay que cancelarle la suscripción en Stripe a mano** (el panel lo recuerda).
+- **Horas aparte de los miembros:** si las pide el mismo día de la sesión, 50 €/h + IVA entre semana y 60 €/h + IVA en finde y festivos (como en las condiciones). Si las pide con días de antelación, el precio normal de la web para esas horas. El panel lo propone solo y se puede cambiar en cada sesión (0 = de regalo).
 - **Facturas de cuotas:** al marcar la cuota pagada se emite y se le envía la factura, con las mismas series que las reservas: completa (AR-W) si el miembro tiene sus datos de facturación y simplificada (AR-S) si no. Si luego los da, desde la cuota se hace la completa que sustituye a la simplificada. Las cuotas de 0 € y las sesiones incluidas no se facturan; las horas aparte, sí.
 - **Reglas** que comprueba el panel (se pueden saltar con «Reservar igualmente» cuando son avisos): 72 h de antelación, su horario de lunes a viernes, duración de sesión, máximo de sesiones al mes y horas que le quedan. Fines de semana y festivos van siempre aparte. Chocar con otra reserva o un bloqueo no se puede saltar.
 - **Cancelar** con menos de 48 h: cuenta como usada (se puede desmarcar si hay un buen motivo).
@@ -172,7 +173,6 @@ nadie puede reservar encima.
 
 ### Pendiente de decidir
 
-- **Precio de las horas aparte para miembros.** Ahora el panel propone 60,50 €/h entre semana y 72,60 €/h el finde (`PLAN_HORA_EXTRA_CENT`, provisional) y se puede cambiar en cada sesión.
 - Si una **fianza que os quedáis** necesita factura (que lo diga el gestor).
 - Añadir la **renovación y el preaviso** a las condiciones de la web si se usan en algún contrato.
 

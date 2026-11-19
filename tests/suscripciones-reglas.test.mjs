@@ -61,7 +61,7 @@ test('sesiones de Ana: limpia, antelación, fuera de horario y reparto', () => {
   assert.deepEqual(codigos(fuera.avisos), ['duracion', 'franja'])
   assert.equal(fuera.horasPlan, 3)
   assert.equal(fuera.horasExtra, 1)
-  assert.equal(fuera.precioExtraSugeridoCent, 6050)
+  assert.equal(fuera.precioExtraSugeridoCent, 4840) // con antelación: 1 h a la tarifa de la web (2 h = 96,80 €)
   const fuera4 = R.validarSesion({ sus: ANA, ...s('2026-11-23', '13:00', '17:00'), horasPlan: 4, ahora: AHORA })
   assert.deepEqual(codigos(fuera4.avisos), ['franja'])
   assert.equal(fuera4.horasExtra, 0)
@@ -73,7 +73,14 @@ test('sesiones de Ana: finde, festivo, sin horas, otros periodos', () => {
   assert.equal(sab.horasExtra, 4)
   assert.ok(codigos(sab.notas).includes('finde'))
   assert.equal(sab.avisos.length, 0)
-  assert.equal(sab.precioExtraSugeridoCent, 29040)
+  assert.equal(sab.precioExtraSugeridoCent, 22748) // con antelación: 4 h de finde de la web
+
+  // El mismo día: 50 €/h + IVA entre semana y 60 €/h + IVA en finde
+  const hoyMismo = R.validarSesion({ sus: ANA, ...s('2026-11-23', '13:00', '17:00'), ahora: new Date('2026-11-23T08:00:00Z') })
+  assert.equal(hoyMismo.horasExtra, 1)
+  assert.equal(hoyMismo.precioExtraSugeridoCent, 6050)
+  const sabHoy = R.validarSesion({ sus: ANA, ...s('2026-11-21', '14:00', '18:00'), ahora: new Date('2026-11-21T08:00:00Z') })
+  assert.equal(sabHoy.precioExtraSugeridoCent, 29040)
 
   const fest = R.validarSesion({ sus: ANA, ...s('2026-11-25', '14:00', '18:00'), festivos: new Set(['2026-11-25']), ahora: AHORA })
   assert.ok(codigos(fest.notas).includes('festivo'))
