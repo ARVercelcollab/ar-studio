@@ -4,7 +4,7 @@ import * as R from '../lib/suscripciones/reglas.js'
 import { madridAInstante } from '../lib/reservas/tiempo.js'
 import { bloqueoHasta } from '../lib/reservas/disponibilidad.js'
 
-// Condiciones como las de Anastasia (Starter especial), sin datos personales
+// Condiciones de un Starter especial de ejemplo, sin datos personales
 const ANA = {
   id: 1, codigo: 'SUS-PRUEBA', plan: 'starter', nombre: 'Ana', fechaInicio: '2026-11-20', ultimoDia: null,
   horasPeriodo: 8, duracionesH: [4], sesionMinH: 4, sesionMaxH: 4, maxSesiones: 2, franjaDesde: '14:00', franjaHasta: '20:00',
