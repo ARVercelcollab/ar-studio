@@ -5,7 +5,6 @@ import ButtonArrow from '../components/button'
 import YoutubeCard from '../components/YoutubeCard'
 import InstagramCard from '../components/InstagramCard'
 import { POSTS_IG } from '../lib/instagram'
-import { PLAZAS_LIBRES, PLAZAS_TOTALES, textoPlazasPlan } from '../lib/plazas'
 import { RESERVAS_PROPIAS } from '../lib/enlaces'
 
 const WA = 'https://wa.me/34613395533?text='
@@ -146,7 +145,6 @@ export default function PlanMensual() {
               <div><dt>89 m²</dt><dd>Superficie</dd></div>
               <div><dt>3,5 m</dt><dd>Altura de techo</dd></div>
               <div><dt>1</dt><dd>Miembro a la vez</dd></div>
-              <div><dt>{PLAZAS_TOTALES}</dt><dd>Plazas totales</dd></div>
             </dl>
           </div>
         </section>
@@ -260,7 +258,6 @@ export default function PlanMensual() {
               </ul>
               <p className="planmensual__ahorro">Reservando por horas: 194€/mes. <strong>Ahorras 65€ cada mes.</strong></p>
               <ButtonArrow texto="QUIERO STARTER" href={waStarter} />
-              <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.starter)}</p>
             </div>
 
             <div className="planmensual__card planmensual__card--destacada">
@@ -278,7 +275,6 @@ export default function PlanMensual() {
               </ul>
               <p className="planmensual__ahorro">Reservando por horas: 387€/mes. <strong>Ahorras 188€ cada mes.</strong></p>
               <ButtonArrow texto="QUIERO CREATOR" href={waCreator} />
-              <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.creator)}</p>
             </div>
 
             <div className="planmensual__card">
@@ -295,7 +291,6 @@ export default function PlanMensual() {
               </ul>
               <p className="planmensual__ahorro">Reservando por horas: 774€/mes. <strong>Ahorras 425€ cada mes.</strong></p>
               <ButtonArrow texto="QUIERO PRO" href={waPro} />
-              <p className="planmensual__plazas">{textoPlazasPlan(PLAZAS_LIBRES.pro)}</p>
             </div>
 
           </div>
@@ -335,7 +330,6 @@ export default function PlanMensual() {
                 <tr><td>Luz natural de la mañana</td><td>No</td><td className="destacada">Sí</td><td>Sí</td></tr>
                 <tr><td>Antelación de reserva</td><td>72h</td><td className="destacada">72h</td><td>72h</td></tr>
                 <tr><td>Material incluido</td><td>Todo</td><td className="destacada">Todo</td><td>Todo</td></tr>
-                <tr><td>Plazas libres</td><td>{PLAZAS_LIBRES.starter}</td><td className="destacada">{PLAZAS_LIBRES.creator}</td><td>{PLAZAS_LIBRES.pro}</td></tr>
               </tbody>
             </table>
           </div>
