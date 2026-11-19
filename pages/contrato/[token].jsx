@@ -24,7 +24,7 @@ function Campo({ etiqueta, error, ancho, children }) {
 const wa = `https://wa.me/${ESTUDIO.whatsapp}`
 
 // Aún no hay suscripción: el pago se está confirmando o no se completó
-function EsperandoPago({ alta, token, pago }) {
+function EsperandoPago({ alta, token, pago, soloTarjeta }) {
   const router = useRouter()
   const [intentos, setIntentos] = useState(0)
   const [error, setError] = useState(null)
@@ -65,7 +65,7 @@ function EsperandoPago({ alta, token, pago }) {
       <>
         <span className="rsv-ficha__estado is-error">Pago no completado</span>
         <h1>El pago no se ha completado</h1>
-        <p className="rsv__intro">No se ha cobrado nada. Puedes intentarlo de nuevo con tarjeta o Bizum.</p>
+        <p className="rsv__intro">No se ha cobrado nada. Puedes intentarlo de nuevo {soloTarjeta ? 'con tarjeta (la cuota de cada mes se cobra en ella)' : 'con tarjeta o Bizum'}.</p>
         {error && <p className="rsv__alerta is-error">{error}</p>}
         <button type="button" className="rsv__boton" style={{ maxWidth: 320 }} disabled={pagando} onClick={reintentar}>
           {pagando ? 'Abriendo el pago…' : `Pagar ${formatoEuros(alta.importeCent)}`}
@@ -90,7 +90,7 @@ export default function PaginaContrato(p) {
     return (
       <>
         <Head><title>Tu suscripción | AR Studio</title><meta name="robots" content="noindex, nofollow" /></Head>
-        <main className="rsv rsv-ficha"><EsperandoPago alta={p.alta} token={p.token} pago={p.pago} /></main>
+        <main className="rsv rsv-ficha"><EsperandoPago alta={p.alta} token={p.token} pago={p.pago} soloTarjeta={Boolean(p.soloTarjeta)} /></main>
       </>
     )
   }
@@ -237,12 +237,13 @@ function Contrato({ token, pago, contrato, sus, c, estudio, iban, titular, onFir
 
 export async function getServerSideProps({ params, query, res }) {
   res.setHeader('Cache-Control', 'no-store')
-  const { paginaContrato } = await import('../../lib/suscripciones/alta')
+  const { paginaContrato, cobroAutomaticoActivo } = await import('../../lib/suscripciones/alta')
   const { condicionesDeSuscripcion, firmanteEstudio, ibanEstudio } = await import('../../lib/suscripciones/contrato')
   const pagina = await paginaContrato(params.token)
   if (!pagina) return { notFound: true }
   const pago = typeof query.pago === 'string' ? query.pago : null
-  if (pagina.tipo === 'alta') return { props: { tipo: 'alta', alta: pagina.alta, token: params.token, pago } }
+  // Con el cobro mensual automático el alta se paga solo con tarjeta (Bizum no admite cobros recurrentes)
+  if (pagina.tipo === 'alta') return { props: { tipo: 'alta', alta: pagina.alta, token: params.token, pago, soloTarjeta: cobroAutomaticoActivo() } }
   const { contrato, sus } = pagina
   const estudio = firmanteEstudio()
   return {

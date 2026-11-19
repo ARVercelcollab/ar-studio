@@ -19,6 +19,7 @@ export default async function handler(req, res) {
   if (secreto ? req.headers.authorization !== `Bearer ${secreto}` : Boolean(process.env.VERCEL)) {
     return res.status(401).json({ error: 'no_autorizado' })
   }
+  const empezo = Date.now()
   await limpiarRetenciones()
   await asegurarCuotasDeTodas()
   await asegurarGastosFijos()
@@ -42,12 +43,9 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error('[cron] suscripciones', e.message)
   }
-  // Google Calendar: todo lo pendiente o con error, por tandas (como mucho unos 40 segundos)
-  let calendario = null
-  for (let i = 0; i < 6; i++) {
-    const r = await sincronizarPendientes({ base, limite: 50, tiempoMaxMs: 5000, todo: true })
-    calendario = r
-    if (!r.hecho || (!r.quedan && r.creados + r.quitados + r.errores < 50)) break
-  }
+  // Google Calendar: todo lo pendiente o con error, por tandas, con un plazo total que deja
+  // margen dentro de los 60 s (lo que quede, mañana o con «Volver a sincronizar»)
+  const usado = Date.now() - empezo
+  const calendario = await sincronizarPendientes({ base, limite: 50, tiempoMaxMs: Math.max(5000, 45000 - usado), todo: true })
   res.status(200).json({ recordatorios: enviados, pendientes: reservas.length - enviados, suscripciones, calendario })
 }

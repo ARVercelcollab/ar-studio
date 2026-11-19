@@ -167,6 +167,12 @@ ya las pone en el calendario.
 - **Permisos que pide:** crear, cambiar y borrar eventos (`calendar.events`), ver la lista de
   calendarios para elegir en cuál van (`calendar.calendarlist.readonly`) y el correo de la cuenta.
 - **Privacidad:** quien vea ese calendario ve los datos de los clientes: no compartirlo fuera del estudio.
+  Los eventos van como **privados** y no llevan el NIF (está en el panel); sí las notas del estudio.
+- **Rapidez:** después de un pago o de un cambio en el panel se espera a Google como mucho unos
+  3 segundos en total; lo que no dé tiempo se pasa en el siguiente cambio o en la tarea diaria.
+- **Cambiar de calendario o volver a conectar la misma cuenta:** los eventos (también los antiguos)
+  se quitan del anterior y se ponen en el nuevo, sin duplicarse. Al desconectar se recuerda el
+  calendario: si se vuelve a conectar la misma cuenta, se sigue en él.
 
 ### Preparar la conexión (una vez)
 
@@ -192,8 +198,11 @@ ya las pone en el calendario.
 6. En el panel, *Google Calendar → Conectar Google Calendar*, entrar con la cuenta del estudio,
    marcar todas las casillas y **Permitir**. Elegir en qué calendario van (por defecto, el principal).
 
-Cada base de datos (producción, vistas previas, local) tiene su propia conexión: en una vista
-previa hay que conectar aparte, y mejor con un calendario de pruebas para no llenar el de verdad.
+Cada base de datos (producción, vistas previas, local) tiene su propia conexión. Las vistas previas
+usan una copia de la base de producción: la primera vez que se abre la copia, se olvida ahí la
+conexión de producción (nunca se usa ni se revoca desde una vista previa) y los eventos de
+producción no se tocan. En una vista previa hay que conectar aparte, y mejor con un calendario
+de pruebas para no llenar el de verdad.
 
 ## Suscripciones (planes mensuales)
 
