@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 // Función para convertir URLs en links cliqueables con navegación interna
 const linkifyText = (text, onNavigate) => {
   const urlRegex = /(https?:\/\/[^\s,]+)/g;
-  const internalLinkRegex = /\[VER (ESPACIO|INSTAGRAM|RESERVAR)\]/g;
+  const internalLinkRegex = /\[VER (ESPACIO|RESERVAR)\]/g;
 
   // Primero procesar links internos
   let processedText = text;
@@ -182,7 +182,6 @@ EJEMPLOS:
 
 Links (solo DESPUÉS de entender proyecto)
 * Reservar: https://calendly.com/ar-studio
-* Instagram: @studioar.es
 * Email: arstudiospain@gmail.com
 * Modelos: https://ariannyrivasagency.com
 
@@ -209,7 +208,7 @@ Aquí te comparto el link para que puedas reservar https://calendly.com/ar-studi
 Quieren ver el estudio (sin contexto):
 Claro! Pero primero cuéntame que tipo de sesión tienes en mente, así veo si el espacio te cuadra bien
 Quieren ver el estudio (con contexto):
-Puedes ver fotos del espacio en nuestro Instagram @studioar.es, te cuadra para [su proyecto]?
+Aquí puedes ver fotos del espacio [VER ESPACIO], te cuadra para [su proyecto]?
 Necesitan modelos:
 Sí tenemos! Se llama AR Agency, que tipo de sesión es? Así veo que perfiles te pueden servir
 Dudan si les sirve:
@@ -528,8 +527,8 @@ Reglas de Oro
 │      → NUNCA dar cifras generales del estudio                       │
 │                                                                     │
 │  "Quiero ver el espacio" / "Tienen fotos?"                          │
-│      → Redirigir a Instagram: @studioar.es                          │
-│      → Y/o a la web: https://studioar.es                            │
+│      → Enseñar las fotos de la web: [VER ESPACIO]                   │
+│      → Nunca mandar a Instagram: que no salgan de la web            │
 │                                                                     │
 │  "Necesito modelos" / "Tienen modelos disponibles?"                 │
 │      → Explicar AR Agency                                           │
@@ -730,8 +729,6 @@ export default function ChatWidget() {
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      } else if (section === 'INSTAGRAM') {
-        window.open('https://www.instagram.com/studioar.es/', '_blank');
       } else if (section === 'RESERVAR') {
         const element = document.getElementById('reserva');
         if (element) {
