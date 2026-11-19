@@ -3,7 +3,9 @@ import { rutaAdmin } from '../../../../lib/admin/api.js'
 import { crearReservaManual } from '../../../../lib/reservas/servicio.js'
 import { validarCliente } from '../../../../lib/reservas/validacion.js'
 import { correoConfirmacion } from '../../../../lib/reservas/correos.js'
-import { urlReserva } from '../../../../lib/reservas/flujo.js'
+import { urlReserva, urlPanel } from '../../../../lib/reservas/flujo.js'
+import { facturasAutomaticas, seFactura } from '../../../../lib/facturas/servicio.js'
+import { facturarAlCobrar } from '../../../../lib/facturas/envio.js'
 import { urlBase } from '../../../../lib/http.js'
 
 export default rutaAdmin(async (req, res) => {
@@ -31,6 +33,10 @@ export default rutaAdmin(async (req, res) => {
     pagadoEn: b.pagado ? b.pagadoEn || null : null,
     notasInternas: b.notasInternas,
   })
-  if (b.enviarCorreo && reserva.email) await correoConfirmacion(reserva, { urlReserva: urlReserva(urlBase(req), reserva) })
+  const base = urlBase(req)
+  const conFactura = reserva.pagoEstado === 'pagado' && seFactura(reserva) && facturasAutomaticas()
+  if (b.enviarCorreo && reserva.email) await correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: conFactura })
+  // Apuntada ya pagada: lleva su factura (se manda solo si se avisa al cliente)
+  if (conFactura) await facturarAlCobrar(reserva, { urlPanel: urlPanel(base), urlReserva: urlReserva(base, reserva), enviar: Boolean(b.enviarCorreo) })
   res.status(200).json({ id: reserva.id })
 })

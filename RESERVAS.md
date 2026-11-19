@@ -15,7 +15,7 @@ apuntan a Calendly y `/reservar` redirige allí.
 | Página de la reserva | `/reserva/[enlace privado]` | Estado, reintentar el pago, añadir al calendario, pedir un cambio o cancelación |
 | Panel | `/admin` | Agenda, ficha de cada reserva, reservas a mano, mover, marcar pagada (Bizum, transferencia…), cancelar con la devolución que toca según las condiciones, bloqueos y festivos |
 | Correos | Resend (`reservas@studioar.es`) | Confirmación al cliente con el `.ics`, aviso al estudio, recordatorio el día antes, avisos de pagos raros |
-| Facturas | PDF por correo | Si el cliente pide factura, al confirmarse el pago se emite (serie AR-W, numeración correlativa) y se le envía en PDF con copia al estudio. Desde el panel se emite, se descarga o se reenvía |
+| Facturas | PDF por correo | **Todo lo cobrado lleva factura.** Al confirmarse el pago se emite sola y se le envía en PDF con copia al estudio: **completa** (serie AR-W) si ha dado nombre, NIF y dirección, y **simplificada** (serie AR-S, sin datos del cliente) si no. Si después pide la completa (desde la página de su reserva o el estudio desde el panel), se hace una AR-W que dice a qué simplificada sustituye; la simplificada queda marcada, no se borra. Cada serie tiene su numeración correlativa por año. Desde el panel se emite, se descarga o se reenvía |
 | Calendario | `/api/admin/calendario?clave=…` | Todas las reservas para suscribirse desde Google Calendar |
 | Inicio | `/admin` | Cómo va el estudio de un vistazo: reservas de hoy, lo que hay que hacer, ingresos, gastos, beneficio y ocupación con gráficas, comparado con el mes (o trimestre, o año) anterior |
 | Finanzas | `/admin/finanzas` | Facturación, gastos (fijos, variables y materiales), gastos fijos que se apuntan solos, lo cobrado por Calendly, IVA orientativo y CSV para la gestoría. Ver «Finanzas» más abajo |
@@ -102,8 +102,9 @@ producción queda marcada y rechaza cualquier pago hecho con un TPV en modo prue
 | `FACTURA_EMISOR_NOMBRE` | Quien factura (el mismo nombre que en las facturas manuales) |
 | `FACTURA_EMISOR_NIF` | Su NIF |
 | `FACTURA_EMISOR_DIRECCION` | Su dirección, con las líneas separadas por `|` (p. ej. `Calle 1|46007 València (Valencia)|España`) |
-| `FACTURA_SERIE` | Opcional. Por defecto `AR-W` (serie de las facturas de la web) |
-| `FACTURAS_AUTOMATICAS` | Opcional. `0` para que no se envíen solas (se emiten desde el panel) |
+| `FACTURA_SERIE` | Opcional. Por defecto `AR-W` (serie de las facturas completas de la web) |
+| `FACTURA_SERIE_SIMPLIFICADA` | Opcional. Por defecto `AR-S` (serie de las facturas simplificadas). Tiene que ser distinta de `FACTURA_SERIE` |
+| `FACTURAS_AUTOMATICAS` | Opcional. `0` para que no se emitan ni se envíen solas (se emiten desde el panel) |
 | `RESEND_API_KEY` | Ya existe |
 | `RESERVAS_EMAIL_FROM` | Opcional. Por defecto `AR Studio <reservas@studioar.es>` |
 | `RESERVAS_EMAIL_ESTUDIO` | Opcional. A dónde llegan los avisos; por defecto `arstudiospain@gmail.com` |
@@ -136,7 +137,7 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 
 ### 6. Pendiente fuera de la fase 1
 
-- **Facturas:** las de las reservas web salen solas (serie AR-W) con el mismo diseño que las manuales (serie AR-M). Que el gestor confirme la serie. Las **rectificativas** (cuando se devuelve dinero de una reserva ya facturada) se hacen de momento a mano; el panel avisa. Antes del 1-7-2027 (o 1-1-2027 si factura una sociedad) hay que pasar a un programa que cumpla **Veri*factu**: este no lo cumple.
+- **Facturas:** todas las reservas y cuotas cobradas salen solas, completas (AR-W) o simplificadas (AR-S), con el mismo diseño que las manuales (serie AR-M). La simplificada vale hasta 400 € con IVA, que cubre cualquier reserva del estudio. Las de Calendly las sigue haciendo Stripe. Las **rectificativas** (cuando se devuelve dinero de una reserva ya facturada) se hacen de momento a mano; el panel avisa. Antes del 1-7-2027 (o 1-1-2027 si factura una sociedad) hay que pasar a un programa que cumpla **Veri*factu**: este no lo cumple.
 - **Devoluciones:** desde el portal del TPV; el panel solo apunta el importe.
 - **Límites antiabuso:** cada conexión puede tener como mucho 2 horas guardadas sin pagar (12 en total a la vez) y 4 intentos de pago por reserva; si alguien vuelve atrás desde el banco y reserva otra vez, se suelta su hora anterior. En el panel, 8 contraseñas falsas seguidas bloquean esa conexión 15 minutos.
 - **Cambios del cliente:** el cliente los pide desde su página y el estudio los hace en el panel.
@@ -163,7 +164,7 @@ nadie puede reservar encima.
 
 - **Periodo** = el mes de cobro: del día del primer cobro al mismo día del mes siguiente. Las horas que no se usan se pierden al acabar el periodo.
 - **Cuotas:** cada periodo tiene su cuota, que aparece sola cuando empieza. El panel **no cobra**: se marca como pagada cuando llega la transferencia o el Bizum. A quien paga con **Stripe**, Stripe le sigue cobrando solo; aquí solo se apunta, y **al darle de baja hay que cancelarle la suscripción en Stripe a mano** (el panel lo recuerda).
-- **Facturas de cuotas:** si el miembro quiere factura (con NIF y dirección), al marcar la cuota pagada se emite y se le envía en la misma serie AR-W. Las cuotas de 0 € y las sesiones incluidas no se facturan; las horas aparte, sí.
+- **Facturas de cuotas:** al marcar la cuota pagada se emite y se le envía la factura, con las mismas series que las reservas: completa (AR-W) si el miembro tiene sus datos de facturación y simplificada (AR-S) si no. Si luego los da, desde la cuota se hace la completa que sustituye a la simplificada. Las cuotas de 0 € y las sesiones incluidas no se facturan; las horas aparte, sí.
 - **Reglas** que comprueba el panel (se pueden saltar con «Reservar igualmente» cuando son avisos): 72 h de antelación, su horario de lunes a viernes, duración de sesión, máximo de sesiones al mes y horas que le quedan. Fines de semana y festivos van siempre aparte. Chocar con otra reserva o un bloqueo no se puede saltar.
 - **Cancelar** con menos de 48 h: cuenta como usada (se puede desmarcar si hay un buen motivo).
 - **Baja:** al apuntarla, el panel propone el último día según el contrato (permanencia de 3 meses, mes de prueba, renovación y preaviso), explica qué pasa con la fianza y cancela las sesiones posteriores.
@@ -213,18 +214,17 @@ Sin datos personales en el repositorio (es público): todo se mete desde el pane
 - Las reservas por horas, las horas aparte de los planes y las cuotas cuentan solas. **Lo cobrado por Calendly no llega solo**: se apunta una vez al mes en *Facturación → Calendly* (con las pistas de lo que Stripe ya cobró y está en el panel, para no sumarlo dos veces). Las reservas de Calendly pasadas a la agenda no suman.
 - Las fianzas no son ingreso hasta que se resuelven: solo cuenta lo que el estudio se queda.
 - Cobros que no pasan por el panel (fondos o equipo del día, facturas hechas a mano AR-M, otros): *Facturación → + Apuntar otro ingreso*.
-- Gastos: con factura a nombre del estudio y su NIF, el IVA se descuenta; un ticket sin NIF cuenta entero; seguros y banco no llevan IVA; las empresas de fuera de España (por ejemplo algunas apps) van aparte para la gestoría. El alquiler lleva normalmente una retención del 19 % que la gestoría ingresa con el modelo 115.
+- Gastos: con factura a nombre del estudio y su NIF, el IVA se descuenta; un ticket sin NIF cuenta entero; seguros y banco no llevan IVA; las empresas de fuera de España (por ejemplo algunas apps) van aparte para la gestoría. El alquiler del estudio no lleva retención; si algún día el casero la aplicara (19 %, modelo 115), se marca en el gasto.
 - El IVA del trimestre es **orientativo**: lo que vale es lo que presente la gestoría.
 
 ### Para empezar
 
-1. *Finanzas → Gastos fijos → + Nuevo gasto fijo*: alquiler (con su IVA y la retención si la lleva), alarma, internet, seguro, gestoría y programas, cada uno con su día de cargo y desde qué mes.
+1. *Finanzas → Gastos fijos → + Nuevo gasto fijo*: alquiler (con su IVA, si lo factura con IVA), alarma, internet, seguro, gestoría y programas, cada uno con su día de cargo y desde qué mes.
 2. Cada vez que llegue una factura variable (luz, agua, Aquaservice…) o se compre material, *+ Apuntar gasto*. Si se pega el enlace de Drive de la factura, la gestoría la tiene a mano.
 3. Al acabar cada mes, mientras se cobre por Calendly: *Facturación → Calendly* con lo cobrado, lo devuelto y las comisiones del informe de Stripe.
-4. Cada trimestre, *Finanzas → Resumen → Para la gestoría*: los tres CSV.
+4. Cada trimestre, *Finanzas → Resumen → Para la gestoría*: los tres CSV. El de facturas lleva las completas y las simplificadas, con su tipo y qué simplificada sustituye cada completa.
 
 ### Pendiente de decidir (con la gestoría)
 
 - El IVA de una fianza que os quedáis (ahora 0 %, `FIANZA_RETENIDA_IVA_PCT` en `lib/finanzas/config.js`).
 - Cómo van las comisiones de Stripe (ahora como empresa de fuera de España, `COMISION_STRIPE_TIPO_FACTURA`).
-- Si el alquiler lleva retención (depende del casero).

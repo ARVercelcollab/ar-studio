@@ -79,9 +79,10 @@ function Mensaje({ estado }) {
 
 // ---------- Cuotas ----------
 
+// Todo lo cobrado lleva factura: completa si ha dado sus datos y simplificada si no
 const pagoDe = (sus, emisorListo, facturasAuto, hoy) => {
   const metodo = sus.metodoHabitual && METODOS[sus.metodoHabitual] ? sus.metodoHabitual : 'transferencia'
-  return { metodo, fecha: hoy, referencia: '', emitirFactura: Boolean(sus.factura) && metodo !== 'stripe' && emisorListo && facturasAuto }
+  return { metodo, fecha: hoy, referencia: '', emitirFactura: metodo !== 'stripe' && emisorListo && facturasAuto }
 }
 const edicionDe = (c) => ({ importe: (c.importeCent / 100).toFixed(2).replace('.', ','), horas: String(c.horas).replace('.', ','), nota: '' })
 const facturaDe = (sus) => ({ nombre: sus.factura?.nombre || '', nif: sus.factura?.nif || '', direccion: sus.factura?.direccion || '' })
@@ -141,10 +142,10 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {cobrable && <button type="button" className="adm-boton adm-mini" onClick={() => alternar('pagar')}>Marcar pagada</button>}
             {cobrable && c.recordatorio && <a className="adm-boton adm-boton--claro adm-mini" href={c.recordatorio} target="_blank" rel="noopener noreferrer">Recordar por WhatsApp</a>}
-            {c.factura && <a className="adm-boton adm-boton--claro adm-mini" href={`/api/admin/facturas/${c.factura.id}`} target="_blank" rel="noopener noreferrer">Factura {c.factura.codigo}</a>}
+            {c.factura && <a className="adm-boton adm-boton--claro adm-mini" href={`/api/admin/facturas/${c.factura.id}`} target="_blank" rel="noopener noreferrer">{c.factura.simplificada ? 'Simplificada' : 'Factura'} {c.factura.codigo}</a>}
             {c.factura && <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => hacer({ accion: 'factura' })}>{c.factura.enviada ? 'Reenviar' : 'Enviar factura'}</button>}
-            {!c.factura && c.estado === 'pagada' && c.importeCent > 0 && emisorListo && (
-              <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={() => alternar('factura')}>Emitir factura</button>
+            {(!c.factura || c.factura.simplificada) && c.estado === 'pagada' && c.importeCent > 0 && emisorListo && (
+              <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={() => alternar('factura')}>{c.factura ? 'Hacer la completa' : 'Emitir factura'}</button>
             )}
             <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={() => alternar('mas')}>Más ▾</button>
           </div>
@@ -164,10 +165,10 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
                     </label>
                     <label>Cuándo<input type="date" max={hoy} value={pago.fecha} onChange={(e) => setPago({ ...pago, fecha: e.target.value })} /></label>
                     <label className="adm-ancho">Referencia o enlace (opcional)<input value={pago.referencia} onChange={(e) => setPago({ ...pago, referencia: e.target.value })} placeholder="Concepto, n.º de cobro, o el enlace al recibo de Stripe" /></label>
-                    {sus.factura && emisorListo ? (
-                      <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.emitirFactura} onChange={(e) => setPago({ ...pago, emitirFactura: e.target.checked })} /> Emitir y enviarle la factura{pago.metodo === 'stripe' ? ' (si Stripe ya se la manda, déjalo sin marcar)' : ''}</label>
+                    {c.importeCent === 0 ? null : emisorListo ? (
+                      <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.emitirFactura} onChange={(e) => setPago({ ...pago, emitirFactura: e.target.checked })} /> Emitir y enviarle la {sus.factura ? 'factura con sus datos' : 'factura simplificada (no ha dado sus datos de facturación)'}{pago.metodo === 'stripe' ? ' (si Stripe ya se la manda, déjalo sin marcar)' : ''}</label>
                     ) : (
-                      <p className="adm-ancho adm-nota">{sus.factura ? 'Para emitir facturas faltan los datos de quien factura en Vercel.' : 'No ha pedido factura. Si la pide, se puede emitir luego desde aquí.'}</p>
+                      <p className="adm-ancho adm-nota">Para emitir facturas faltan los datos de quien factura en Vercel.</p>
                     )}
                   </div>
                   <p style={{ marginTop: 10 }}>
@@ -177,6 +178,9 @@ function FilaCuota({ c, sus, emisorListo, facturasAuto, hoy }) {
               )}
               {abierto === 'factura' && (
                 <>
+                  <p className="adm-nota" style={{ marginBottom: 8 }}>
+                    {c.factura ? `Con nombre, NIF y dirección se hace la factura completa, que sustituye a la simplificada ${c.factura.codigo}.` : 'Con nombre, NIF y dirección sale la factura completa. Si lo dejas vacío, sale la simplificada.'}
+                  </p>
                   <div className="adm-form">
                     <label className="adm-ancho">Nombre o razón social<input value={datosFactura.nombre} onChange={(e) => setDatosFactura({ ...datosFactura, nombre: e.target.value })} /></label>
                     <label>NIF o CIF<input value={datosFactura.nif} onChange={(e) => setDatosFactura({ ...datosFactura, nif: e.target.value })} /></label>
@@ -258,7 +262,7 @@ function Datos({ sus }) {
             <dt>Correo</dt><dd><a href={`mailto:${sus.email}`}>{sus.email}</a></dd>
             <dt>WhatsApp</dt><dd>{wa ? <a href={wa} target="_blank" rel="noopener noreferrer">{sus.telefono}</a> : '—'}</dd>
             <dt>Paga con</dt><dd>{METODOS[sus.metodoHabitual] || '—'}{sus.cobroExterno === 'stripe' ? ` · cobro automático${sus.cobroExternoRef ? ` (${sus.cobroExternoRef})` : ''}` : ''}</dd>
-            <dt>Factura</dt><dd>{sus.factura ? `${sus.factura.nombre} · ${sus.factura.nif} · ${sus.factura.direccion}` : 'No la pide'}</dd>
+            <dt>Datos de factura</dt><dd>{sus.factura ? `${sus.factura.nombre} · ${sus.factura.nif} · ${sus.factura.direccion}` : 'No los ha dado (sus cuotas llevan factura simplificada)'}</dd>
             <dt>Contrato</dt><dd>{sus.contratoUrl ? <a href={sus.contratoUrl} target="_blank" rel="noopener noreferrer">Abrir</a> : '—'}</dd>
             <dt>Alta</dt><dd>{fecha(sus.creadoEn.slice(0, 10))}</dd>
           </dl>
@@ -279,7 +283,7 @@ function Datos({ sus }) {
             </label>
             {f.metodoHabitual === 'stripe' && <label className="adm-ancho">Suscripción en Stripe (sub_…)<input value={f.cobroExternoRef} onChange={(e) => poner('cobroExternoRef', e.target.value)} /></label>}
             <label className="adm-ancho">Enlace al contrato<input value={f.contratoUrl} onChange={(e) => poner('contratoUrl', e.target.value)} placeholder="https://…" /></label>
-            <label className="adm-check adm-ancho"><input type="checkbox" checked={f.quiereFactura} onChange={(e) => poner('quiereFactura', e.target.checked)} /> Quiere factura</label>
+            <label className="adm-check adm-ancho"><input type="checkbox" checked={f.quiereFactura} onChange={(e) => poner('quiereFactura', e.target.checked)} /> Quiere factura con sus datos (si no, se le hace la simplificada)</label>
             {f.quiereFactura && (
               <>
                 <label className="adm-ancho">Nombre o razón social<input value={f.factura.nombre} onChange={(e) => poner('factura', { ...f.factura, nombre: e.target.value })} /></label>

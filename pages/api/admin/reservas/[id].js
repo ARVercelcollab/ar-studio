@@ -3,8 +3,8 @@ import { rutaAdmin } from '../../../../lib/admin/api.js'
 import { marcarPagada, cancelar, reprogramar, guardarNotas, reactivar, reservaPorId, registrarEvento } from '../../../../lib/reservas/servicio.js'
 import { correoCancelacion, correoCambio, correoConfirmacion } from '../../../../lib/reservas/correos.js'
 import { urlReserva, urlPanel } from '../../../../lib/reservas/flujo.js'
-import { facturasAutomaticas } from '../../../../lib/facturas/servicio.js'
-import { emitirYEnviar, facturaAutomatica } from '../../../../lib/facturas/envio.js'
+import { facturasAutomaticas, seFactura } from '../../../../lib/facturas/servicio.js'
+import { emitirYEnviar, facturarAlCobrar } from '../../../../lib/facturas/envio.js'
 import { urlBase } from '../../../../lib/http.js'
 import { moverSesionPlan, cancelarSesionPlan } from '../../../../lib/suscripciones/servicio.js'
 
@@ -31,9 +31,10 @@ export default rutaAdmin(async (req, res) => {
   switch (b.accion) {
     case 'pagada':
       reserva = await marcarPagada(id, { metodo: b.metodo, nota: b.nota, fecha: b.fecha || null })
-      if (b.enviarCorreo && reserva.email) await correo(() => correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: Boolean(reserva.factura) && facturasAutomaticas() }))
-      if (b.enviarCorreo && reserva.factura && facturasAutomaticas()) {
-        const r = await facturaAutomatica(reserva, { urlPanel: urlPanel(base) })
+      if (b.enviarCorreo && reserva.email) await correo(() => correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: seFactura(reserva) && facturasAutomaticas() }))
+      {
+        // Todo lo cobrado lleva factura; si no se avisa al cliente, se emite sin mandarla
+        const r = await facturarAlCobrar(reserva, { urlPanel: urlPanel(base), urlReserva: urlReserva(base, reserva), enviar: Boolean(b.enviarCorreo) })
         if (r?.factura) mensaje = [mensaje, `Factura ${r.factura.codigo} emitida${r.enviada ? ' y enviada' : ''}.`].filter(Boolean).join(' ')
       }
       break
@@ -63,8 +64,9 @@ export default rutaAdmin(async (req, res) => {
       reserva = await reservaPorId(id)
       if (!reserva) return res.status(404).json({ error: 'no_existe', mensaje: 'Reserva no encontrada.' })
       const datos = b.nombre || b.nif || b.direccion ? { nombre: b.nombre, nif: b.nif, direccion: b.direccion } : null
-      const r = await emitirYEnviar(reserva, { datosCliente: datos, reenviar: true })
-      mensaje = `Factura ${r.factura.codigo} ${r.enviada ? `enviada a ${reserva.email}` : 'emitida (sin correo del cliente: descárgala y envíala tú)'}.`
+      const r = await emitirYEnviar(reserva, { datosCliente: datos, reenviar: true, urlReserva: urlReserva(base, reserva) })
+      const queEs = r.factura.sustituye ? `Factura ${r.factura.codigo} (sustituye a la simplificada ${r.factura.sustituye.codigo})` : `${r.factura.simplificada ? 'Factura simplificada' : 'Factura'} ${r.factura.codigo}`
+      mensaje = `${queEs} ${r.enviada ? `enviada a ${reserva.email}` : 'emitida (sin correo del cliente: descárgala y envíala tú)'}.`
       break
     }
     default:

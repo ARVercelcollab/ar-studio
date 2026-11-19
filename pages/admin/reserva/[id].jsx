@@ -74,6 +74,17 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
   const [eFactura, accionFactura] = useAccion(r.id)
   const [eReactivar, accionReactivar] = useAccion(r.id)
   const [datosFactura, setDatosFactura] = useState({ nombre: r.factura?.nombre || '', nif: r.factura?.nif || '', direccion: r.factura?.direccion || '' })
+  const formularioFactura = (texto, boton) => (
+    <>
+      {texto && <p className="adm-nota" style={{ marginBottom: 8 }}>{texto}</p>}
+      <div className="adm-form">
+        <label className="adm-ancho">Nombre o razón social<input value={datosFactura.nombre} onChange={(e) => setDatosFactura({ ...datosFactura, nombre: e.target.value })} /></label>
+        <label>NIF o CIF<input value={datosFactura.nif} onChange={(e) => setDatosFactura({ ...datosFactura, nif: e.target.value })} /></label>
+        <label className="adm-ancho">Dirección<input value={datosFactura.direccion} onChange={(e) => setDatosFactura({ ...datosFactura, direccion: e.target.value })} /></label>
+      </div>
+      <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura', ...datosFactura }, '')}>{boton}</button></p>
+    </>
+  )
 
   const puedeCobrarse = r.pagoEstado !== 'pagado' && r.estado !== 'cancelada'
   const telefono = (r.telefono || '').replace(/[^0-9]/g, '')
@@ -102,7 +113,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
               <dt>Actividad</dt><dd>{r.actividad || '—'}</dd>
               <dt>Fondos</dt><dd>{r.fondos}</dd>
               <dt>Equipo</dt><dd>{r.equipo.length ? r.equipo.join(', ') : 'Nada'}</dd>
-              <dt>Factura</dt><dd>{r.factura ? `${r.factura.nombre} · ${r.factura.nif} · ${r.factura.direccion}` : 'No la pide'}</dd>
+              <dt>Datos de factura</dt><dd>{r.factura ? `${r.factura.nombre} · ${r.factura.nif} · ${r.factura.direccion}` : 'No los ha dado (lleva factura simplificada)'}</dd>
               <dt>Comentarios</dt><dd>{r.comentarios || '—'}</dd>
               {r.motivoCancelacion && (<><dt>Motivo</dt><dd>{r.motivoCancelacion}</dd></>)}
               <dt>Página del cliente</dt><dd><a href={enlaceCliente} target="_blank" rel="noopener noreferrer">Abrir</a></dd>
@@ -164,29 +175,28 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
               <p>Incluida en la suscripción: no lleva factura propia. Se factura la cuota del mes desde <Link href={sus ? `/admin/suscripciones/${sus.id}` : '/admin/suscripciones'} className="adm-enlace">su ficha</Link>.</p>
             ) : factura ? (
               <>
-                <p>{factura.codigo} · {factura.total}{factura.enviadaEn ? ` · enviada a ${factura.enviadaA}` : ' · sin enviar'}</p>
+                <p>{factura.simplificada ? 'Simplificada ' : ''}{factura.codigo} · {factura.total}{factura.enviadaEn ? ` · enviada a ${factura.enviadaA}` : ' · sin enviar'}</p>
+                {factura.sustituye && <p className="adm-nota">Sustituye a la factura simplificada {factura.sustituye}.</p>}
                 <p style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <a className="adm-boton adm-boton--claro" href={`/api/admin/facturas/${factura.id}`} target="_blank" rel="noopener noreferrer">Ver PDF</a>
                   {r.email && <button type="button" className="adm-boton adm-boton--claro" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura' }, 'Reenviada.')}>Reenviar al cliente</button>}
                 </p>
+                {factura.simplificada && r.pagoEstado === 'pagado' && (
+                  <div style={{ marginTop: 14 }}>
+                    {formularioFactura('¿Pide la factura con sus datos? Con nombre, NIF y dirección se hace la completa, que sustituye a esta simplificada.', r.email ? 'Hacer la completa y enviarla' : 'Hacer la completa')}
+                  </div>
+                )}
               </>
             ) : !emisorListo ? (
               <p>Faltan los datos de quien factura en Vercel (FACTURA_EMISOR_NOMBRE, FACTURA_EMISOR_NIF y FACTURA_EMISOR_DIRECCION).</p>
             ) : r.pagoEstado === 'pendiente' ? (
-              <p>Se podrá emitir cuando esté pagada{r.factura ? '; como la ha pedido, saldrá sola al marcarla como pagada con el correo' : ''}.</p>
+              <p>Saldrá sola al marcarla como pagada: {r.factura ? 'la completa, con los datos que ha dado' : 'la simplificada, porque no ha dado datos de facturación'}.</p>
             ) : r.pagoEstado !== 'pagado' ? (
               <p>Tiene una devolución apuntada: si hace falta factura, hazla a mano por lo que se ha cobrado de verdad.</p>
             ) : !['confirmada', 'cancelada'].includes(r.estado) ? (
               <p>Resuelve antes la reserva (confírmala en una hora libre o cancélala).</p>
             ) : (
-              <>
-                <div className="adm-form">
-                  <label className="adm-ancho">Nombre o razón social<input value={datosFactura.nombre} onChange={(e) => setDatosFactura({ ...datosFactura, nombre: e.target.value })} /></label>
-                  <label>NIF o CIF<input value={datosFactura.nif} onChange={(e) => setDatosFactura({ ...datosFactura, nif: e.target.value })} /></label>
-                  <label className="adm-ancho">Dirección<input value={datosFactura.direccion} onChange={(e) => setDatosFactura({ ...datosFactura, direccion: e.target.value })} /></label>
-                </div>
-                <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura', ...datosFactura }, '')}>{r.email ? 'Emitir y enviar factura' : 'Emitir factura'}</button></p>
-              </>
+              formularioFactura('Con nombre, NIF y dirección sale la factura completa. Si lo dejas vacío, sale la simplificada.', r.email ? 'Emitir y enviar factura' : 'Emitir factura')
             )}
             <Mensaje estado={eFactura} />
           </div>
@@ -215,7 +225,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
                 </label>
                 <label>Cobrada el<input type="date" max={hoy} value={pago.fecha} onChange={(e) => setPago({ ...pago, fecha: e.target.value })} /></label>
                 <p className="adm-nota" style={{ alignSelf: 'end' }}>Vacío = hoy. Cuenta en Finanzas el día del cobro.</p>
-                {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.enviarCorreo} onChange={(e) => setPago({ ...pago, enviarCorreo: e.target.checked })} /> Mandarle el correo de confirmación{r.factura ? ' y la factura' : ''}</label>}
+                {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.enviarCorreo} onChange={(e) => setPago({ ...pago, enviarCorreo: e.target.checked })} /> Mandarle el correo de confirmación y la factura</label>}
               </div>
               <Mensaje estado={ePago} />
               <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={ePago.enviando} onClick={() => accionPago({ accion: 'pagada', ...pago }, 'Marcada como pagada.')}>Marcar pagada</button></p>
@@ -316,7 +326,7 @@ export async function getServerSideProps(ctx) {
       cuentaPorRegla: Boolean(sus && reserva.origen === 'plan' && cancelacionCuenta(sus, reserva, new Date())),
       cobrosDia: await ingresosDeReserva(reserva.id),
       hoy: fechaMadrid(new Date()),
-      factura: factura ? { id: factura.id, codigo: factura.codigo, total: formatoEuros(factura.totalCent), enviadaEn: factura.enviadaEn, enviadaA: factura.enviadaA } : null,
+      factura: factura ? { id: factura.id, codigo: factura.codigo, total: formatoEuros(factura.totalCent), enviadaEn: factura.enviadaEn, enviadaA: factura.enviadaA, simplificada: factura.simplificada, sustituye: factura.sustituye?.codigo || null } : null,
       emisorListo: Boolean(emisor()),
       enlaceCliente: `${urlBase(ctx.req)}/reserva/${reserva.token}`,
       pagos: pagos.map((p) => ({ pedido: p.pedido, proveedor: p.proveedor, importe: formatoEuros(p.importeCent), estado: p.estado, codigoRespuesta: p.codigoRespuesta, creadoEn: fechaHoraTexto(p.creadoEn) })),

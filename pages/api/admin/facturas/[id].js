@@ -7,6 +7,6 @@ export default rutaAdmin(async (req, res) => {
   const f = await facturaPorId(req.query.id)
   if (!f) return res.status(404).json({ error: 'no_existe', mensaje: 'Factura no encontrada.' })
   res.setHeader('Content-Type', 'application/pdf')
-  res.setHeader('Content-Disposition', `inline; filename="Factura ${f.codigo}.pdf"`)
+  res.setHeader('Content-Disposition', `inline; filename="${f.simplificada ? 'Factura simplificada' : 'Factura'} ${f.codigo}.pdf"`)
   res.status(200).send(await pdfFactura(f))
 }, { metodos: ['GET'] })

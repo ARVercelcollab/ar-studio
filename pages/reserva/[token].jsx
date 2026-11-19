@@ -23,8 +23,10 @@ function enlaceGoogle(r) {
   return `https://calendar.google.com/calendar/render?${p}`
 }
 
-export default function PaginaReserva({ inicial, token, pago, factura }) {
+export default function PaginaReserva({ inicial, token, pago, factura: facturaInicial }) {
   const [r, setR] = useState(inicial)
+  const [factura, setFactura] = useState(facturaInicial) // { codigo, simplificada } o null
+  const [pideFactura, setPideFactura] = useState({ abierta: false, nombre: '', nif: '', direccion: '', enviando: false, hecha: null })
   const [esperando, setEsperando] = useState(inicial.estado === 'pendiente' && pago === 'ok')
   const [error, setError] = useState(null)
   const [pagando, setPagando] = useState(false)
@@ -77,6 +79,21 @@ export default function PaginaReserva({ inicial, token, pago, factura }) {
     }
   }
 
+  async function pedirFacturaCompleta(e) {
+    e.preventDefault()
+    setError(null)
+    setPideFactura((f) => ({ ...f, enviando: true }))
+    try {
+      const x = await pedirJson(`/api/reservas/${token}/factura`, { method: 'POST', body: { nombre: pideFactura.nombre, nif: pideFactura.nif, direccion: pideFactura.direccion } })
+      setFactura({ codigo: x.codigo, simplificada: false })
+      setPideFactura((f) => ({ ...f, enviando: false, abierta: false, hecha: x }))
+    } catch (err) {
+      setPideFactura((f) => ({ ...f, enviando: false }))
+      setError(err.message)
+    }
+  }
+  const cambiarDato = (campo) => (e) => setPideFactura((f) => ({ ...f, [campo]: e.target.value }))
+
   const [etiqueta, clase] = ETIQUETAS[r.estado] || ['', '']
   const wa = `https://wa.me/${ESTUDIO.whatsapp}?text=${encodeURIComponent(`Hola, tengo la reserva ${r.codigo} (${r.franja}).`)}`
 
@@ -126,8 +143,26 @@ export default function PaginaReserva({ inicial, token, pago, factura }) {
 
           {factura && (
             <p className="rsv__nota" style={{ marginBottom: 18 }}>
-              Factura {factura}: <a className="rsv-enlace" href={`/api/reservas/${token}/factura`}>descargar PDF</a>
+              {factura.simplificada ? 'Factura simplificada' : 'Factura'} {factura.codigo}: <a className="rsv-enlace" href={`/api/reservas/${token}/factura`}>descargar PDF</a>
             </p>
+          )}
+          {pideFactura.hecha && (
+            <p className="rsv__alerta is-ok">Hecho: {pideFactura.hecha.enviada ? `te hemos enviado la factura ${pideFactura.hecha.codigo} a tu correo` : `ya tienes la factura ${pideFactura.hecha.codigo}`}. Sustituye a la simplificada.</p>
+          )}
+          {factura?.simplificada && r.pagoEstado === 'pagado' && (
+            pideFactura.abierta ? (
+              <form onSubmit={pedirFacturaCompleta} className="rsv__form" style={{ marginBottom: 18 }}>
+                <p className="rsv__nota rsv__ancho">Con tus datos te hacemos la factura completa, que sustituye a la simplificada.</p>
+                <label className="rsv__campo rsv__ancho"><span>Nombre o razón social</span><input value={pideFactura.nombre} onChange={cambiarDato('nombre')} autoComplete="organization" maxLength={120} required /></label>
+                <label className="rsv__campo"><span>NIF o CIF</span><input value={pideFactura.nif} onChange={cambiarDato('nif')} maxLength={20} required /></label>
+                <label className="rsv__campo"><span>Dirección de facturación</span><input value={pideFactura.direccion} onChange={cambiarDato('direccion')} autoComplete="street-address" maxLength={200} required /></label>
+                <button type="submit" className="rsv__boton rsv__ancho" disabled={pideFactura.enviando}>{pideFactura.enviando ? 'Haciendo la factura…' : 'Pedir la factura'}</button>
+              </form>
+            ) : (
+              <div className="rsv-ficha__acciones" style={{ marginBottom: 18 }}>
+                <button type="button" className="rsv__boton rsv__boton--claro" onClick={() => setPideFactura((f) => ({ ...f, abierta: true }))}>Necesito factura con mis datos</button>
+              </div>
+            )
           )}
 
           {error && <p className="rsv__alerta is-error">{error}</p>}
@@ -202,5 +237,5 @@ export async function getServerSideProps({ params, query, res }) {
   const r = await reservaPorToken(String(params.token))
   if (!r) return { notFound: true }
   const factura = await facturaDeReserva(r.id)
-  return { props: { inicial: vistaPublica(r), token: String(params.token), pago: query.pago === 'ok' ? 'ok' : query.pago === 'ko' ? 'ko' : null, factura: factura?.codigo || null } }
+  return { props: { inicial: vistaPublica(r), token: String(params.token), pago: query.pago === 'ok' ? 'ok' : query.pago === 'ko' ? 'ko' : null, factura: factura ? { codigo: factura.codigo, simplificada: factura.simplificada } : null } }
 }

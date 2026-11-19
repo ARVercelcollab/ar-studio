@@ -78,7 +78,7 @@ export default function NuevaSuscripcion({ hoy }) {
           <label>Apellidos<input value={f.apellidos} onChange={(e) => poner('apellidos', e.target.value)} /></label>
           <label>Correo<input type="email" required value={f.email} onChange={(e) => poner('email', e.target.value)} /></label>
           <label>WhatsApp<input value={f.telefono} onChange={(e) => poner('telefono', e.target.value)} /></label>
-          <label className="adm-check adm-ancho"><input type="checkbox" checked={f.quiereFactura} onChange={(e) => poner('quiereFactura', e.target.checked)} /> Quiere factura de las cuotas</label>
+          <label className="adm-check adm-ancho"><input type="checkbox" checked={f.quiereFactura} onChange={(e) => poner('quiereFactura', e.target.checked)} /> Quiere factura con sus datos (si no, se le hace la simplificada)</label>
           {f.quiereFactura && (
             <>
               <label className="adm-ancho">Nombre o razón social<input value={f.factura.nombre} onChange={(e) => poner('factura', { ...f.factura, nombre: e.target.value })} /></label>

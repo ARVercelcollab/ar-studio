@@ -2,7 +2,7 @@
 import { rutaAdmin, centimos } from '../../../../lib/admin/api.js'
 import * as SUS from '../../../../lib/suscripciones/servicio.js'
 import { emitirYEnviarCuota } from '../../../../lib/facturas/envio.js'
-import { facturaDeCuota } from '../../../../lib/facturas/servicio.js'
+import { facturaDeCuota, facturasAutomaticas } from '../../../../lib/facturas/servicio.js'
 import { registrarEvento } from '../../../../lib/reservas/servicio.js'
 
 // Emitir y mandar la factura de una cuota. Si se emite pero falla el correo, lo dice
@@ -10,7 +10,8 @@ import { registrarEvento } from '../../../../lib/reservas/servicio.js'
 async function facturar(id, opciones = {}) {
   try {
     const r = await emitirYEnviarCuota(id, opciones)
-    return { ok: true, texto: `Factura ${r.factura.codigo} ${r.enviada ? 'enviada' : 'emitida'}.` }
+    const queEs = r.factura.sustituye ? `Factura ${r.factura.codigo} (sustituye a la simplificada ${r.factura.sustituye.codigo})` : `${r.factura.simplificada ? 'Factura simplificada' : 'Factura'} ${r.factura.codigo}`
+    return { ok: true, texto: `${queEs} ${r.enviada ? 'enviada' : 'emitida'}.` }
   } catch (e) {
     const f = await facturaDeCuota(id).catch(() => null)
     if (f) {
@@ -29,7 +30,11 @@ export default rutaAdmin(async (req, res) => {
     case 'pagada': {
       await SUS.marcarCuotaPagada(id, { metodo: b.metodo, pagadaEn: b.fecha, referencia: b.referencia, enlace: b.enlace, nota: b.nota })
       let mensaje = 'Cuota marcada como pagada.'
-      if (b.emitirFactura) mensaje += ` ${(await facturar(id)).texto}`
+      // Todo lo cobrado lleva factura (completa o simplificada); las de 0 € no se facturan
+      if (b.emitirFactura && facturasAutomaticas()) {
+        const cuota = await SUS.cuotaPorId(id).catch(() => null)
+        if (!cuota || cuota.importeCent > 0) mensaje += ` ${(await facturar(id)).texto}`
+      }
       return res.status(200).json({ ok: true, mensaje })
     }
     case 'desmarcar':

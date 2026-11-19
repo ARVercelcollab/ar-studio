@@ -267,6 +267,7 @@ test('facturas: numeración correlativa, una por reserva, desglose de IVA y PDF'
   process.env.FACTURA_EMISOR_NIF = 'X0000000T'
   process.env.FACTURA_EMISOR_DIRECCION = 'Calle Falsa 1|46007 València|España'
   process.env.FACTURA_SERIE = 'AR-T'
+  process.env.FACTURA_SERIE_SIMPLIFICADA = 'AR-TS'
   const F = await import('../lib/facturas/servicio.js')
   const { pdfFactura } = await import('../lib/facturas/pdf.js')
   assert.deepEqual(F.desglose(9680), { baseCent: 8000, ivaCent: 1680, totalCent: 9680 })
@@ -277,7 +278,8 @@ test('facturas: numeración correlativa, una por reserva, desglose de IVA y PDF'
   await assert.rejects(F.emitirFactura(sinPagar.id, { nombre: 'X', nif: 'B12345678', direccion: 'Y' }), { codigo: 'sin_pagar' })
 
   const pagada = await S.crearReservaManual({ ...CLIENTE, fecha, hora: '15:00', horas: 3, pagoEstado: 'pagado', metodoPago: 'bizum' })
-  await assert.rejects(F.emitirFactura(pagada.id), { codigo: 'datos' })
+  // Si se pasan datos, tienen que estar completos
+  await assert.rejects(F.emitirFactura(pagada.id, { nombre: 'Solo nombre' }), { codigo: 'datos' })
   const a = await F.emitirFactura(pagada.id, { nombre: 'Estudio Cliente SL', nif: 'b12345678', direccion: 'Avenida del Puerto 1, 46021 València' })
   assert.equal(a.nueva, true)
   assert.match(a.factura.codigo, /^AR-T-\d{4}-001$/)

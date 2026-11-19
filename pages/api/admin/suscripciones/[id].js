@@ -2,7 +2,9 @@
 import { rutaAdmin, centimos } from '../../../../lib/admin/api.js'
 import * as SUS from '../../../../lib/suscripciones/servicio.js'
 import { correoConfirmacion } from '../../../../lib/reservas/correos.js'
-import { urlReserva } from '../../../../lib/reservas/flujo.js'
+import { urlReserva, urlPanel } from '../../../../lib/reservas/flujo.js'
+import { facturasAutomaticas, seFactura } from '../../../../lib/facturas/servicio.js'
+import { facturarAlCobrar } from '../../../../lib/facturas/envio.js'
 import { urlBase } from '../../../../lib/http.js'
 import { textoDuracion } from '../../../../lib/reservas/config.js'
 import { registrarEvento } from '../../../../lib/reservas/servicio.js'
@@ -23,14 +25,21 @@ export default rutaAdmin(async (req, res) => {
       })
       let mensaje = `Sesión reservada. Le quedan ${textoDuracion(resumen.restantes, { corto: true })} este periodo.`
       let correoFallido = false
+      const base = urlBase(req)
+      const conFactura = reserva.pagoEstado === 'pagado' && seFactura(reserva) && facturasAutomaticas()
       if (b.enviarCorreo && reserva.email) {
         try {
-          await correoConfirmacion(reserva, { urlReserva: urlReserva(urlBase(req), reserva) })
+          await correoConfirmacion(reserva, { urlReserva: urlReserva(base, reserva), facturaAutomatica: conFactura })
         } catch (e) {
           correoFallido = true
           mensaje += ' No se pudo mandar el correo de confirmación.'
           await registrarEvento(reserva.id, 'correo_fallido', { error: String(e.message || e) }, { suscripcionId: reserva.suscripcionId, autor: 'panel' }).catch(() => {})
         }
+      }
+      // Horas aparte ya pagadas: llevan su factura
+      if (conFactura) {
+        const r = await facturarAlCobrar(reserva, { urlPanel: urlPanel(base), urlReserva: urlReserva(base, reserva), enviar: Boolean(b.enviarCorreo) })
+        if (r?.factura) mensaje += ` Factura ${r.factura.codigo} emitida${r.enviada ? ' y enviada' : ''}.`
       }
       return res.status(200).json({ id: reserva.id, mensaje, correoFallido })
     }

@@ -301,8 +301,9 @@ export default function Reservador() {
 
             <label className="rsv__check rsv__ancho">
               <input type="checkbox" checked={cliente.quiereFactura} onChange={(e) => cambiar('quiereFactura', e.target.checked)} />
-              Quiero factura
+              Quiero factura con mis datos (nombre, NIF y dirección)
             </label>
+            {!cliente.quiereFactura && <p className="rsv__nota rsv__ancho" style={{ marginTop: -6 }}>Si no, te enviamos la factura simplificada (el ticket). Puedes pedir la completa después desde tu reserva.</p>}
             {cliente.quiereFactura && (
               <>
                 <Campo etiqueta="Nombre o razón social" error={errores.facturaNombre}>

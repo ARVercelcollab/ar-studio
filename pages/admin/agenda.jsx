@@ -63,7 +63,7 @@ export default function Agenda({ vista, buscar, dias, cifras, calendario, avisos
                 {r.nombre} {r.apellidos}
                 {r.esPlan
                   ? <small>{r.duracionTexto} · {r.planTexto} · {r.horasPlanTexto}</small>
-                  : <small>{r.duracionTexto} · {r.actividad || 'sin actividad'}{r.origen !== 'web' ? ` · ${r.origen}` : ''}{r.factura ? ' · pide factura' : ''}</small>}
+                  : <small>{r.duracionTexto} · {r.actividad || 'sin actividad'}{r.origen !== 'web' ? ` · ${r.origen}` : ''}{r.factura ? ' · factura con datos' : ''}</small>}
               </span>
               <span>{r.esPlan ? r.importePlan : r.importe}</span>
               {chipEstado(r)}
