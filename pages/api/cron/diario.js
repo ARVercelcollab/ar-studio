@@ -1,11 +1,16 @@
-// Tarea diaria (Vercel Cron, ver vercel.json): recordatorios de las reservas de mañana
-// y limpieza de las horas guardadas que no se llegaron a pagar.
+// Tarea diaria (Vercel Cron, ver vercel.json): recordatorios de las reservas de mañana,
+// limpieza de las horas guardadas que no se llegaron a pagar y reintento de lo que no
+// llegó a Google Calendar.
 import { reservasParaRecordar, marcarRecordatorio, limpiarRetenciones, registrarEvento } from '../../../lib/reservas/servicio.js'
 import { correoRecordatorio } from '../../../lib/reservas/correos.js'
 import { urlReserva } from '../../../lib/reservas/flujo.js'
 import { urlBase } from '../../../lib/http.js'
 import { asegurarCuotasDeTodas } from '../../../lib/suscripciones/servicio.js'
 import { asegurarGastosFijos } from '../../../lib/finanzas/servicio.js'
+import { sincronizarPendientes } from '../../../lib/google/calendario.js'
+
+// Hasta 60 s (lo máximo en el plan gratuito de Vercel) por si hay mucho que pasar a Google
+export const config = { maxDuration: 60 }
 
 export default async function handler(req, res) {
   const secreto = process.env.CRON_SECRET
@@ -28,5 +33,12 @@ export default async function handler(req, res) {
       console.error('[cron] recordatorio fallido', r.codigo, e.message)
     }
   }
-  res.status(200).json({ recordatorios: enviados, pendientes: reservas.length - enviados })
+  // Google Calendar: todo lo pendiente o con error, por tandas (como mucho unos 40 segundos)
+  let calendario = null
+  for (let i = 0; i < 6; i++) {
+    const r = await sincronizarPendientes({ base, limite: 50, tiempoMaxMs: 5000, todo: true })
+    calendario = r
+    if (!r.hecho || (!r.quedan && r.creados + r.quitados + r.errores < 50)) break
+  }
+  res.status(200).json({ recordatorios: enviados, pendientes: reservas.length - enviados, calendario })
 }

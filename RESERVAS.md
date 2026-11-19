@@ -16,7 +16,8 @@ apuntan a Calendly y `/reservar` redirige allí.
 | Panel | `/admin` | Agenda, ficha de cada reserva, reservas a mano, mover, marcar pagada (Bizum, transferencia…), cancelar con la devolución que toca según las condiciones, bloqueos y festivos |
 | Correos | Resend (`reservas@studioar.es`) | Confirmación al cliente con el `.ics`, aviso al estudio, recordatorio el día antes, avisos de pagos raros |
 | Facturas | PDF por correo | **Todo lo cobrado lleva factura.** Al confirmarse el pago se emite sola y se le envía en PDF con copia al estudio: **completa** (serie AR-W) si ha dado nombre, NIF y dirección, y **simplificada** (serie AR-S, sin datos del cliente) si no. Si después pide la completa (desde la página de su reserva o el estudio desde el panel), se hace una AR-W que dice a qué simplificada sustituye; la simplificada queda marcada, no se borra. Cada serie tiene su numeración correlativa por año. Desde el panel se emite, se descarga o se reenvía |
-| Calendario | `/api/admin/calendario?clave=…` | Todas las reservas para suscribirse desde Google Calendar |
+| Google Calendar | `/admin/google` | Cada reserva confirmada (web, panel y sesiones de los planes) y cada bloqueo entran **al momento** en el calendario de Google del estudio, con todos los datos del cliente (nombre, WhatsApp, correo, qué va a hacer, fondos, equipo, comentarios, horas, importe, si está pagada, factura y enlace a su ficha). Si se mueve o se cancela, se actualiza o se quita solo. Ver «Google Calendar» más abajo |
+| Calendario para suscribirse | `/api/admin/calendario?clave=…` | Alternativa sin conectar la cuenta (Google solo lo refresca cada varias horas) |
 | Inicio | `/admin` | Cómo va el estudio de un vistazo: reservas de hoy, lo que hay que hacer, ingresos, gastos, beneficio y ocupación con gráficas, comparado con el mes (o trimestre, o año) anterior |
 | Finanzas | `/admin/finanzas` | Facturación, gastos (fijos, variables y materiales), gastos fijos que se apuntan solos, lo cobrado por Calendly, IVA orientativo y CSV para la gestoría. Ver «Finanzas» más abajo |
 | Suscripciones | `/admin/suscripciones` | Planes mensuales (Starter, Creator, Pro): altas, horas de cada mes, sesiones, cuotas, fianza y bajas. Ver «Suscripciones» más abajo |
@@ -97,7 +98,8 @@ producción queda marcada y rechaza cualquier pago hecho con un TPV en modo prue
 | `ADMIN_PASSWORD` | Contraseña del panel, de 12 caracteres o más (si es más corta, el panel no deja entrar) |
 | `SESSION_SECRET` | Texto aleatorio de 32 caracteres o más (firma la sesión del panel) |
 | `CRON_SECRET` | Texto aleatorio: Vercel lo usa para lanzar el recordatorio diario |
-| `CALENDARIO_TOKEN` | Texto aleatorio de 24 caracteres o más, para el calendario de Google |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Del cliente OAuth de Google Cloud, para conectar Google Calendar (ver «Google Calendar») |
+| `CALENDARIO_TOKEN` | Opcional. Texto aleatorio de 24 caracteres o más, para el calendario por suscripción (si no se conecta Google Calendar) |
 | `SITIO_URL` | `https://www.studioar.es` |
 | `FACTURA_EMISOR_NOMBRE` | Quien factura (el mismo nombre que en las facturas manuales) |
 | `FACTURA_EMISOR_NIF` | Su NIF |
@@ -132,7 +134,7 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 3. Desactivar los tipos de evento de Calendly ese mismo día, para que nadie reserve en los dos sitios.
 4. En *Finanzas → Ajustes*, poner el último mes en que se cobró por Calendly.
 5. Hacer una reserva real pequeña y devolverla desde el portal del TPV.
-6. Suscribirse al calendario desde Google Calendar con el enlace que sale al final de la agenda del panel.
+6. Comprobar en *Google Calendar* (panel) que está conectado y al día. Las reservas que vienen de Calendly no se copian (Calendly ya las pone), así que no hay duplicados mientras convivan.
 7. Cuando todo vaya bien un par de semanas, dar de baja Calendly.
 
 ### 6. Pendiente fuera de la fase 1
@@ -141,8 +143,52 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 - **Devoluciones:** desde el portal del TPV; el panel solo apunta el importe.
 - **Límites antiabuso:** cada conexión puede tener como mucho 2 horas guardadas sin pagar (12 en total a la vez) y 4 intentos de pago por reserva; si alguien vuelve atrás desde el banco y reserva otra vez, se suelta su hora anterior. En el panel, 8 contraseñas falsas seguidas bloquean esa conexión 15 minutos.
 - **Cambios del cliente:** el cliente los pide desde su página y el estudio los hace en el panel.
-- **Política de privacidad:** menciona Calendly como proveedor; al activar, cambiarla por el TPV de Comercia, Neon (base de datos) y Resend (correos).
+- **Política de privacidad:** menciona Calendly como proveedor; al activar, cambiarla por el TPV de Comercia, Neon (base de datos), Resend (correos) y Google (Google Calendar, donde se copian los datos de cada reserva para el estudio).
 - **Área de clientes** (que los miembros vean sus horas y reserven solos): fase 3. Los planes ya se llevan desde el panel.
+
+## Google Calendar
+
+Cada reserva confirmada y cada bloqueo se copian al calendario de Google del estudio en cuanto
+pasan (al confirmarse el pago, al guardar algo en el panel). Si se mueve, se cambia algo o se
+cancela, el evento se actualiza o se quita. Las reservas de Calendly no se copian, porque Calendly
+ya las pone en el calendario.
+
+- **Si Google falla** (o no está conectado), la reserva sigue adelante igual: queda pendiente y se
+  vuelve a intentar sola en los siguientes cambios y en la tarea diaria. En *Google Calendar*
+  (panel) hay un botón **Volver a sincronizar** y el Inicio avisa si algo no ha llegado.
+- **Nunca se duplica:** cada evento tiene un número fijo sacado de la reserva.
+- **Qué se guarda:** solo el permiso de Google (el «refresh token»), **cifrado** con `SESSION_SECRET`.
+  Si se cambia `SESSION_SECRET`, hay que volver a conectar.
+- **Permisos que pide:** crear, cambiar y borrar eventos (`calendar.events`), ver la lista de
+  calendarios para elegir en cuál van (`calendar.calendarlist.readonly`) y el correo de la cuenta.
+- **Privacidad:** quien vea ese calendario ve los datos de los clientes: no compartirlo fuera del estudio.
+
+### Preparar la conexión (una vez)
+
+1. Entrar en <https://console.cloud.google.com> con la cuenta de Google del estudio y crear un
+   proyecto (por ejemplo «AR Studio web»).
+2. *APIs y servicios → Biblioteca*: buscar **Google Calendar API** y pulsar **Habilitar**.
+3. *APIs y servicios → Pantalla de consentimiento de OAuth* (o *Google Auth Platform*):
+   - Tipo de usuario **Externo** (con una cuenta de Gmail no hay otra opción; si el estudio usa
+     Google Workspace, **Interno** es mejor).
+   - Nombre de la aplicación «AR Studio», correo de asistencia el del estudio.
+   - En *Público*, pulsar **Publicar la aplicación** (pasar a **En producción**). En modo
+     «Prueba» Google corta el permiso a los 7 días y habría que volver a conectar cada semana.
+     No hace falta que Google la verifique: al conectar saldrá un aviso de «aplicación no
+     verificada»; se pulsa *Configuración avanzada → Ir a AR Studio*.
+4. *Clientes* (o *Credenciales → Crear credenciales → ID de cliente de OAuth*):
+   - Tipo **Aplicación web**.
+   - **URI de redireccionamiento autorizados** (todas las direcciones desde las que se vaya a conectar):
+     - `https://www.studioar.es/api/admin/google/callback`
+     - la de la vista previa de la rama, por ejemplo `https://ar-studio-git-reservas-propias-<equipo>.vercel.app/api/admin/google/callback`
+     - en local, `http://localhost:3100/api/admin/google/callback`
+5. Copiar el **ID de cliente** y el **secreto de cliente** a Vercel como `GOOGLE_CLIENT_ID` y
+   `GOOGLE_CLIENT_SECRET` (Production y Preview) y volver a desplegar.
+6. En el panel, *Google Calendar → Conectar Google Calendar*, entrar con la cuenta del estudio,
+   marcar todas las casillas y **Permitir**. Elegir en qué calendario van (por defecto, el principal).
+
+Cada base de datos (producción, vistas previas, local) tiene su propia conexión: en una vista
+previa hay que conectar aparte, y mejor con un calendario de pruebas para no llenar el de verdad.
 
 ## Suscripciones (planes mensuales)
 

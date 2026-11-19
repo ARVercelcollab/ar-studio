@@ -13,6 +13,7 @@ const MENU = [
   ['/admin/finanzas', 'Finanzas'],
   ['/admin/bloqueos', 'Bloqueos'],
   ['/admin/festivos', 'Festivos'],
+  ['/admin/google', 'Google Calendar'],
 ]
 
 const activo = (href, pathname) => {
