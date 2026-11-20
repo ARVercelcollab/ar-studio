@@ -184,6 +184,10 @@ test('facturas 8: la ruta del cliente respeta FACTURAS_AUTOMATICAS=0 y un doble 
   ])
   assert.deepEqual([a.statusCode, b.statusCode], [200, 200], JSON.stringify([a.cuerpo, b.cuerpo]))
   assert.equal(asuntos().filter((s) => /^Factura AR-R-/.test(s)).length, 1, asuntos().join(' | '))
+  // Con otros datos ya no: la factura completa no se cambia desde la web
+  const otra = await llamar(rutaFacturaCliente, { admin: false, query: { token: r.token }, body: { ...DATOS, nombre: 'Otra Empresa de Prueba SL' } })
+  assert.equal(otra.statusCode, 409)
+  assert.equal(asuntos().filter((s) => /^Factura AR-R-/.test(s)).length, 1)
 })
 
 test('fuera de alcance: en Vercel sin RESEND_API_KEY la factura no se marca enviada', async () => {

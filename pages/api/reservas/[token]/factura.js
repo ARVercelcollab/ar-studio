@@ -35,7 +35,14 @@ export default async function handler(req, res) {
     const datos = { nombre: texto(req.body?.nombre, 120), nif: texto(req.body?.nif, 20).toUpperCase(), direccion: texto(req.body?.direccion, 200) }
     if (!datosCompletos(datos)) return res.status(400).json({ error: 'datos', mensaje: 'Para la factura hacen falta el nombre o razón social, el NIF o CIF y la dirección.' })
     const actual = await facturaDeReserva(r.id)
-    if (actual && !actual.simplificada) return res.status(409).json({ error: 'ya', mensaje: `Ya tienes la factura ${actual.codigo} con tus datos. Si hay que corregir algo, escríbenos.` })
+    if (actual && !actual.simplificada) {
+      // Los mismos datos otra vez (doble clic o reenvío): es la misma factura, sin otro correo
+      const igual = (a, b) => String(a || '').replace(/\s+/g, ' ').trim().toUpperCase() === String(b || '').replace(/\s+/g, ' ').trim().toUpperCase()
+      if (igual(actual.cliente?.nif, datos.nif) && igual(actual.cliente?.nombre, datos.nombre)) {
+        return res.status(200).json({ ok: true, codigo: actual.codigo, enviada: Boolean(actual.enviadaEn) })
+      }
+      return res.status(409).json({ error: 'ya', mensaje: `Ya tienes la factura ${actual.codigo} con tus datos. Si hay que corregir algo, escríbenos.` })
+    }
     const { factura, enviada, nueva, errorEnvio } = await emitirYEnviar(r, { datosCliente: datos, urlReserva: urlReserva(urlBase(req), r), soloSiNueva: true })
     // Otra petición a la vez ya la ha hecho (doble clic): no se manda dos veces
     if (!nueva && !factura.simplificada) return res.status(200).json({ ok: true, codigo: factura.codigo, enviada: Boolean(factura.enviadaEn) })
