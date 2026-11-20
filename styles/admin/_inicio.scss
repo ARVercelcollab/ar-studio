@@ -1,6 +1,6 @@
 // Panel · pantalla «Inicio» (pages/admin/index.jsx y components/admin/inicio/*), con el diseño del
-// prototipo: cifras, frase del mes, «Pendiente ahora», gráfico por meses, «En qué se va el dinero»
-// y últimos movimientos. Todo bajo .adm; colores de _tokens.scss.
+// prototipo: «Por revisar» en la cabecera, cifras, frase del mes, gráfico por meses, «En qué se va
+// el dinero» y últimos movimientos. Todo bajo .adm; colores de _tokens.scss.
 @use 'tokens' as *;
 
 .adm {
@@ -32,293 +32,123 @@
     color: var(--texto-2);
   }
 
-  // ---------- Pendiente ahora ----------
-  .ini-pend {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    padding: 16px 16px 12px;
-    background: var(--superficie);
-    border: 1px solid var(--linea);
-    border-radius: var(--radio);
-
-    h3,
-    p,
-    ul,
-    dl,
-    dd {
-      margin: 0;
-    }
-
-    ul {
-      padding: 0;
-      list-style: none;
-    }
+  // ---------- «Por revisar» (botón de la cabecera con su lista) ----------
+  .ini-revisar {
+    position: relative;
   }
 
-  .ini-pend--aviso {
-    border-color: var(--aviso-linea);
-    box-shadow: inset 0 0 0 1px var(--aviso-linea);
-  }
-
-  .ini-pend__cab {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .ini-pend__icono {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    background: var(--superficie-3);
-    color: var(--marron);
-
-    .ui-icono {
-      width: 17px;
-      height: 17px;
-    }
-  }
-
-  .ini-pend--aviso .ini-pend__icono {
-    background: var(--aviso-fondo);
-    color: var(--aviso);
-  }
-
-  .ini-pend__titulo {
-    font-size: 0.9375rem;
-    font-weight: 500;
-    line-height: 1.3;
-  }
-
-  .ini-pend__cifra {
-    font-size: 1.1875rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .ini-pend__resumen {
-    margin: 8px 0 4px;
-    color: var(--texto-3);
-    font-size: 0.8125rem;
-  }
-
-  .ini-pend__cuerpo {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  .ini-pend__lista {
-    flex: 1;
-  }
-
-  .ini-pend__fila {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-top: 1px solid var(--linea);
-
-    &:first-child {
-      border-top: 0;
-    }
-  }
-
-  .ini-pend__quien {
-    flex: 1;
-    min-width: 0;
-    color: inherit;
-    text-decoration: none;
-
-    &:hover .ini-pend__nombre {
-      text-decoration: underline;
-    }
-  }
-
-  .ini-pend__nombre {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.35;
-  }
-
-  .ini-pend__detalle {
-    display: block;
-    margin-top: 1px;
-    color: var(--texto-3);
-    font-size: 0.8125rem;
-    line-height: 1.35;
-  }
-
-  .ini-pend__detalle--mal {
-    color: var(--mal);
-  }
-
-  .ini-pend__hora {
-    display: inline-block;
-    min-width: 44px;
-    color: var(--marron);
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .ini-pend__importe {
-    font-size: 0.875rem;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .ini-pend__impago {
-    display: inline-block;
-    margin-top: 4px;
-    padding: 1px 8px;
-    border-radius: 999px;
-    background: var(--mal-fondo);
-    color: var(--mal);
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-
-  .ini-pend__vacio {
-    display: flex;
+  .ini-revisar__boton {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    flex: 1;
-    padding: 10px 0;
-    color: var(--texto-3);
-    font-size: 0.8125rem;
-
-    .ui-icono {
-      width: 16px;
-      height: 16px;
-      color: var(--bien);
-    }
-  }
-
-  .ini-pend__mas {
-    padding-top: 2px;
-    font-size: 0.8125rem;
-
-    a {
-      color: var(--texto-2);
-    }
-  }
-
-  .ini-pend__cuenta {
-    div {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 6px 0;
-      border-top: 1px solid var(--linea);
-      font-size: 0.875rem;
-
-      &:first-child {
-        border-top: 0;
-      }
-    }
-
-    dt {
-      color: var(--texto-2);
-    }
-
-    dd {
-      font-weight: 500;
-      font-variant-numeric: tabular-nums;
-    }
-  }
-
-  .ini-pend__nota {
-    flex: 1;
-    margin-top: 6px !important;
-    color: var(--texto-3);
-    font-size: 0.8125rem;
-  }
-
-  .ini-pend__pie {
-    margin-top: 8px;
-    padding-top: 10px;
-    border-top: 1px solid var(--linea);
-  }
-
-  .ini-vez {
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--linea-fuerte);
+    border-radius: var(--radio-s);
+    background: var(--superficie);
     color: var(--texto-2);
-  }
-
-  .ini-vez--nueva {
-    color: var(--bien);
-    font-weight: 500;
-  }
-
-  // Otros avisos (facturas, Google Calendar, pagos raros)
-  .ini-avisos {
-    margin-top: 12px;
-    padding: 10px 14px;
-    border: 1px solid var(--aviso-linea);
-    border-radius: var(--radio);
-    background: var(--aviso-fondo);
+    font: inherit;
     font-size: 0.875rem;
+    cursor: pointer;
 
-    summary {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--aviso);
+    strong {
+      color: var(--texto);
       font-weight: 500;
-      cursor: pointer;
-
-      .ui-icono {
-        width: 16px;
-        height: 16px;
-      }
-
-      span {
-        font-weight: 400;
-      }
     }
+
+    &:hover:not(:disabled) {
+      border-color: var(--marron-suave);
+      color: var(--texto);
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 2px;
+    }
+  }
+
+  .ini-revisar__punto {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--aviso);
+  }
+
+  .ini-revisar__punto--mal {
+    background: var(--mal);
+  }
+
+  .ini-revisar__punto--bien {
+    background: var(--bien);
+  }
+
+  .ini-revisar__panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 30;
+    width: min(400px, calc(100vw - 32px));
+    max-height: min(70vh, 520px);
+    overflow: auto;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra-capa);
 
     ul {
-      margin: 8px 0 2px;
-      padding: 0;
+      margin: 0;
+      padding: 6px 0;
       list-style: none;
     }
 
-    li {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 7px 0;
-      border-top: 1px solid var(--aviso-linea);
+    li + li {
+      border-top: 1px solid var(--linea);
+    }
 
-      a,
-      span {
-        color: var(--texto);
-      }
+    a,
+    li > div {
+      display: grid;
+      grid-template-columns: 8px minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 10px;
+      padding: 10px 14px;
+      color: var(--texto);
+      text-decoration: none;
+    }
 
-      small {
-        flex: none;
-        color: var(--texto-3);
-      }
+    a:hover {
+      background: var(--superficie-2);
+    }
+
+    .ini-revisar__punto {
+      margin-top: 6px;
     }
   }
 
-  .ini-avisos--mal {
-    border-color: #F3C5BF;
-    background: var(--mal-fondo);
+  .ini-revisar__texto {
+    display: grid;
+    gap: 2px;
+    font-size: 0.875rem;
 
-    summary {
-      color: var(--mal);
+    b {
+      font-weight: 500;
     }
 
-    li {
-      border-top-color: #F3C5BF;
+    span {
+      color: var(--texto-2);
+      font-size: 0.8125rem;
     }
+  }
+
+  .ini-revisar__importe {
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
   }
 
   // ---------- Gráfico de meses y «En qué se va el dinero» ----------

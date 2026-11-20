@@ -1,14 +1,14 @@
-// Inicio del panel: cómo va el mes de un vistazo (como el Inicio de Gartalia). Arriba, el saludo y
-// el mes; luego las cuatro cifras, la frase del mes, «Pendiente ahora», el gráfico por meses con
-// «En qué se va el dinero» y los últimos movimientos. Dinero sin IVA (salvo los últimos
+// Inicio del panel: cómo va el mes de un vistazo (como el Inicio de AR Academy). Arriba, el saludo,
+// «Por revisar» (lo pendiente, en una lista que se abre) y el mes; luego las cuatro cifras, la frase
+// del mes, el gráfico por meses con «En qué se va el dinero» y los últimos movimientos. Dinero sin IVA (salvo los últimos
 // movimientos, que van con IVA como en Movimientos).
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import Panel from '../../components/admin/Panel'
-import { Cifra, Rejilla, Seccion, Tarjeta, SelectorFlechas, EnlaceFlecha, Vacio, Icono, ocultoEnCookie, useImportesOcultos } from '../../components/admin/ui'
+import { Cifra, Rejilla, Tarjeta, SelectorFlechas, EnlaceFlecha, Vacio, ocultoEnCookie, useImportesOcultos } from '../../components/admin/ui'
 import { useEuros, aEuros } from '../../components/admin/graficas'
-import PendienteAhora from '../../components/admin/inicio/Pendiente'
+import PorRevisar from '../../components/admin/inicio/PorRevisar'
 import { GraficoMeses, EnQueSeVa } from '../../components/admin/inicio/Graficos'
 import { redirigirSiNoAdmin } from '../../lib/admin/auth'
 import { datosInicio } from '../../lib/admin/inicio'
@@ -106,29 +106,6 @@ function Frase({ d }) {
   )
 }
 
-// Otros avisos (facturas sin emitir, Google Calendar, pagos raros…): discretos, debajo de las tarjetas
-function OtrosAvisos({ avisos }) {
-  if (!avisos.length) return null
-  const urgentes = avisos.filter((a) => a.nivel === 'error').length
-  return (
-    <details className={`ini-avisos${urgentes ? ' ini-avisos--mal' : ''}`}>
-      <summary>
-        <Icono nombre="aviso" />
-        {avisos.length === 1 ? '1 aviso más' : `${avisos.length} avisos más`}
-        {urgentes > 0 && <span> · {urgentes === 1 ? '1 urgente' : `${urgentes} urgentes`}</span>}
-      </summary>
-      <ul>
-        {avisos.map((a, i) => (
-          <li key={i}>
-            {a.enlace ? <Link href={a.enlace}>{a.texto}</Link> : <span>{a.texto}</span>}
-            <small>{a.chip}</small>
-          </li>
-        ))}
-      </ul>
-    </details>
-  )
-}
-
 const PUNTO = {
   horas: 'var(--g-ingresos)', horas_aparte: 'var(--g-teal)', cuota: 'var(--g-teal)', calendly: 'var(--g-azul)',
   devolucion: 'var(--g-arcilla)', gasto: 'var(--g-gastos)',
@@ -175,11 +152,6 @@ function Contenido({ d }) {
       <Cifras d={d} />
       <Frase d={d} />
 
-      <Seccion titulo="Pendiente ahora" derecha={`A día de hoy, ${textoFechaCorta(d.hoy)}`}>
-        <PendienteAhora d={d} textoHoy={fechaLarga(d.hoy).replace(/ de \d{4}$/, '')} />
-        <OtrosAvisos avisos={d.otrosAvisos} />
-      </Seccion>
-
       <div className="ini-dos">
         <GraficoMeses
           grafico={d.grafico} graficoAnio={d.graficoAnio} mesElegido={p.clave} hoy={d.hoy}
@@ -222,11 +194,14 @@ export default function Inicio(d) {
       clase="ini"
       ocultoInicial={Boolean(d.oculto)}
       acciones={(
-        <SelectorFlechas
+        <>
+          <PorRevisar porCobrar={d.porCobrar} porResolver={d.porResolver} avisos={d.otrosAvisos} />
+          <SelectorFlechas
           etiqueta="Mes" texto={may(textoMes(p.clave))}
           anterior={p.anterior ? `/admin?p=${p.anterior}` : null}
           siguiente={p.siguiente ? (p.siguiente === mesDe(d.hoy) ? '/admin' : `/admin?p=${p.siguiente}`) : null}
-        />
+          />
+        </>
       )}
     >
       <div className={`ini-contenido${cargando ? ' is-cargando' : ''}`}>
