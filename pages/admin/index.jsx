@@ -75,7 +75,7 @@ function Cifras({ d }) {
         delta={delta.dinero(beneficio.actual, beneficio.comp, 'resultado')} href="/admin/mes-a-mes"
       />
       <Cifra
-        nombre="Horas reservadas" valor={`${cifraHoras(ocupacion.horas)} h`} sufijo={ocupacion.actual !== null ? `· ${ocupacion.actual} % ocupado${ocupacion.futurasPeriodo > 0 ? ` · ${cifraHoras(ocupacion.futurasPeriodo)} h por venir` : ''}` : null}
+        nombre="Horas reservadas" valor={`${cifraHoras(ocupacion.horas)} h`} sufijo={ocupacion.futurasPeriodo > 0 ? `· ${cifraHoras(ocupacion.futurasPeriodo)} h por venir` : ocupacion.actual !== null ? `· ${ocupacion.actual} % ocupado` : null}
         delta={delta.horas(ocupacion.horas, ocupacion.compHoras)} href="/admin/reservas"
       />
     </Rejilla>
