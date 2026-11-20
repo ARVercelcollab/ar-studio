@@ -132,8 +132,13 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 ### 5. El día del cambio
 
 1. Poner el TPV en **real** y `NEXT_PUBLIC_RESERVAS_PROPIAS=1` en Producción, y volver a desplegar.
-2. Apuntar en el panel (*Añadir → Reserva*, marcada como pagada con **Cómo: Por Calendly (ya cobrada en Stripe)** y la fecha del cobro) las reservas futuras que haya en Calendly.
-3. Desactivar los tipos de evento de Calendly ese mismo día, para que nadie reserve en los dos sitios.
+2. Desactivar los tipos de evento de Calendly, para que nadie reserve en los dos sitios.
+3. Exportar de Calendly todas las reservas (*Eventos programados → Exportar*, pasadas y futuras) y subir el CSV en
+   *Ajustes → Calendly → Importar reservas de Calendly*. Primero sale un resumen sin tocar nada (nuevas, futuras,
+   pasadas, canceladas, ya importadas, ya apuntadas a mano y problemas fila a fila) y luego se confirma. Las
+   **futuras ocupan su hora** (con sus 30 minutos) y las pasadas van a las fichas de los clientes. Se puede subir
+   varias veces: lo ya importado se salta. Las filas que chocan con otra reserva o un bloqueo no entran: se
+   resuelven a mano (*Añadir → Reserva*, «Por Calendly (ya cobrada en Stripe)»).
 4. En *Movimientos → Ajustes de las cuentas* (al final de la página), poner el último mes en que se cobró por Calendly.
 5. Hacer una reserva real pequeña y devolverla desde el portal del TPV.
 6. Comprobar en *Google Calendar* (panel) que está conectado y al día. Las reservas que vienen de Calendly no se copian (Calendly ya las pone), así que no hay duplicados mientras convivan.
@@ -224,8 +229,17 @@ cabecera con el logo y barra abajo: Inicio · Reservas · **Añadir** · Miembro
   historial). La ficha enseña sus datos y facturación, reservas este año y en total, horas, lo
   pagado, qué suele hacer, próximas reservas, historial y **notas del estudio** (se guardan en la
   base de datos, tabla `clientes_notas`, migración 14). Desde la ficha: llamar, WhatsApp, correo y
-  «Nueva reserva para este cliente». Para traer el historial de Calendly haría falta importar el CSV
-  que exporta Calendly (fecha y hora, nombre, correo, teléfono, respuestas, importe, estado e id).
+  «Nueva reserva para este cliente». El historial de Calendly se trae con *Ajustes → Calendly → Importar
+  reservas de Calendly* (CSV de *Eventos programados → Exportar*): cuentan como reservas y horas en la ficha,
+  pero **no** en lo pagado (su dinero está en Stripe y se apunta por meses en Calendly).
+- **Importar de Calendly** (`/admin/ajustes/calendly#importar`, `lib/reservas/calendly-importar.js`, migración 17):
+  reconoce las columnas en inglés y en español (nombre, correo, teléfono, tipo de evento, inicio, fin, zona horaria,
+  programado, cancelado y motivo, UUID del invitado y del evento, importe y moneda, y las preguntas/respuestas:
+  actividad, fondos y equipo van a su campo y el resto a comentarios). Las horas se leen en hora de Madrid o, si
+  se elige, en la zona de cada persona; una fecha que no se entiende no se importa. Origen `calendly`, pagadas
+  por Stripe, sin factura (la hizo Stripe), sin Google Calendar (ya las pone Calendly) y sin nuestro recordatorio
+  (lo manda Calendly). Si el archivo no trae el importe, se pone el de la web y se marca como estimado. Clave para
+  no duplicar: `reservas.externo_ref` = `calendly:<UUID del invitado>`. Límite: 3 MB / 5.000 filas.
 - **Añadir → Escribirlo:** se escribe con palabras normales («Reserva de Laura el lunes de 17 a 19»,
   «Aquaservice 32 € con tarjeta», «Cobrado 199 € de cuota de Irene por Bizum», «Bloquear el sábado
   por la mañana», «¿Cómo va el mes?»). Lo entiende un intérprete de palabras clave

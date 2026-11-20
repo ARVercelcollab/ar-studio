@@ -112,7 +112,7 @@ export default function ResumenAjustes({ fijos, alMesCent, google, calendly, fes
             <p className="adm-ajustes__texto">Cada reserva entra al momento con nombre, teléfono, qué van a hacer, importe y si está pagada. Si se mueve o se cancela, se actualiza sola.</p>
           </Tarjeta>
 
-          <Tarjeta id="calendly" titulo="Calendly" nota={calendly.sigue ? 'Mientras se siga usando, lo cobrado se apunta una vez al mes. Aparece en Movimientos.' : calendly.hasta ? `Se cobró por Calendly hasta ${calendly.hasta}.` : 'No se cobra por Calendly.'} pie={<EnlaceFlecha href="/admin/ajustes/calendly">Apuntar un mes</EnlaceFlecha>}>
+          <Tarjeta id="calendly" titulo="Calendly" nota={calendly.sigue ? 'Mientras se siga usando, lo cobrado se apunta una vez al mes. Aparece en Movimientos.' : calendly.hasta ? `Se cobró por Calendly hasta ${calendly.hasta}.` : 'No se cobra por Calendly.'} pie={<><EnlaceFlecha href="/admin/ajustes/calendly">Apuntar un mes</EnlaceFlecha> <EnlaceFlecha href="/admin/ajustes/calendly#importar">Importar reservas</EnlaceFlecha></>}>
             {calendly.falta && <Aviso tono="aviso" titulo={`Falta apuntar ${calendly.falta}.`}>Copia lo cobrado del informe de Stripe.</Aviso>}
             {calendly.meses.length === 0 ? (
               <p className="ui-t3 adm-ajustes__vacio">Todavía no hay ningún mes apuntado.</p>

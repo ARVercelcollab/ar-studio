@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { useState } from 'react'
 import Panel from '../../../components/admin/Panel'
 import SubmenuAjustes from '../../../components/admin/ajustes/SubmenuAjustes'
+import ImportarCalendly from '../../../components/admin/ajustes/ImportarCalendly'
 import { Tarjeta, Boton } from '../../../components/admin/ui'
 import { useAccion, Mensaje } from '../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
@@ -77,6 +78,7 @@ function FormularioCalendly({ k }) {
           {k.fila && <Boton variante="peligro" disabled={estado.enviando} onClick={() => { if (window.confirm(`¿Borrar lo apuntado de Calendly en ${nombre}? También se borra su comisión.`)) ejecutar('/api/admin/finanzas/calendly', { accion: 'borrar', mes: k.mes }) }}>Borrar este mes</Boton>}
         </div>
       </Tarjeta>
+      <ImportarCalendly />
     </Panel>
   )
 }

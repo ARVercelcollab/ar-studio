@@ -21,7 +21,7 @@ function FilaReserva({ r, hoy }) {
           {r.estado !== 'cancelada' && dia >= hoy && r.pagoEstado !== 'pendiente' && <Etiqueta tono="marron" punto>Reservada</Etiqueta>}
         </span>
       </div>
-      <span className="ui-imp ui-num rsv-lista-res__importe">{r.incluida ? <span className="ui-t3">Incluida</span> : euros(r.pagoEstado === 'pendiente' ? r.precioCent : r.pagadoCent)}</span>
+      <span className="ui-imp ui-num rsv-lista-res__importe">{r.incluida ? <span className="ui-t3">Incluida</span> : r.importada ? <span className="ui-t3" title="Cobrada por Calendly (Stripe)">Calendly</span> : euros(r.pagoEstado === 'pendiente' ? r.precioCent : r.pagadoCent)}</span>
       <Link href={`/admin/reserva/${r.id}`} className="ui-boton ui-boton--texto ui-boton--peq" aria-label={`Ver la reserva del ${fechaCorta(dia, { anio: true })}`}>Ver</Link>
     </li>
   )
