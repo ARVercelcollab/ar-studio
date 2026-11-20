@@ -13,7 +13,7 @@ export default function PoliticaPrivacidad() {
           <li><strong>Nombre:</strong>Arianny Rivas</li>
           <li><strong>Correo electrónico:</strong> <a href="mailto:arstudiospain@gmail.com">arstudiospain@gmail.com</a></li>
           <li><strong>Teléfono:</strong> 661 85 56 12</li>
-          <li><strong>Finalidad:</strong> Gestionar las reservas del estudio{RESERVAS_PROPIAS ? ', los planes mensuales (alta, contrato, cobros y fianza), los pagos y las facturas' : ''}, responder a consultas y garantizar el cumplimiento de nuestras condiciones de contratación.</li>
+          <li><strong>Finalidad:</strong> Gestionar las reservas del estudio{RESERVAS_PROPIAS ? ', los planes mensuales (alta, contrato, cobros y fianza), el área de miembros, los pagos y las facturas' : ''}, responder a consultas y garantizar el cumplimiento de nuestras condiciones de contratación.</li>
         </ul>
 
 
@@ -67,6 +67,7 @@ export default function PoliticaPrivacidad() {
         <ul className="legal__lista">
           <li>Aplicamos medidas técnicas y organizativas para garantizar la confidencialidad e integridad de los datos.</li>
           <li>Controlamos el acceso y el uso autorizado de la información recogida.</li>
+          {RESERVAS_PROPIAS && <li><strong>Área de miembros:</strong> para entrar no hay contraseñas. Escribes tu correo y te mandamos un enlace que caduca al poco tiempo y solo sirve una vez. Al entrar guardamos en tu navegador una cookie técnica (ar_miembro) durante 30 días para que no tengas que volver a pedir el enlace; se borra al pulsar «Salir». Usamos tu correo solo para identificarte y para los avisos de tu plan.</li>}
         </ul>
 
         <div className="button__cierre">

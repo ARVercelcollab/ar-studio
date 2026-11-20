@@ -1,4 +1,5 @@
 import ButtonArrow from "../components/button"
+import { RESERVAS_PROPIAS } from "../lib/enlaces"
 
 export default function PoliticaCookies() {
   return (
@@ -16,13 +17,14 @@ export default function PoliticaCookies() {
         <h2>2. Tipos de cookies utilizadas</h2>
         <ul className="legal__lista">
           <li><strong>Cookies técnicas:</strong> necesarias para el funcionamiento básico del sitio.</li>
+          {RESERVAS_PROPIAS && <li><strong>Área de miembros:</strong> si eres miembro y entras en tu área, guardamos la cookie técnica <em>ar_miembro</em> durante 30 días para mantener tu sesión abierta. Solo sirve para saber que eres tú; se borra al pulsar «Salir» o al caducar. Es necesaria para el área, así que no pide consentimiento.</li>}
           <li><strong>Cookies de análisis:</strong> nos permiten conocer cómo interactúan los usuarios con el sitio para mejorar sus contenidos y estructura. Utilizamos Google Search Console y Vercel Analytics.</li>
         </ul>
 
         <h2>3. Cookies de terceros</h2>
         <ul className="legal__lista">
           <li>Este sitio puede utilizar servicios de terceros que recopilan información con fines estadísticos, como Google Search Console y herramientas de análisis proporcionadas por Vercel.</li>
-          <li>AR Studio no recopila datos personales directamente a través de cookies.</li>
+          <li>{RESERVAS_PROPIAS ? 'Aparte de la cookie técnica del área de miembros, AR Studio no recopila datos personales directamente a través de cookies.' : 'AR Studio no recopila datos personales directamente a través de cookies.'}</li>
         </ul>
 
         <h2>4. Cómo desactivar las cookies</h2>

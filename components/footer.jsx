@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { URL_RESERVAR } from '../lib/enlaces'
+import { URL_RESERVAR, RESERVAS_PROPIAS } from '../lib/enlaces'
 
 export default function Footer() {
 
@@ -8,6 +8,7 @@ export default function Footer() {
       <ul className="footer__links">
         <li><Link href="mailto:arstudiospain@gmail.com">Contacto</Link></li>
         <li><Link href={URL_RESERVAR}>Reservar</Link></li>
+        {RESERVAS_PROPIAS && <li><Link href="/miembros">Área de miembros</Link></li>}
         <li><Link href="/legal">Aviso legal</Link></li>
         <li><Link href="/privacidad">Política de privacidad</Link></li>
         <li><Link href="/cookies">Política de cookies</Link></li>

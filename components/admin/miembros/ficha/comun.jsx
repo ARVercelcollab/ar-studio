@@ -62,6 +62,8 @@ export const EVENTOS = {
   cobro_intento: 'Cobro automático', cobro_rechazado: 'Cobro rechazado por el banco', cobro_agotado: 'Cobro rechazado (sin más intentos)',
   cobro_revisar: 'Cobro sin confirmar (revisar)', cobro_no_cobrado: 'Cobro comprobado: no se cobró', cobro_activado: 'Cobro automático activado',
   cobro_desactivado: 'Cobro automático parado',
+  // Área de miembros
+  acceso_enviado: 'Enlace de acceso enviado', acceso_miembro: 'Entró en su área', mensaje_miembro: 'Mensaje desde su área',
 }
 
 const FIANZA_ACCION = { cobrada: 'cobrada', devolver: 'devuelta', retener: 'retenida', sin_fianza: 'sin fianza' }
@@ -90,6 +92,8 @@ export function textoEvento(e) {
   if (e.tipo === 'cobro_revisar') partes.push(d.error === 'cortado' ? 'se cortó a medias' : d.error)
   if (e.tipo === 'cuota_pagada' && d.automatico) partes.push('cobro automático')
   if (e.tipo === 'correo_fallido' || e.tipo === 'factura_fallida') partes.push(d.error)
+  if (e.tipo === 'acceso_enviado' && d.a) partes.push(`a ${d.a}`)
+  if (e.tipo === 'mensaje_miembro') partes.push(d.tipo === 'baja' ? 'quiere darse de baja' : null, d.texto ? `«${String(d.texto).slice(0, 140)}${String(d.texto).length > 140 ? '…' : ''}»` : null)
   if (d.nota && e.tipo !== 'fianza') partes.push(d.nota)
   return partes.filter(Boolean).join(' · ')
 }

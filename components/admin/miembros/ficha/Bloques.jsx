@@ -2,12 +2,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useMemo, useState } from 'react'
-import { Tarjeta, Boton, Datos as ListaDatos, Aviso, Icono } from '../../ui'
+import { Tarjeta, Boton, Datos as ListaDatos, Aviso } from '../../ui'
 import CondicionesPlan, { formularioDeCondiciones, formularioDePlan } from '../../CondicionesPlan'
 import { enlaceWhatsApp } from '../../../../lib/admin/vista'
 import { propuestaBaja, consecuenciasBaja, periodoNumero, textoPeriodo } from '../../../../lib/suscripciones/reglas'
 import { PLANES, METODOS_CUOTA } from '../../../../lib/reservas/config'
-import { useAccion, Mensaje, Desplegable, EVENTOS, METODOS, fecha, euros } from './comun'
+import { useAccion, Mensaje, Desplegable, EVENTOS, METODOS, fecha, euros, fechaHoraCorta } from './comun'
 
 // ---------- Datos ----------
 
@@ -223,6 +223,9 @@ export function Baja({ sus, sesiones, hoy, estado: estadoSus, puedeBorrarse }) {
 
 // ---------- Historial ----------
 
+// Quién lo hizo, solo cuando no ha sido el estudio desde el panel
+const AUTORES = { cliente: 'El miembro', miembro: 'El miembro' }
+
 export function Historial({ eventos }) {
   const [todo, setTodo] = useState(false)
   const lista = [...eventos].reverse()
@@ -234,7 +237,7 @@ export function Historial({ eventos }) {
           {visibles.map((e, i) => (
             <li key={i}>
               <time>{e.cuando}</time>
-              <span>{EVENTOS[e.tipo] || e.tipo}{e.texto ? ` · ${e.texto}` : ''}{e.reservaId ? <> · <Link href={`/admin/reserva/${e.reservaId}`} className="mb-enlace">ver</Link></> : null}</span>
+              <span>{EVENTOS[e.tipo] || e.tipo}{e.texto ? ` · ${e.texto}` : ''}{AUTORES[e.autor] ? ` · ${AUTORES[e.autor]}` : ''}{e.reservaId ? <> · <Link href={`/admin/reserva/${e.reservaId}`} className="mb-enlace">ver</Link></> : null}</span>
             </li>
           ))}
         </ul>
@@ -248,13 +251,32 @@ export function Historial({ eventos }) {
   )
 }
 
-// ---------- Área de miembros (se hará después) ----------
+// ---------- Área de miembros ----------
 
-export function AreaMiembros() {
+// Si ha entrado en su área (studioar.es/miembros) y reenviarle el enlace para entrar
+// acceso: { ultimoEn, enviadoEn } (ISO o null)
+export function AreaMiembros({ sus, acceso, estado: estadoSus }) {
+  const [estado, ejecutar] = useAccion()
+  const cuando = (iso) => (iso ? fechaHoraCorta(iso) : null)
+  const ultimo = cuando(acceso?.ultimoEn)
+  const enviado = cuando(acceso?.enviadoEn)
+  const terminada = estadoSus === 'finalizada'
   return (
-    <div className="mb-area" role="note">
-      <Icono nombre="persona" />
-      <span><b>Área de miembros: próximamente.</b> Podrá entrar con su correo, ver sus horas y reservar sus sesiones. Aquí verás si ha entrado y podrás reenviarle el acceso.</span>
-    </div>
+    <Tarjeta
+      titulo="Área de miembros"
+      nota="Entra con su correo en studioar.es/miembros: ve sus horas, reserva y cambia sus sesiones y descarga sus facturas"
+      className="mb-bloque"
+      acciones={!terminada && (
+        <Boton variante="secundario" tam="peq" icono="correo" disabled={estado.enviando || !sus.email} onClick={() => ejecutar(`/api/admin/suscripciones/${sus.id}`, { accion: 'enviar_acceso' })}>
+          {estado.enviando ? 'Enviando…' : 'Enviar enlace de acceso'}
+        </Boton>
+      )}
+    >
+      <ListaDatos filas={[
+        ['Último acceso', ultimo || 'Aún no ha entrado'],
+        ['Último enlace enviado', enviado ? `${enviado} · a ${sus.email}` : 'Ninguno'],
+      ]} />
+      <Mensaje estado={estado} />
+    </Tarjeta>
   )
 }

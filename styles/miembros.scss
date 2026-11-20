@@ -1,0 +1,1276 @@
+@use './variables.scss' as *;
+
+// Área de miembros (/miembros): la web pública, con sus letras y el marrón del estudio.
+// Primero el móvil; en ordenador, dos columnas.
+
+$borde: #e6ded5;
+$suave: #f6f3ef;
+$crema: #fbf8f4;
+$gris: #8a7a6c;
+$ok: #4f6b3a;
+$aviso: #9a5b13;
+$error: #a33b2b;
+$info: #5b6f86;
+
+.mbr {
+  font-family: $aktiv;
+  color: $brown;
+  max-width: 1120px;
+  margin: 48px auto 80px;
+  padding: 0 3vw;
+  box-sizing: border-box;
+  font-weight: 300;
+
+  @include media600px {
+    margin-top: 24px;
+    padding: 0 16px;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  p, li, label, input, textarea, select, button, a, dt, dd, summary, legend {
+    font-family: $aktiv;
+  }
+
+  strong {
+    font-weight: 400;
+  }
+
+  // Los botones y enlaces de la web van sin estilo («all: unset»): el foco se pinta aquí
+  :focus-visible {
+    outline: 2px solid $brown;
+    outline-offset: 2px;
+  }
+
+  h1 {
+    font-size: 2.6rem;
+    font-weight: 200;
+    letter-spacing: -2px;
+    line-height: 1.05;
+
+    @include media600px {
+      font-size: 2rem;
+      letter-spacing: -1px;
+    }
+  }
+}
+
+.mbr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// ---------- Botones y enlaces ----------
+
+.mbr-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: $brown;
+  color: $white;
+  border: 1px solid $brown;
+  font-size: 0.95rem;
+  font-weight: 300;
+  letter-spacing: 0.2px;
+  padding: 12px 22px 11px;
+  min-height: 44px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color $transition-short, color $transition-short, border-color $transition-short;
+
+  &:hover:not(:disabled) {
+    background: #3a2b1e;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &.mbr-boton--claro {
+    background: $white;
+    color: $brown;
+    border-color: #d9ccbd;
+
+    &:hover:not(:disabled) {
+      background: $suave;
+      border-color: $brown;
+    }
+  }
+
+  &.mbr-boton--texto {
+    background: transparent;
+    color: $brown;
+    border-color: transparent;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding-left: 8px;
+    padding-right: 8px;
+
+    &:hover:not(:disabled) {
+      background: $suave;
+    }
+  }
+
+  &.mbr-boton--peq {
+    font-size: 0.85rem;
+    padding: 7px 14px 6px;
+    min-height: 36px;
+  }
+}
+
+.mbr-enlace {
+  color: $brown;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: $beige-oscuro;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration-color: $brown;
+  }
+}
+
+.mbr-copiar {
+  border: 1px solid $brown;
+  background: $white;
+  color: $brown;
+  padding: 5px 10px 4px;
+  font-size: 0.78rem;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+
+  &:hover {
+    background: $suave;
+  }
+}
+
+.mbr-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-top: 12px;
+
+  &.mbr-fila--centro {
+    justify-content: center;
+  }
+}
+
+// ---------- Textos pequeños ----------
+
+.mbr-nota {
+  font-size: 0.88rem;
+  color: $gris;
+  line-height: 1.45;
+  margin-top: 10px;
+
+  &.mbr-nota--linea {
+    display: block;
+    margin-top: 2px;
+  }
+
+  &.mbr-nota--centro {
+    text-align: center;
+  }
+}
+
+.mbr-vacio {
+  font-size: 0.95rem;
+  color: $gris;
+  line-height: 1.5;
+  padding: 6px 0 2px;
+}
+
+.mbr-cargando {
+  font-size: 0.85rem;
+  color: $gris;
+  margin-top: 10px;
+  min-height: 1.2em;
+}
+
+// ---------- Etiquetas ----------
+
+.mbr-etiqueta {
+  display: inline-block;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 5px 8px 4px;
+  border-radius: 999px;
+  background: $suave;
+  color: $gris;
+  white-space: nowrap;
+
+  &--bien { background: #eef3e8; color: $ok; }
+  &--aviso { background: #fbf1e3; color: $aviso; }
+  &--mal { background: #fbebe8; color: $error; }
+  &--info { background: #eef1f5; color: $info; }
+  &--gris { background: $suave; color: $gris; }
+}
+
+// ---------- Avisos ----------
+
+.mbr-avisos {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.mbr-aviso {
+  display: block;
+  border-left: 3px solid $aviso;
+  background: #fbf5ec;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin: 12px 0;
+
+  .mbr-avisos & {
+    margin: 0;
+    display: flex;
+    gap: 12px 18px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    > div {
+      flex: 1 1 260px;
+    }
+  }
+
+  .mbr-aviso__titulo {
+    font-weight: 400;
+    margin-bottom: 2px;
+  }
+
+  &--mal { border-color: $error; background: #fbefec; }
+  &--bien { border-color: $ok; background: #f1f5ec; }
+  &--info { border-color: $info; background: #f1f4f7; }
+
+  &.mbr-aviso--fianza {
+    display: block;
+    border: 2px solid $brown;
+    background: #fbf7f2;
+    padding: 18px 20px;
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 300;
+      margin-bottom: 6px;
+    }
+  }
+}
+
+.mbr-fianza {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+
+  > div {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 4px 12px;
+    align-items: center;
+
+    @include media500px {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  dt {
+    color: $gris;
+    font-size: 0.85rem;
+  }
+
+  dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+  }
+
+  .mbr-fianza__iban {
+    font-size: 1.05rem;
+    letter-spacing: 0.5px;
+    word-break: break-all;
+  }
+}
+
+// ---------- Cabecera del área ----------
+
+.mbr-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  .mbr-cab__ante {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: $gris;
+    margin-bottom: 8px;
+  }
+
+  .mbr-cab__sub {
+    margin-top: 10px;
+    font-size: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+  }
+}
+
+// ---------- Rejilla y tarjetas ----------
+
+.mbr-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+
+  @media (min-width: 960px) {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+.mbr-columna {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+
+  @media (min-width: 960px) {
+    gap: 24px;
+  }
+}
+
+.mbr-tarjeta {
+  background: $white;
+  border: 1px solid $borde;
+  border-radius: 12px;
+  padding: 22px;
+
+  @include media500px {
+    padding: 18px 16px;
+  }
+
+  .mbr-tarjeta__titulo {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: $gris;
+    font-weight: 300;
+    margin-bottom: 14px;
+  }
+}
+
+.mbr-plegable {
+  summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    .mbr-tarjeta__titulo {
+      margin-bottom: 0;
+    }
+
+    &::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-right: 1px solid $brown;
+      border-bottom: 1px solid $brown;
+      transform: rotate(45deg);
+      margin: 0 4px 4px 12px;
+      transition: transform $transition-short;
+    }
+  }
+
+  &[open] summary {
+    margin-bottom: 12px;
+
+    &::after {
+      transform: rotate(-135deg);
+      margin-bottom: -4px;
+    }
+  }
+
+  .mbr-plegable__n {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: $gris;
+  }
+}
+
+// ---------- Tu mes ----------
+
+.mbr-mes {
+  background: $crema;
+
+  .mbr-mes__cab {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+
+    .mbr-tarjeta__titulo {
+      margin-bottom: 8px;
+    }
+  }
+
+  .mbr-mes__periodo {
+    font-size: 0.85rem;
+    color: $gris;
+  }
+
+  .mbr-mes__cifra {
+    font-size: 2rem;
+    font-weight: 200;
+    letter-spacing: -1px;
+    line-height: 1.1;
+
+    strong {
+      font-weight: 300;
+      font-size: 2.8rem;
+      letter-spacing: -2px;
+    }
+
+    @include media500px {
+      font-size: 1.6rem;
+
+      strong {
+        font-size: 2.3rem;
+      }
+    }
+  }
+
+  .mbr-mes__sub {
+    margin-top: 6px;
+    font-size: 0.95rem;
+    color: $gris;
+  }
+
+  .mbr-mes__accion {
+    margin-top: 18px;
+
+    .mbr-boton {
+      width: 100%;
+
+      @media (min-width: 600px) {
+        width: auto;
+        min-width: 220px;
+      }
+    }
+  }
+}
+
+.mbr-barra {
+  margin-top: 16px;
+
+  .mbr-barra__pista {
+    display: flex;
+    height: 10px;
+    border-radius: 999px;
+    background: #ebe3d9;
+    overflow: hidden;
+    gap: 2px;
+  }
+
+  .mbr-barra__usadas {
+    background: $brown;
+  }
+
+  .mbr-barra__reservadas {
+    background: #b8895f;
+  }
+
+  .mbr-barra__libres {
+    background: #ebe3d9;
+  }
+
+  .mbr-barra__pista span {
+    display: block;
+    height: 100%;
+  }
+
+  .mbr-barra__leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: $gris;
+
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+  }
+}
+
+// ---------- Sesiones ----------
+
+.mbr-sesiones {
+  display: grid;
+}
+
+.mbr-sesion {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 4px 14px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid $borde;
+
+  &:first-child {
+    border-top: 0;
+    padding-top: 4px;
+  }
+
+  @media (min-width: 600px) {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .mbr-sesion__fecha {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid $borde;
+    border-radius: 10px;
+    padding: 6px 0 5px;
+    line-height: 1.1;
+    font-size: 0.72rem;
+    color: $gris;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    strong {
+      font-size: 1.35rem;
+      font-weight: 300;
+      color: $brown;
+      letter-spacing: -0.5px;
+    }
+  }
+
+  .mbr-sesion__hora {
+    font-size: 1.05rem;
+
+    span {
+      color: $gris;
+      font-size: 0.92rem;
+    }
+  }
+
+  .mbr-sesion__reparto {
+    font-size: 0.88rem;
+    color: $gris;
+    margin: 3px 0 6px;
+  }
+
+  .mbr-sesion__motivo {
+    font-size: 0.82rem;
+    color: $gris;
+    margin-top: 6px;
+    line-height: 1.4;
+
+    &.mbr-sesion__error {
+      color: $error;
+      flex-basis: 100%;
+    }
+  }
+
+  .mbr-sesion__acciones {
+    grid-column: 2;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+
+    @media (min-width: 600px) {
+      grid-column: 3;
+      justify-content: flex-end;
+    }
+  }
+
+  &.is-pasada .mbr-sesion__fecha {
+    background: $suave;
+  }
+
+  &.is-cancelada .mbr-sesion__hora {
+    text-decoration: line-through;
+    text-decoration-color: $beige-oscuro;
+  }
+}
+
+// ---------- Diálogo ----------
+
+.mbr-dialogo {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(43, 32, 23, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  @include media500px {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .mbr-dialogo__caja {
+    background: $white;
+    color: $brown;
+    font-family: $aktiv;
+    font-weight: 300;
+    width: 100%;
+    max-width: 440px;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(43, 32, 23, 0.25);
+
+    @include media500px {
+      border-radius: 16px 16px 0 0;
+      padding: 22px 18px calc(18px + env(safe-area-inset-bottom));
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-family: $aktiv;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    button {
+      font-family: $aktiv;
+    }
+
+    :focus-visible {
+      outline: 2px solid $brown;
+      outline-offset: 2px;
+    }
+  }
+
+  .mbr-dialogo__sesion {
+    font-size: 1.02rem !important;
+    margin-bottom: 10px;
+  }
+
+  .mbr-dialogo__acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    flex-wrap: wrap-reverse;
+
+    .mbr-boton {
+      flex: 1 1 160px;
+    }
+  }
+}
+
+// ---------- Pagos ----------
+
+.mbr-pagos {
+  display: grid;
+}
+
+.mbr-pago {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid $borde;
+
+  &:first-child {
+    border-top: 0;
+    padding-top: 2px;
+  }
+
+  .mbr-pago__que {
+    font-size: 0.95rem;
+  }
+
+  .mbr-pago__det {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-top: 6px;
+    font-size: 0.85rem;
+  }
+
+  .mbr-pago__importe {
+    font-size: 1rem;
+    font-weight: 300;
+    white-space: nowrap;
+  }
+}
+
+// ---------- Tu plan ----------
+
+.mbr-condiciones {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+
+  li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 0.92rem;
+    line-height: 1.45;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 2px;
+      top: 0.6em;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: $beige-oscuro;
+    }
+  }
+}
+
+.mbr-datos {
+  display: grid;
+  border-top: 1px solid $borde;
+
+  > div {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 4px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid $borde;
+    font-size: 0.92rem;
+    line-height: 1.45;
+
+    @include media500px {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  dt {
+    color: $gris;
+  }
+}
+
+.mbr-escribenos {
+  margin-top: 18px;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 400;
+    margin-bottom: 10px;
+  }
+
+  .mbr-campo {
+    margin-top: 10px;
+  }
+}
+
+// ---------- Formularios ----------
+
+.mbr-campo {
+  display: grid;
+  gap: 6px;
+
+  > span {
+    font-size: 0.85rem;
+    color: $gris;
+  }
+
+  input,
+  textarea {
+    font-family: $aktiv;
+    font-weight: 300;
+    font-size: 1rem;
+    color: $brown;
+    border: 1px solid #d9ccbd;
+    background: $white;
+    padding: 11px 12px;
+    width: 100%;
+    border-radius: 8px;
+
+    &:focus {
+      outline: 2px solid $brown;
+      outline-offset: 0;
+      border-color: $brown;
+    }
+
+    &[aria-invalid='true'] {
+      border-color: $error;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 84px;
+    line-height: 1.4;
+  }
+}
+
+.mbr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.mbr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d9ccbd;
+  border-radius: 999px;
+  padding: 8px 14px 7px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  background: $white;
+  transition: border-color $transition-short, background-color $transition-short;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover {
+    border-color: $brown;
+  }
+
+  &:focus-within {
+    outline: 2px solid $brown;
+    outline-offset: 2px;
+  }
+
+  &.is-activo {
+    background: $brown;
+    color: $white;
+    border-color: $brown;
+  }
+
+  &.mbr-chip--grande {
+    font-size: 1.1rem;
+    padding: 12px 22px 11px;
+    border-radius: 10px;
+  }
+}
+
+// ---------- Entrada (sin sesión) ----------
+
+.mbr--entrada {
+  display: flex;
+  justify-content: center;
+  margin-top: 56px;
+
+  @include media600px {
+    margin-top: 28px;
+  }
+}
+
+.mbr-entrada {
+  width: 100%;
+  max-width: 440px;
+  background: $white;
+  border: 1px solid $borde;
+  border-radius: 14px;
+  padding: 32px 30px 26px;
+
+  @include media500px {
+    padding: 26px 18px 20px;
+  }
+
+  .mbr-entrada__logo {
+    display: block;
+    width: 112px;
+    height: auto;
+    margin-bottom: 22px;
+    opacity: 0.85;
+  }
+
+  h1 {
+    font-size: 2rem;
+    letter-spacing: -1px;
+    margin-bottom: 10px;
+  }
+
+  .mbr-entrada__texto {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+
+  form {
+    display: grid;
+    gap: 14px;
+
+    .mbr-aviso {
+      margin: 0;
+    }
+  }
+
+  .mbr-boton {
+    width: 100%;
+  }
+
+  .mbr-entrada__pie {
+    margin-top: 20px;
+    font-size: 0.88rem;
+    text-align: center;
+  }
+}
+
+// ---------- Reservar ----------
+
+.mbr-volver {
+  display: inline-block;
+  font-size: 0.9rem;
+  color: $gris;
+  margin-bottom: 14px;
+  cursor: pointer;
+
+  &:hover {
+    color: $brown;
+  }
+}
+
+.mbr-titulo {
+  margin-bottom: 10px;
+}
+
+.mbr-intro {
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 600px;
+  margin-bottom: 18px;
+  color: $brown;
+}
+
+.mbr-reservar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+
+  @media (min-width: 900px) {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 44px;
+    align-items: start;
+  }
+}
+
+.mbr-paso {
+  border-top: 1px solid $borde;
+  padding: 24px 0;
+
+  &.is-cerrado {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 300;
+    letter-spacing: -0.3px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: baseline;
+  }
+
+  .mbr-paso__num {
+    font-size: 0.85rem;
+    color: $gris;
+  }
+
+  .mbr-paso__extra {
+    font-size: 0.95rem;
+    color: $gris;
+    text-transform: none;
+  }
+}
+
+.mbr-cal {
+  max-width: 440px;
+
+  .mbr-cal__mes {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+
+    p {
+      text-transform: capitalize;
+      font-size: 1.05rem;
+    }
+
+    button {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid $borde;
+      border-radius: 8px;
+      font-size: 1.15rem;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+    }
+  }
+
+  .mbr-cal__semana,
+  .mbr-cal__dias {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .mbr-cal__semana span {
+    text-align: center;
+    font-size: 0.75rem;
+    color: $gris;
+    padding-bottom: 6px;
+  }
+
+  .mbr-cal__dia {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    color: #c9bdb1;
+
+    &.is-libre {
+      background: $suave;
+      color: $brown;
+      cursor: pointer;
+
+      &:hover {
+        border-color: $beige;
+      }
+    }
+
+    &.is-elegido {
+      background: $brown;
+      color: $white;
+    }
+  }
+}
+
+.mbr-horas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.mbr-hora {
+  border: 1px solid $borde;
+  border-radius: 8px;
+  padding: 11px 0 10px;
+  text-align: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $beige;
+  }
+
+  &.is-activo {
+    background: $brown;
+    color: $white;
+    border-color: $brown;
+  }
+}
+
+.mbr-resumen {
+  border: 1px solid $borde;
+  border-radius: 12px;
+  background: $white;
+  padding: 22px;
+
+  @media (min-width: 900px) {
+    position: sticky;
+    top: 24px;
+  }
+
+  h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: $gris;
+    font-weight: 300;
+    margin-bottom: 14px;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 14px;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+  }
+
+  dt {
+    color: $gris;
+  }
+
+  dd {
+    text-align: right;
+  }
+
+  .mbr-boton {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .mbr-aviso {
+    font-size: 0.88rem;
+  }
+}
+
+.mbr-mensajes {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+
+  li {
+    padding-left: 12px;
+    border-left: 3px solid $info;
+  }
+
+  &--mal li {
+    border-color: $error;
+    color: $error;
+  }
+}
+
+.mbr-hecho {
+  max-width: 520px;
+  margin: 20px auto 0;
+  text-align: center;
+  padding: 36px 26px 30px;
+
+  h1 {
+    margin-bottom: 14px;
+  }
+
+  p {
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .mbr-hecho__marca {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: $brown;
+    color: $white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .mbr-hecho__cuando {
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+  }
+
+  .mbr-fila {
+    margin-top: 22px;
+  }
+}
+
+// ---------- Enlace en la página del plan mensual ----------
+
+.mbr-yaeres {
+  margin-top: 18px;
+  text-align: center;
+  font-family: $aktiv;
+  font-weight: 300;
+  font-size: 0.95rem;
+  color: $brown;
+
+  a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+}
+
+// ---------- Barra de la página de muestra (solo en local) ----------
+
+.mbr-muestra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  max-width: 1120px;
+  margin: 18px auto 0;
+  padding: 10px 3vw;
+  font-family: $aktiv;
+  font-size: 0.8rem;
+  color: $gris;
+  border-bottom: 1px dashed $borde;
+
+  a {
+    color: $brown;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &.is-activo {
+      font-weight: 400;
+      text-decoration: none;
+      background: $brown;
+      color: $white;
+      padding: 2px 6px;
+    }
+  }
+}

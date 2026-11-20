@@ -11,6 +11,8 @@ import { emisor, facturasAutomaticas } from '../../../lib/facturas/servicio'
 
 export default FichaMiembro
 
+const iso = (v) => (v ? new Date(v).toISOString() : null)
+
 export async function getServerSideProps(ctx) {
   const redir = redirigirSiNoAdmin(ctx)
   if (redir) return redir
@@ -44,9 +46,11 @@ export async function getServerSideProps(ctx) {
         recordatorio: c.estado === 'pendiente' && c.importeCent > 0 ? enlaceWhatsApp(sus.telefono, textoRecordatorioCuota(sus, c, { iban })) : null,
       })),
       sesiones: ficha.sesiones.map(sesion),
-      eventos: ficha.eventos.map((e) => ({ tipo: e.tipo, detalle: e.detalle, cuando: fechaHoraTexto(e.creadoEn), reservaId: e.reservaId, codigo: e.codigo }))
-        .map((e) => ({ tipo: e.tipo, cuando: e.cuando, reservaId: e.reservaId ?? null, texto: textoEvento(e) || null })),
+      eventos: ficha.eventos.map((e) => ({ tipo: e.tipo, detalle: e.detalle, cuando: fechaHoraTexto(e.creadoEn), reservaId: e.reservaId, codigo: e.codigo, autor: e.autor }))
+        .map((e) => ({ tipo: e.tipo, cuando: e.cuando, reservaId: e.reservaId ?? null, autor: e.autor ?? null, texto: textoEvento(e) || null })),
       ultimoDiaPermanencia: ficha.ultimoDiaPermanencia,
+      // Área de miembros: último acceso y último enlace enviado (ISO o null)
+      acceso: { ultimoEn: iso(ficha.acceso?.ultimoEn), enviadoEn: iso(ficha.acceso?.enviadoEn) },
       contrato: contrato ? { estado: contrato.estado, version: contrato.version, firmadoEn: contrato.firmadoEn, enviadoEn: contrato.enviadoEn, recordadoEn: contrato.recordadoEn, url: urlContrato(urlBase(ctx.req), contrato.token) } : null,
       puedeBorrarse: ficha.puedeBorrarse,
       impago: ficha.impago || null,

@@ -80,7 +80,7 @@ export default function FichaMiembro(p) {
       </div>
 
       <Historial eventos={eventos} />
-      <AreaMiembros />
+      <AreaMiembros sus={sus} acceso={p.acceso} estado={estado} />
     </Panel>
   )
 }

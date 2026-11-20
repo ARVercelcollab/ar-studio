@@ -1,5 +1,6 @@
 import '../styles/style.scss'
 import '../styles/reservas.scss'
+import '../styles/miembros.scss'
 import '../styles/admin.scss'
 import { useRouter } from 'next/router'
 import Head from 'next/head'

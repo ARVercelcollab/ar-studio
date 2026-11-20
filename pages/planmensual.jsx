@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import ButtonArrow from '../components/button'
 import YoutubeCard from '../components/YoutubeCard'
@@ -122,6 +123,7 @@ export default function PlanMensual() {
           <div className="planmensual__ctas">
             <ButtonArrow texto="VER PLANES" href="#planes" />
           </div>
+          {RESERVAS_PROPIAS && <p className="mbr-yaeres"><Link href="/miembros">¿Ya eres miembro? Entra en tu área</Link></p>}
         </section>
 
         <div className="planmensual__strip">
