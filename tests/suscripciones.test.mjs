@@ -292,6 +292,15 @@ test('borrar solo una suscripción sin movimientos; listado y opciones', async (
   const { filas, cifras } = await SUS.listarSuscripciones()
   assert.ok(filas.some((f) => f.id === usada.id && f.restantes === 4))
   assert.ok(cifras.activas >= 1)
+  // Lo que enseña la lista y el tablero del panel
+  const fila = filas.find((f) => f.id === usada.id)
+  assert.equal(typeof fila.alMesCent, 'number')
+  assert.ok(fila.alMesCent > 0)
+  assert.equal(fila.impago, false)
+  assert.equal(fila.proximoCobro, null) // sin cobro automático
+  assert.ok('fianzaEstado' in fila && 'contratoEstado' in fila && 'tarjeta' in fila)
+  assert.ok(cifras.cuotasAlMesCent >= fila.alMesCent)
+  assert.equal(typeof cifras.fianzasPendientes, 'number')
   const ops = await SUS.opcionesParaReservar()
   assert.ok(ops.some((o) => o.id === usada.id && o.duracionPorDefecto === 4))
   const previa = await SUS.comprobarSesion(usada.id, { fecha: await laborable(6), desde: '14:00', hasta: '18:00' })

@@ -1,3 +1,819 @@
-// Panel · pantalla «miembros». La rellena la tanda que rehace esta pantalla.
+// Panel · pantalla «miembros» (lista, tablero, ficha y alta).
 // Todo bajo .adm; usa las variables de _tokens.scss (var(--marron), var(--linea)…).
 @use 'tokens' as *;
+
+.adm {
+  // ---------- Lista ----------
+
+  .mb-vistas {
+    margin: 16px 0 12px;
+  }
+
+  .ui-tabla-caja:has(.mb-tabla) {
+    overflow-x: auto;
+  }
+
+  .mb-tabla {
+    td {
+      vertical-align: middle;
+    }
+
+    .ui-tabla__sub .ui-etiqueta {
+      margin-left: 2px;
+    }
+
+    // En el móvil, cada miembro es una tarjeta: horas, cuota, tarjeta, contrato y fianza en
+    // dos líneas cortas, sin los textos pequeños (están en su ficha)
+    @media (max-width: $movil-max) {
+      td.m-fila {
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+
+        .ui-tabla__sub {
+          display: none;
+        }
+      }
+
+      td.m-principal .ui-tabla__sub {
+        display: flex;
+      }
+    }
+  }
+
+  .mb-nombre {
+    color: var(--texto);
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--marron);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  .mb-horas {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+
+  .mb-horas__pista {
+    position: relative;
+    display: inline-block;
+    width: 64px;
+    height: 6px;
+    border-radius: 99px;
+    background: var(--superficie-3);
+    overflow: hidden;
+
+    i {
+      position: absolute;
+      inset: 0 auto 0 0;
+      border-radius: 99px;
+      background: var(--marron);
+    }
+  }
+
+  .mb-horas__texto {
+    color: var(--texto);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mb-cobro {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--texto);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    .ui-icono {
+      width: 16px;
+      height: 16px;
+      color: var(--texto-3);
+    }
+  }
+
+  .mb-almes {
+    display: block;
+    color: var(--texto);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  // ---------- Para hacer ----------
+
+  .mb-parahacer {
+    margin: 16px 0 4px;
+  }
+
+  .mb-parahacer__lista {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
+      padding: 10px 0;
+      border-top: 1px solid var(--linea);
+      font-size: 0.9063rem;
+    }
+
+    li:first-child {
+      border-top: 0;
+      padding-top: 4px;
+    }
+
+    li.is-urgente .mb-parahacer__texto {
+      color: var(--texto);
+      font-weight: 500;
+    }
+
+    li > .ui-icono {
+      width: 16px;
+      height: 16px;
+      color: var(--aviso);
+      flex: none;
+    }
+  }
+
+  .mb-parahacer__texto {
+    flex: 1 1 280px;
+    color: var(--texto-2);
+  }
+
+  .mb-parahacer__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  // ---------- Tablero ----------
+
+  .mb-tablero__nota {
+    margin: 18px 0 10px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .mb-tablero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+
+    @media (min-width: $tablet-min) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (min-width: $grande-min) {
+      grid-template-columns: repeat(var(--columnas, 4), minmax(0, 1fr));
+    }
+  }
+
+  .mb-columna {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+    border-radius: var(--radio);
+    background: var(--superficie-3);
+    border: 1px solid var(--linea);
+  }
+
+  .mb-columna__titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 4px 2px;
+    color: var(--texto);
+    font-size: 0.9063rem;
+    font-weight: 500;
+  }
+
+  .mb-columna__n {
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: 99px;
+    background: var(--superficie);
+    color: var(--texto-2);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .mb-columna--impago .mb-columna__n.es-alguno {
+    background: var(--mal-fondo);
+    color: var(--mal);
+  }
+
+  .mb-columna__vacia {
+    margin: 4px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .mb-tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    color: var(--texto);
+    text-decoration: none;
+    transition: border-color 0.15s;
+
+    &:hover {
+      border-color: var(--linea-fuerte);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 2px;
+    }
+  }
+
+  .mb-tarjeta__nombre {
+    font-weight: 500;
+  }
+
+  .mb-tarjeta__sub {
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .mb-tarjeta__detalle {
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--linea);
+    color: var(--texto-2);
+    font-size: 0.8438rem;
+  }
+
+  .mb-columna--impago .mb-tarjeta__detalle {
+    color: var(--mal);
+  }
+
+  // ---------- Mensajes y piezas pequeñas ----------
+
+  .mb-mensaje {
+    margin: 10px 0 0;
+    padding: 8px 12px;
+    border-radius: var(--radio-s);
+    background: var(--bien-fondo);
+    color: var(--bien);
+    font-size: 0.875rem;
+
+    &.is-error {
+      background: var(--mal-fondo);
+      color: var(--mal);
+    }
+  }
+
+  .mb-botones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .mb-enlace {
+    color: var(--marron);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .mb-enlace--boton {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .mb-linea {
+    display: block;
+    margin-top: 4px;
+  }
+
+  label.mb-linea {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .mb-pequeno {
+    margin: 8px 0 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    line-height: 1.5;
+
+    b {
+      color: var(--texto);
+      font-weight: 500;
+    }
+
+    .ui-etiqueta {
+      margin-right: 4px;
+    }
+  }
+
+  .mb-desplegable {
+    margin-top: 12px;
+    border-top: 1px solid var(--linea);
+
+    > summary {
+      padding: 12px 0 0;
+      color: var(--marron);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      list-style-position: inside;
+    }
+
+    > summary:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+  }
+
+  .mb-desplegable__cuerpo {
+    padding-top: 12px;
+  }
+
+  .mb-historial {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.875rem;
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+      padding: 8px 0;
+      border-top: 1px solid var(--linea);
+      color: var(--texto-2);
+
+      @media (min-width: $tablet-min) {
+        grid-template-columns: 150px minmax(0, 1fr);
+        gap: 12px;
+      }
+    }
+
+    li:first-child {
+      border-top: 0;
+    }
+
+    time {
+      color: var(--texto-3);
+      font-size: 0.8125rem;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // ---------- Ficha ----------
+
+  .mb-cab {
+    margin-bottom: 18px;
+  }
+
+  .mb-volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+
+    .ui-icono {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: var(--marron);
+    }
+  }
+
+  .mb-cab__fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px 20px;
+  }
+
+  .mb-cab__titulos {
+    min-width: 0;
+
+    h1 {
+      margin: 0;
+      color: var(--texto);
+      font-size: 1.625rem;
+      font-weight: 600;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    > p {
+      margin: 4px 0 0;
+      color: var(--texto-2);
+    }
+  }
+
+  .mb-cab__etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    font-size: 0.8125rem;
+  }
+
+  .mb-cab__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mb-tres,
+  .mb-dos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: start;
+  }
+
+  @media (min-width: $grande-min) {
+    .mb-tres {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: stretch;
+    }
+  }
+
+  @media (min-width: $ancho-min) {
+    .mb-dos {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: $tablet-min) and (max-width: #{$grande-min - 1px}) {
+    .mb-tres {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .mb-bloque {
+    min-width: 0;
+
+    .ui-tarjeta__nota {
+      margin-top: 2px;
+    }
+
+    textarea {
+      margin-top: 12px;
+    }
+  }
+
+  // Tarjetas sueltas de la ficha (el historial) · .mb-ficha va en la raíz, junto a .adm
+  &.mb-ficha .adm-contenido > .ui-tarjeta {
+    margin-bottom: 14px;
+  }
+
+  .mb-grande {
+    margin: 12px 0 8px;
+    color: var(--texto);
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+
+    small {
+      color: var(--texto-2);
+      font-size: 1.0625rem;
+      font-weight: 500;
+    }
+  }
+
+  .mb-horasmes .mb-horas {
+    display: flex;
+  }
+
+  .mb-horasmes .mb-horas__pista {
+    flex: 1;
+    width: auto;
+    height: 8px;
+  }
+
+  .mb-horasmes .mb-horas__texto {
+    display: none;
+  }
+
+  .mb-subbloque {
+    padding-top: 12px;
+
+    & + & {
+      margin-top: 14px;
+      border-top: 1px solid var(--linea);
+    }
+
+    h3 {
+      margin: 0;
+      color: var(--texto-2);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  .mb-bloque .ui-datos {
+    margin-top: 12px;
+  }
+
+  // Sesiones
+  .mb-sesiones {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+
+    li + li {
+      border-top: 1px solid var(--linea);
+    }
+  }
+
+  .mb-sesion {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    color: var(--texto);
+    text-decoration: none;
+
+    &:hover .mb-sesion__ver,
+    &:focus-visible .mb-sesion__ver {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+  }
+
+  .mb-sesion__raya {
+    align-self: stretch;
+    width: 3px;
+    min-height: 32px;
+    border-radius: 2px;
+    background: var(--marron);
+    flex: none;
+  }
+
+  .mb-sesion__texto {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+
+    b {
+      font-weight: 500;
+      font-size: 0.9063rem;
+    }
+
+    small {
+      color: var(--texto-3);
+      font-size: 0.8125rem;
+    }
+  }
+
+  .mb-sesion__importe {
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  .mb-sesion__ver {
+    color: var(--marron);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  // Cuotas
+  .mb-cuotas {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mb-cuota {
+    padding: 12px 0;
+    border-top: 1px solid var(--linea);
+
+    &:first-child {
+      border-top: 0;
+    }
+  }
+
+  .mb-cuota__fila {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mb-cuota__quien {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .mb-cuota__titulo {
+    color: var(--texto);
+    font-weight: 500;
+    font-size: 0.9063rem;
+  }
+
+  .mb-cuota__sub {
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .mb-cuota__cobro {
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+
+    &.is-mal {
+      color: var(--mal);
+    }
+  }
+
+  .mb-cuota__derecha {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .mb-cuota__importe {
+    color: var(--texto);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .mb-cuota__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .mb-cuota__form {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--superficie-2);
+    border: 1px solid var(--linea);
+  }
+
+  // Área de miembros (próximamente)
+  .mb-area {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 4px;
+    padding: 12px 16px;
+    border-radius: var(--radio);
+    border: 1px dashed var(--linea-fuerte);
+    color: var(--texto-3);
+    font-size: 0.875rem;
+
+    b {
+      color: var(--texto-2);
+      font-weight: 500;
+    }
+
+    .ui-icono {
+      flex: none;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+    }
+  }
+
+  // ---------- Alta ----------
+
+  .mb-alta__form {
+    display: grid;
+    gap: 14px;
+    max-width: 860px;
+  }
+
+  .mb-planes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+
+    @media (min-width: $tablet-min) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .mb-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--linea-fuerte);
+    background: var(--superficie);
+    color: var(--texto);
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+
+    b {
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    &:hover {
+      border-color: var(--marron);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 2px;
+    }
+
+    &[aria-pressed='true'] {
+      border-color: var(--marron);
+      background: var(--marron);
+      color: #fff;
+
+      .mb-plan__precio,
+      .mb-plan__texto {
+        color: rgba(255, 255, 255, 0.86);
+      }
+    }
+  }
+
+  .mb-plan__precio {
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mb-plan__texto {
+    margin-top: 6px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .mb-alta__resumen {
+    background: var(--marron-suave);
+    border-color: var(--lateral-linea);
+
+    > p {
+      margin: 10px 0 0;
+      color: var(--texto-2);
+
+      b {
+        color: var(--texto);
+        font-weight: 500;
+      }
+    }
+
+    .ui-aviso {
+      margin: 12px 0 0;
+    }
+  }
+}
