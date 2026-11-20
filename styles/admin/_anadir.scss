@@ -1,3 +1,379 @@
-// Panel · pantalla «anadir». La rellena la tanda que rehace esta pantalla.
+// Panel · pantalla «Añadir» (Escribirlo | Formulario), como el «Apuntar» de Gartalia.
 // Todo bajo .adm; usa las variables de _tokens.scss (var(--marron), var(--linea)…).
 @use 'tokens' as *;
+
+.adm .adm-anadir__rejilla {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+
+  @media (min-width: $grande-min) {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  }
+}
+
+.adm .adm-anadir__principal,
+.adm .adm-anadir__lado {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+// ---------- Escribirlo ----------
+
+.adm .adm-anadir__chat {
+  display: flex;
+  flex-direction: column;
+  min-height: min(620px, 72vh);
+  padding: 0;
+  overflow: hidden;
+}
+
+.adm .adm-anadir__mensajes {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.adm .adm-anadir__burbuja {
+  max-width: min(600px, 100%);
+  padding: 12px 14px;
+  border-radius: var(--radio);
+  font-size: 0.9063rem;
+  line-height: 1.5;
+
+  p + p {
+    margin-top: 6px;
+  }
+}
+
+.adm .adm-anadir__burbuja--panel {
+  align-self: flex-start;
+  background: var(--superficie-2);
+  border: 1px solid var(--linea);
+  color: var(--texto);
+
+  b {
+    font-weight: 500;
+  }
+}
+
+.adm .adm-anadir__burbuja--yo {
+  align-self: flex-end;
+  background: var(--marron);
+  color: #fff;
+}
+
+.adm .adm-anadir__entendido {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.adm .adm-anadir__caja {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-s);
+  background: var(--superficie);
+}
+
+.adm .adm-anadir__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+
+  p {
+    width: 100%;
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .ui-chip {
+    padding-right: 12px;
+  }
+}
+
+.adm .adm-anadir__falta,
+.adm .adm-anadir__aviso,
+.adm .adm-anadir__error,
+.adm .adm-anadir__hecho {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 0.8438rem;
+  line-height: 1.45;
+
+  .ui-icono {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+}
+
+.adm .adm-anadir__falta {
+  color: var(--aviso);
+  font-weight: 500;
+}
+
+.adm .adm-anadir__aviso {
+  color: var(--texto-2);
+}
+
+.adm .adm-anadir__error {
+  color: var(--mal);
+}
+
+.adm .adm-anadir__hecho {
+  color: var(--bien);
+  font-weight: 500;
+
+  a {
+    color: var(--marron);
+    text-decoration: underline;
+  }
+}
+
+.adm .adm-anadir__botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adm .adm-anadir__mas {
+  font-size: 0.8438rem;
+
+  a {
+    color: var(--marron);
+    text-decoration: underline;
+  }
+}
+
+.adm .adm-anadir__ejemplos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 0 18px 12px;
+
+  > span {
+    width: 100%;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .ui-chip {
+    padding-right: 12px;
+    background: var(--superficie);
+    color: var(--texto-2);
+    font-weight: 400;
+    text-align: left;
+  }
+}
+
+.adm .adm-anadir__escribir {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--linea);
+  background: var(--superficie);
+
+  .ui-control {
+    flex: 1;
+  }
+}
+
+.adm .adm-anadir__enviar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--marron);
+  color: #fff;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--marron);
+    outline-offset: 2px;
+  }
+
+  .ui-icono {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// ---------- Formulario ----------
+
+.adm .adm-anadir__form {
+  display: grid;
+  gap: 16px;
+}
+
+.adm .adm-anadir__pestanas,
+.adm .adm-anadir__subvista {
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ui-conmutador {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+.adm .adm-anadir__subvista {
+  margin-bottom: 4px;
+}
+
+.adm .adm-anadir__equipo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.adm .adm-anadir__guardar {
+  margin-top: 14px;
+}
+
+// Los formularios de gasto y de ingreso traen su propia caja: dentro de la tarjeta, sin borde
+.adm .adm-anadir__legado > .adm-caja {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+// ---------- Columna de la derecha ----------
+
+.adm .adm-anadir__como {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 10px 0;
+    border-top: 1px solid var(--linea);
+    font-size: 0.875rem;
+    font-weight: 500;
+
+    &:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+  }
+
+  span {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--texto-3);
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+}
+
+.adm .adm-anadir__nada {
+  font-size: 0.875rem;
+}
+
+.adm .adm-anadir__hechos {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 0.875rem;
+  }
+
+  .ui-icono {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--bien);
+  }
+
+  a {
+    color: var(--texto);
+    text-decoration: underline;
+    text-decoration-color: var(--linea-fuerte);
+  }
+
+  small {
+    display: block;
+    color: var(--texto-3);
+    font-size: 0.75rem;
+  }
+}
+
+.adm .adm-anadir__nota {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radio);
+  background: var(--superficie-3);
+  color: var(--texto-2);
+  font-size: 0.8438rem;
+  line-height: 1.5;
+
+  .ui-icono {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  b {
+    color: var(--texto);
+    font-weight: 500;
+  }
+}
+
+@media (max-width: $movil-max) {
+  .adm .adm-anadir__chat {
+    min-height: 0;
+  }
+
+  .adm .adm-anadir__mensajes {
+    max-height: none;
+    padding: 14px;
+  }
+
+  .adm .adm-anadir__ejemplos {
+    padding: 0 14px 12px;
+  }
+
+  .adm .adm-anadir__escribir {
+    padding: 10px 14px 14px;
+  }
+
+  .adm .adm-anadir__burbuja {
+    max-width: 100%;
+  }
+}

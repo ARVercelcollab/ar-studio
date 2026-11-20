@@ -1,9 +1,10 @@
-// Lo cobrado por Calendly (Stripe) en un mes, copiado del informe de Stripe
-import Link from 'next/link'
+// Ajustes › Calendly: lo cobrado por Calendly (Stripe) en un mes, copiado del informe de Stripe
 import { useRouter } from 'next/router'
 import { useState } from 'react'
 import Panel from '../../../components/admin/Panel'
-import { SubmenuFinanzas, useAccion, Mensaje } from '../../../components/admin/Finanzas'
+import SubmenuAjustes from '../../../components/admin/ajustes/SubmenuAjustes'
+import { Tarjeta, Boton } from '../../../components/admin/ui'
+import { useAccion, Mensaje } from '../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
 import { calendlyDelMes, ajustesFinanzas } from '../../../lib/finanzas/servicio'
 import { euros, leerImporte, textoMes, sumarMesesMes, mesDe } from '../../../lib/finanzas/calculos'
@@ -25,9 +26,10 @@ function FormularioCalendly({ k }) {
   const resto = t ? t - pistas.totalPanelCent : null
   const nombre = textoMes(k.mes, { soloNombre: true })
   return (
-    <Panel titulo={`Calendly (Stripe) · ${textoMes(k.mes)}`} acciones={<Link href={`/admin/movimientos/ingresos?p=${k.mes}`} className="adm-boton adm-boton--claro">← Facturación</Link>}>
-      <SubmenuFinanzas />
-      <div className="adm-caja adm-fin-form">
+    <Panel titulo="Calendly" sub={`Lo cobrado por Calendly (Stripe) en ${textoMes(k.mes)}. Aparece en Movimientos.`} clase="adm-ajustes"
+      acciones={<Boton variante="secundario" href={`/admin/movimientos?p=${k.mes}`}>Ver en Movimientos</Boton>}>
+      <SubmenuAjustes />
+      <Tarjeta className="adm-fin-form adm-ajustes__calendly">
         <label className="adm-fin-mes">Mes
           <select value={k.mes} onChange={(e) => router.push(`/admin/ajustes/calendly?mes=${e.target.value}`)}>{k.meses.map((m) => <option key={m} value={m}>{textoMes(m)}</option>)}</select>
         </label>
@@ -64,17 +66,17 @@ function FormularioCalendly({ k }) {
           </label>
           <label>Comisiones de Stripe ese mes (todas)
             <input inputMode="decimal" value={f.comision} onChange={(e) => poner('comision', e.target.value)} placeholder="0,00" />
-            <small>Van solas a Gastos, en «Comisiones del banco y de cobro».</small>
+            <small>Van solas a los gastos, en «Comisiones del banco y de cobro».</small>
           </label>
           <label className="adm-ancho">Enlace al informe (opcional)<input value={f.enlace} placeholder="https://dashboard.stripe.com/…" onChange={(e) => poner('enlace', e.target.value)} /></label>
           <label className="adm-ancho">Nota<input value={f.nota} onChange={(e) => poner('nota', e.target.value)} /></label>
         </div>
         <Mensaje estado={estado} />
         <div className="adm-acciones adm-fin-botones">
-          <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => ejecutar('/api/admin/finanzas/calendly', { mes: k.mes, cobrado: f.nada ? '0' : f.cobrado, devuelto: f.nada ? '0' : f.devuelto, comision: f.comision, enlace: f.enlace, nota: f.nota, version: k.fila?.version })}>Guardar</button>
-          {k.fila && <button type="button" className="adm-boton adm-boton--peligro" disabled={estado.enviando} onClick={() => { if (window.confirm(`¿Borrar lo apuntado de Calendly en ${nombre}? También se borra su comisión.`)) ejecutar('/api/admin/finanzas/calendly', { accion: 'borrar', mes: k.mes }) }}>Borrar este mes</button>}
+          <Boton disabled={estado.enviando} onClick={() => ejecutar('/api/admin/finanzas/calendly', { mes: k.mes, cobrado: f.nada ? '0' : f.cobrado, devuelto: f.nada ? '0' : f.devuelto, comision: f.comision, enlace: f.enlace, nota: f.nota, version: k.fila?.version })}>Guardar</Boton>
+          {k.fila && <Boton variante="peligro" disabled={estado.enviando} onClick={() => { if (window.confirm(`¿Borrar lo apuntado de Calendly en ${nombre}? También se borra su comisión.`)) ejecutar('/api/admin/finanzas/calendly', { accion: 'borrar', mes: k.mes }) }}>Borrar este mes</Boton>}
         </div>
-      </div>
+      </Tarjeta>
     </Panel>
   )
 }

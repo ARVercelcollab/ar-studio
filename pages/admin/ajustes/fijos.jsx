@@ -1,8 +1,10 @@
-// Finanzas · Gastos fijos: lo que se paga cada mes (o cada 2, 3, 6 o 12 meses) y se apunta solo
+// Ajustes › Gastos fijos: lo que se paga cada mes (o cada 2, 3, 6 o 12 meses) y se apunta solo en Movimientos
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
-import Panel, { Chip } from '../../../components/admin/Panel'
-import { SubmenuFinanzas, SelectorMes, FormularioFijo, useAccion, Mensaje } from '../../../components/admin/Finanzas'
+import Panel from '../../../components/admin/Panel'
+import SubmenuAjustes from '../../../components/admin/ajustes/SubmenuAjustes'
+import { Tarjeta, Boton, Etiqueta, Vacio } from '../../../components/admin/ui'
+import { SelectorMes, FormularioFijo, useAccion, Mensaje } from '../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
 import { listarGastosFijos, listarCategorias } from '../../../lib/finanzas/servicio'
 import { euros, textoMes, sumarMesesMes } from '../../../lib/finanzas/calculos'
@@ -41,33 +43,33 @@ function Fijo({ f, hoy, categorias, onAviso }) {
   const tope = [sumarMesesMes(mesHoy, 12), f.hastaMes ? f.hastaMes.slice(0, 7) : null].filter(Boolean).sort()[0]
   const alternar = (q) => setAbierto((a) => (a === q ? null : q))
   return (
-    <div className={`adm-sus adm-fijo${f.activo ? '' : ' is-terminado'}`}>
-      <div className="adm-sus__quien">
-        <strong>{f.concepto}</strong> <Chip tipo="gris">{f.categoria}</Chip>
+    <div className={`adm-ajustes__fijo${f.activo ? '' : ' is-terminado'}`}>
+      <div className="adm-ajustes__fijo-quien">
+        <strong>{f.concepto}</strong> <Etiqueta>{f.categoria}</Etiqueta>
         <small>{textoImporte(f)} · desde {corto(f.desdeMes)}{f.hastaMes ? ` · último mes: ${corto(f.hastaMes)}` : ''}</small>
         {f.tramosFuturos.map((t) => (
-          <small key={t.desdeMes}>Desde {corto(t.desdeMes)}: {euros(t.importeCent, { decimales: true })} · <button type="button" className="adm-enlace" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'quitar_cambio', desdeMes: t.desdeMes.slice(0, 7) })}>Quitar este cambio</button></small>
+          <small key={t.desdeMes}>Desde {corto(t.desdeMes)}: {euros(t.importeCent, { decimales: true })} · <button type="button" className="adm-ajustes__enlace-texto" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'quitar_cambio', desdeMes: t.desdeMes.slice(0, 7) })}>Quitar este cambio</button></small>
         ))}
       </div>
-      <div className="adm-sus__botones">
+      <div className="adm-ajustes__fijo-botones">
         {f.activo ? (
           <>
-            <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={() => alternar('importe')}>Cambiar importe</button>
-            <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={() => alternar('editar')}>Editar</button>
-            <button type="button" className="adm-boton adm-boton--claro adm-mini" onClick={() => alternar('terminar')}>Ya no se paga</button>
+            <Boton variante="secundario" tam="peq" aria-expanded={abierto === 'importe'} onClick={() => alternar('importe')}>Cambiar importe</Boton>
+            <Boton variante="secundario" tam="peq" aria-expanded={abierto === 'editar'} onClick={() => alternar('editar')}>Editar</Boton>
+            <Boton variante="secundario" tam="peq" aria-expanded={abierto === 'terminar'} onClick={() => alternar('terminar')}>Ya no se paga</Boton>
           </>
         ) : (
-          <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'quitar_final' })}>Quitar el final</button>
+          <Boton variante="secundario" tam="peq" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'quitar_final' })}>Quitar el final</Boton>
         )}
       </div>
       {abierto && (
-        <div className="adm-cuota-form adm-fijo__form">
+        <div className="adm-ajustes__fijo-form">
           {abierto === 'importe' && (
             <div className="adm-form">
               <label>{f.importeEs === 'base' ? 'Nuevo importe (sin IVA)' : 'Nuevo importe (lo que pagas)'}<input inputMode="decimal" value={importe} onChange={(e) => setImporte(e.target.value)} /></label>
               <label>A partir de<SelectorMes valor={desdeMes} onCambio={setDesdeMes} desde={f.desdeMes.slice(0, 7)} hasta={tope} /></label>
               <p className="adm-ancho adm-nota">Se cambiarán también los meses ya apuntados desde ese mes, menos los que cambiasteis a mano.</p>
-              <p className="adm-ancho"><button type="button" className="adm-boton adm-mini" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'importe', importe, desdeMes })}>Cambiar importe</button></p>
+              <p className="adm-ancho"><Boton tam="peq" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'importe', importe, desdeMes })}>Cambiar importe</Boton></p>
             </div>
           )}
           {abierto === 'editar' && (
@@ -83,8 +85,8 @@ function Fijo({ f, hoy, categorias, onAviso }) {
               <label className="adm-ancho">Nota<input value={ed.nota} onChange={(e) => setEd({ ...ed, nota: e.target.value })} /></label>
               <p className="adm-ancho adm-nota">Los cambios valen desde este mes; los meses pasados no se tocan.</p>
               <div className="adm-ancho adm-acciones">
-                <button type="button" className="adm-boton adm-mini" disabled={estado.enviando} onClick={() => hacer({ ...base, ...ed, accion: 'editar' })}>Guardar</button>
-                <button type="button" className="adm-enlace adm-importe-negativo" disabled={estado.enviando} onClick={() => { if (window.confirm(f.mesesApuntados === 1 ? 'Se borrará con su mes apuntado.' : f.mesesApuntados ? `Se borrará con sus ${f.mesesApuntados} meses apuntados.` : 'Se borrará este gasto fijo.')) hacer({ ...base, accion: 'borrar' }, { despues: (r) => onAviso(r?.mensaje || 'Gasto fijo borrado.') }) }}>Borrar (creado por error)</button>
+                <Boton tam="peq" disabled={estado.enviando} onClick={() => hacer({ ...base, ...ed, accion: 'editar' })}>Guardar</Boton>
+                <button type="button" className="adm-ajustes__enlace-texto adm-ajustes__peligro" disabled={estado.enviando} onClick={() => { if (window.confirm(f.mesesApuntados === 1 ? 'Se borrará con su mes apuntado.' : f.mesesApuntados ? `Se borrará con sus ${f.mesesApuntados} meses apuntados.` : 'Se borrará este gasto fijo.')) hacer({ ...base, accion: 'borrar' }, { despues: (r) => onAviso(r?.mensaje || 'Gasto fijo borrado.') }) }}>Borrar (creado por error)</button>
               </div>
             </div>
           )}
@@ -92,12 +94,12 @@ function Fijo({ f, hoy, categorias, onAviso }) {
             <div className="adm-form">
               <label>Último mes que se paga<SelectorMes valor={ultimo} onCambio={setUltimo} desde={f.desdeMes.slice(0, 7)} hasta={sumarMesesMes(mesHoy, 12)} /></label>
               <p className="adm-nota" style={{ alignSelf: 'end' }}>Los meses de después se quitan, salvo los que cambiasteis a mano.</p>
-              <p className="adm-ancho"><button type="button" className="adm-boton adm-mini" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'terminar', ultimoMes: ultimo })}>Terminar</button></p>
+              <p className="adm-ancho"><Boton tam="peq" disabled={estado.enviando} onClick={() => hacer({ ...base, accion: 'terminar', ultimoMes: ultimo })}>Terminar</Boton></p>
             </div>
           )}
         </div>
       )}
-      {estado.mensaje && <div className="adm-fijo__form"><Mensaje estado={estado} /></div>}
+      {estado.mensaje && <div className="adm-ajustes__fijo-form"><Mensaje estado={estado} /></div>}
     </div>
   )
 }
@@ -109,29 +111,32 @@ export default function GastosFijos({ d, categorias, hoy }) {
   const [aviso, setAviso] = useState(null)
   const avisar = (m, { recargar = true } = {}) => { setAviso(m); if (recargar) router.replace(router.asPath, undefined, { scroll: false }) }
   return (
-    <Panel titulo="Gastos fijos" acciones={<button type="button" className="adm-boton" onClick={() => setNuevo((v) => !v)}>+ Nuevo gasto fijo</button>}>
-      <SubmenuFinanzas />
-      <p className="adm-nota">Se apuntan solos en Gastos cada mes que toca. Aquí decidís cuáles hay y cuánto son. Si un mes cambia, cambiadlo en ese mes desde Gastos.</p>
-      <p className="adm-grande">Fijos al mes: {euros(d.alMes.conIvaCent)} con IVA <small className="adm-nota">({euros(d.alMes.costeCent)} sin IVA)</small></p>
-      <p className="adm-nota">Los que se pagan cada 2, 3, 6 o 12 meses van repartidos por mes.</p>
-      {aviso && <p className="adm-mensaje">{aviso}</p>}
-      {nuevo && (
-        <div className="adm-caja" style={{ marginTop: 14 }}>
-          <h2>Nuevo gasto fijo</h2>
-          <FormularioFijo categorias={categorias} hoy={hoy} onHecho={(r) => { setNuevo(false); avisar(r?.mensaje || null) }} />
-        </div>
-      )}
-      <div style={{ marginTop: 14 }}>
-        {d.activos.length === 0 && !nuevo && <div className="adm-caja"><p>Aún no hay gastos fijos. Añade el alquiler, la alarma, internet, el seguro o la gestoría.</p></div>}
-        {d.activos.map((f) => <Fijo key={f.id} f={f} hoy={hoy} categorias={categorias} onAviso={avisar} />)}
+    <Panel titulo="Gastos fijos" sub="Se apuntan solos en Movimientos cada mes que toca." clase="adm-ajustes"
+      acciones={<Boton icono={nuevo ? 'x' : 'mas'} variante={nuevo ? 'secundario' : 'primario'} aria-expanded={nuevo} onClick={() => setNuevo((v) => !v)}>{nuevo ? 'Cerrar' : 'Nuevo gasto fijo'}</Boton>}>
+      <SubmenuAjustes />
+      <div className="adm-ajustes__pila">
+        <Tarjeta>
+          <p className="adm-ajustes__cifra">Fijos al mes: <b className="ui-num ui-imp">{euros(d.alMes.conIvaCent)}</b> con IVA <span className="ui-t3">({euros(d.alMes.costeCent)} sin IVA)</span></p>
+          <p className="adm-ajustes__texto">Aquí decidís cuáles hay y cuánto son. Si un mes cambia (la luz, el agua), cambiadlo en ese mes desde Movimientos. Los que se pagan cada 2, 3, 6 o 12 meses van repartidos por mes.</p>
+        </Tarjeta>
+        {aviso && <p className="adm-mensaje" role="status">{aviso}</p>}
+        {nuevo && (
+          <Tarjeta titulo="Nuevo gasto fijo">
+            <FormularioFijo categorias={categorias} hoy={hoy} onHecho={(r) => { setNuevo(false); avisar(r?.mensaje || null) }} />
+          </Tarjeta>
+        )}
+        <Tarjeta titulo="Los que se pagan ahora" className="adm-ajustes__fijos">
+          {d.activos.length === 0 && !nuevo && <Vacio compacto texto="Aún no hay gastos fijos. Añade el alquiler, la alarma, internet, el seguro o la gestoría." />}
+          {d.activos.map((f) => <Fijo key={f.id} f={f} hoy={hoy} categorias={categorias} onAviso={avisar} />)}
+        </Tarjeta>
+        {d.terminados.length > 0 && (
+          <details className="ui-tarjeta adm-ajustes__fijos">
+            <summary>Terminados ({d.terminados.length})</summary>
+            <p className="adm-ajustes__texto">Si quitas el final, se apuntarán también los meses que faltan desde el final: si alguno no se pagó, marcadlo «Este mes no se paga».</p>
+            {d.terminados.map((f) => <Fijo key={f.id} f={f} hoy={hoy} categorias={categorias} onAviso={avisar} />)}
+          </details>
+        )}
       </div>
-      {d.terminados.length > 0 && (
-        <details className="adm-caja" style={{ marginTop: 18 }}>
-          <summary>Terminados ({d.terminados.length})</summary>
-          <p className="adm-nota">Si quitas el final, se apuntarán también los meses que faltan desde el final: si alguno no se pagó, marcadlo «Este mes no se paga».</p>
-          {d.terminados.map((f) => <Fijo key={f.id} f={f} hoy={hoy} categorias={categorias} onAviso={avisar} />)}
-        </details>
-      )}
     </Panel>
   )
 }

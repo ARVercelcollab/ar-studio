@@ -1,19 +1,141 @@
-// Panel · pantalla «ajustes». La rellena la tanda que rehace esta pantalla.
+// Panel · pantalla «Ajustes» y sus apartados (gastos fijos, Google Calendar, Calendly, festivos, bloqueos).
 // Todo bajo .adm; usa las variables de _tokens.scss (var(--marron), var(--linea)…).
 @use 'tokens' as *;
 
-// Provisional (fase A): tarjetas-enlace de Ajustes y de Añadir
-.adm .adm-ajustes__enlace {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+// ---------- Saltos y submenú (chips) ----------
+
+.adm .adm-ajustes__saltos,
+.adm .adm-ajustes__submenu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.adm .adm-ajustes__chip,
+.adm .adm-ajustes__volver {
+  display: inline-flex;
   align-items: center;
-  gap: 14px;
-  color: var(--texto);
+  gap: 4px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--texto-2);
+  font-size: 0.8438rem;
+  font-weight: 500;
   text-decoration: none;
-  transition: border-color 0.15s;
+  transition: background-color 0.15s, border-color 0.15s;
 
   &:hover {
-    border-color: var(--linea-fuerte);
+    border-color: var(--marron);
+    color: var(--marron);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--marron);
+    outline-offset: 2px;
+  }
+
+  &[aria-current='page'] {
+    border-color: var(--marron);
+    background: var(--marron);
+    color: #fff;
+  }
+
+  .ui-icono {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.adm .adm-ajustes__volver {
+  padding-left: 10px;
+  background: var(--superficie-3);
+  border-color: transparent;
+  color: var(--marron);
+}
+
+// ---------- Resumen de Ajustes ----------
+
+.adm .adm-ajustes__rejilla {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+
+  @media (min-width: $grande-min) {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  }
+}
+
+.adm .adm-ajustes__columna,
+.adm .adm-ajustes__pila {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.adm .adm-ajustes__columna > .ui-tarjeta {
+  scroll-margin-top: 16px;
+}
+
+.adm .adm-ajustes__precios {
+  tbody th {
+    font-weight: 400;
+  }
+}
+
+.adm .adm-ajustes__datos {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.adm .adm-ajustes__pie {
+  display: flex;
+  gap: 8px;
+  color: var(--texto-3);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+
+  .ui-icono {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    margin-top: 2px;
+  }
+}
+
+.adm .adm-ajustes__lista {
+  display: grid;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid var(--linea);
+    font-size: 0.9063rem;
+
+    &:first-child {
+      border-top: 0;
+      padding-top: 2px;
+    }
+
+    > span:first-child {
+      min-width: 0;
+    }
+
+    > span:last-child:not(:first-child) {
+      flex: none;
+      color: var(--texto);
+      text-align: right;
+    }
   }
 
   b {
@@ -21,24 +143,269 @@
     font-weight: 500;
   }
 
-  span span {
+  small {
     display: block;
     margin-top: 2px;
     color: var(--texto-3);
     font-size: 0.8125rem;
   }
+}
 
-  > .ui-icono {
+.adm .adm-ajustes__lista + .ui-datos {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linea);
+}
+
+.adm .adm-ajustes__vacio,
+.adm .adm-ajustes__texto {
+  color: var(--texto-2);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.adm .adm-ajustes__vacio {
+  color: var(--texto-3);
+}
+
+.adm .adm-ajustes__texto + .adm-ajustes__texto {
+  margin-top: 8px;
+}
+
+.adm .adm-ajustes__total,
+.adm .adm-ajustes__cifra {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linea);
+  color: var(--texto-2);
+  font-size: 0.9063rem;
+
+  b {
+    color: var(--texto);
+    font-weight: 600;
+  }
+}
+
+.adm .adm-ajustes__cifra {
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  font-size: 1rem;
+}
+
+.adm .adm-ajustes__estado {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radio-s);
+  background: var(--superficie-2);
+
+  > span:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  b {
+    display: block;
+    font-weight: 500;
+  }
+
+  small {
+    display: block;
     color: var(--texto-3);
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
   }
 }
 
 .adm .adm-ajustes__icono {
   display: grid;
+  flex: none;
   place-items: center;
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--superficie-3);
+  background: var(--superficie);
+  border: 1px solid var(--linea);
   color: var(--marron);
+}
+
+.adm .adm-ajustes__pies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.adm .adm-ajustes__botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.adm .adm-ajustes__calendario {
+  margin-top: 4px;
+}
+
+// Avisos dentro de una tarjeta
+.adm .ui-tarjeta .ui-aviso {
+  margin-bottom: 12px;
+}
+
+// ---------- Tablas de festivos y bloqueos ----------
+
+.adm .adm-ajustes__tabla {
+  td.der {
+    width: 1%;
+    white-space: nowrap;
+  }
+
+  @media (max-width: $movil-max) {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2px 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--linea);
+    }
+
+    tbody tr:last-child {
+      border-bottom: 0;
+    }
+
+    td {
+      padding: 0;
+      border: 0;
+    }
+
+    td:first-child {
+      font-weight: 500;
+    }
+
+    td.der {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      align-self: center;
+    }
+
+    td:not(:first-child):not(.der) {
+      color: var(--texto-3);
+      font-size: 0.8438rem;
+    }
+  }
+}
+
+// ---------- Gastos fijos ----------
+
+.adm .adm-ajustes__fijos {
+  display: grid;
+  gap: 0;
+
+  > summary {
+    cursor: pointer;
+    font-weight: 500;
+    padding: 2px 0 10px;
+  }
+}
+
+.adm .adm-ajustes__fijo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid var(--linea);
+  font-size: 0.9063rem;
+
+  &:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  &.is-terminado {
+    opacity: 0.75;
+  }
+
+  @media (max-width: $movil-max) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.adm .adm-ajustes__fijo-quien {
+  min-width: 0;
+
+  strong {
+    font-weight: 500;
+  }
+
+  .ui-etiqueta {
+    margin-left: 6px;
+    vertical-align: 1px;
+  }
+
+  small {
+    display: block;
+    margin-top: 3px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+}
+
+.adm .adm-ajustes__fijo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.adm .adm-ajustes__fijo-form {
+  grid-column: 1 / -1;
+  padding: 14px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-s);
+  background: var(--superficie-2);
+
+  .adm-mensaje {
+    margin: 0;
+  }
+}
+
+.adm .adm-ajustes__enlace-texto {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--marron);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.adm .adm-ajustes__peligro {
+  color: var(--mal);
+}
+
+// ---------- Calendly ----------
+
+.adm .adm-ajustes__calendly .adm-fin-mes {
+  max-width: 320px;
+}
+
+// Provisional (fase A): tarjetas-enlace (ya no las usa ninguna pantalla de esta tanda)
+.adm .adm-ajustes__enlace {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  color: var(--texto);
+  text-decoration: none;
 }
