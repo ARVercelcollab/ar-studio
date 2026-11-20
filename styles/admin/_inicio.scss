@@ -1,3 +1,654 @@
-// Panel · pantalla «inicio». La rellena la tanda que rehace esta pantalla.
-// Todo bajo .adm; usa las variables de _tokens.scss (var(--marron), var(--linea)…).
+// Panel · pantalla «Inicio» (pages/admin/index.jsx y components/admin/inicio/*), con el diseño del
+// prototipo: cifras, frase del mes, «Pendiente ahora», gráfico por meses, «En qué se va el dinero»
+// y últimos movimientos. Todo bajo .adm; colores de _tokens.scss.
 @use 'tokens' as *;
+
+.adm {
+  .ini-contenido {
+    transition: opacity 0.15s;
+
+    &.is-cargando {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+  }
+
+  // La frase del mes
+  .ini-lectura {
+    margin: 14px 0 0;
+    padding: 14px 18px;
+    border-radius: var(--radio);
+    background: var(--marron-suave);
+    color: var(--texto);
+    line-height: 1.55;
+
+    strong {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .ini-lectura__nota {
+    color: var(--texto-2);
+  }
+
+  // ---------- Pendiente ahora ----------
+  .ini-pend {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 16px 16px 12px;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+
+    h3,
+    p,
+    ul,
+    dl,
+    dd {
+      margin: 0;
+    }
+
+    ul {
+      padding: 0;
+      list-style: none;
+    }
+  }
+
+  .ini-pend--aviso {
+    border-color: var(--aviso-linea);
+    box-shadow: inset 0 0 0 1px var(--aviso-linea);
+  }
+
+  .ini-pend__cab {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ini-pend__icono {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--superficie-3);
+    color: var(--marron);
+
+    .ui-icono {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  .ini-pend--aviso .ini-pend__icono {
+    background: var(--aviso-fondo);
+    color: var(--aviso);
+  }
+
+  .ini-pend__titulo {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .ini-pend__cifra {
+    font-size: 1.1875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ini-pend__resumen {
+    margin: 8px 0 4px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .ini-pend__cuerpo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .ini-pend__lista {
+    flex: 1;
+  }
+
+  .ini-pend__fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--linea);
+
+    &:first-child {
+      border-top: 0;
+    }
+  }
+
+  .ini-pend__quien {
+    flex: 1;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover .ini-pend__nombre {
+      text-decoration: underline;
+    }
+  }
+
+  .ini-pend__nombre {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  .ini-pend__detalle {
+    display: block;
+    margin-top: 1px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  .ini-pend__detalle--mal {
+    color: var(--mal);
+  }
+
+  .ini-pend__hora {
+    display: inline-block;
+    min-width: 44px;
+    color: var(--marron);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ini-pend__importe {
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ini-pend__impago {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--mal-fondo);
+    color: var(--mal);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .ini-pend__vacio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    padding: 10px 0;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+
+    .ui-icono {
+      width: 16px;
+      height: 16px;
+      color: var(--bien);
+    }
+  }
+
+  .ini-pend__mas {
+    padding-top: 2px;
+    font-size: 0.8125rem;
+
+    a {
+      color: var(--texto-2);
+    }
+  }
+
+  .ini-pend__cuenta {
+    div {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      border-top: 1px solid var(--linea);
+      font-size: 0.875rem;
+
+      &:first-child {
+        border-top: 0;
+      }
+    }
+
+    dt {
+      color: var(--texto-2);
+    }
+
+    dd {
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .ini-pend__nota {
+    flex: 1;
+    margin-top: 6px !important;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .ini-pend__pie {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--linea);
+  }
+
+  .ini-vez {
+    color: var(--texto-2);
+  }
+
+  .ini-vez--nueva {
+    color: var(--bien);
+    font-weight: 500;
+  }
+
+  // Otros avisos (facturas, Google Calendar, pagos raros)
+  .ini-avisos {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--aviso-linea);
+    border-radius: var(--radio);
+    background: var(--aviso-fondo);
+    font-size: 0.875rem;
+
+    summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--aviso);
+      font-weight: 500;
+      cursor: pointer;
+
+      .ui-icono {
+        width: 16px;
+        height: 16px;
+      }
+
+      span {
+        font-weight: 400;
+      }
+    }
+
+    ul {
+      margin: 8px 0 2px;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-top: 1px solid var(--aviso-linea);
+
+      a,
+      span {
+        color: var(--texto);
+      }
+
+      small {
+        flex: none;
+        color: var(--texto-3);
+      }
+    }
+  }
+
+  .ini-avisos--mal {
+    border-color: #F3C5BF;
+    background: var(--mal-fondo);
+
+    summary {
+      color: var(--mal);
+    }
+
+    li {
+      border-top-color: #F3C5BF;
+    }
+  }
+
+  // ---------- Gráfico de meses y «En qué se va el dinero» ----------
+  .ini-dos {
+    display: grid;
+    gap: 14px;
+    margin-top: 28px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: $grande-min) {
+    .ini-dos {
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    }
+  }
+
+  .ini-lectura-mes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    margin-bottom: 14px;
+    font-size: 0.875rem;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--texto-2);
+    }
+
+    strong {
+      color: var(--texto);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    strong.ui-bien {
+      color: var(--bien);
+    }
+
+    strong.ui-mal {
+      color: var(--mal);
+    }
+  }
+
+  .ini-lectura-mes__mes {
+    flex: 1 0 100%;
+    color: var(--texto) !important;
+    font-weight: 500;
+  }
+
+  .ini-muestra {
+    display: inline-block;
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  .ini-grafico {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .ini-grafico__eje {
+    position: relative;
+    height: 200px;
+
+    span {
+      position: absolute;
+      right: 0;
+      transform: translateY(50%);
+      color: var(--texto-3);
+      font-size: 0.6875rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+  }
+
+  .ini-grafico__lienzo {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    height: 200px;
+    border-bottom: 1px solid var(--linea-fuerte);
+  }
+
+  .ini-grafico__rej {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed var(--linea);
+    pointer-events: none;
+  }
+
+  .ini-grafico__mes {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 3px;
+    border-radius: 8px 8px 0 0;
+    text-decoration: none;
+
+    &:hover {
+      background: var(--superficie-2);
+    }
+
+    &.is-sel {
+      background: var(--superficie-3);
+    }
+
+    &.es-vacio:hover {
+      background: none;
+    }
+  }
+
+  .ini-grafico__barras {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    width: 100%;
+    max-width: 44px;
+    height: 100%;
+
+    i {
+      display: block;
+      flex: 1;
+      min-height: 2px;
+      border-radius: 4px 4px 0 0;
+    }
+  }
+
+  .ini-grafico__mes.es-vacio .ini-grafico__barras i {
+    min-height: 0;
+  }
+
+  .ini-grafico__etiquetas {
+    display: flex;
+    gap: 4px;
+    margin: 6px 0 0 60px;
+
+    span {
+      flex: 1;
+      min-width: 0;
+      color: var(--texto-3);
+      font-size: 0.75rem;
+      text-align: center;
+    }
+
+    span.is-sel {
+      color: var(--marron);
+      font-weight: 500;
+    }
+  }
+
+  .ini-nota {
+    margin: 12px 0 0;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  .ini-vacio {
+    margin: 0;
+    color: var(--texto-3);
+    font-size: 0.875rem;
+  }
+
+  .ini-medidor {
+    display: flex;
+    gap: 2px;
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--superficie-3);
+
+    i {
+      display: block;
+      height: 100%;
+    }
+  }
+
+  .ini-leyenda {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+
+    a {
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr) auto 44px;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-top: 1px solid var(--linea);
+      color: inherit;
+      font-size: 0.875rem;
+      text-decoration: none;
+
+      &:hover .ini-leyenda__nombre {
+        text-decoration: underline;
+      }
+    }
+
+    li:first-child a {
+      border-top: 0;
+    }
+
+    strong {
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .ini-leyenda__nombre {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ini-leyenda__pct {
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // ---------- Últimos movimientos ----------
+  .ini-ultimos {
+    margin-top: 14px;
+  }
+
+  .ini-filas {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 18px;
+      border-top: 1px solid var(--linea);
+
+      &:first-child {
+        border-top: 0;
+      }
+    }
+  }
+
+  .ini-filas__fecha {
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ini-filas__principal {
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+
+    b {
+      display: block;
+      overflow: hidden;
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 1px;
+      overflow: hidden;
+      color: var(--texto-3);
+      font-size: 0.8125rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  a.ini-filas__principal:hover b {
+    text-decoration: underline;
+  }
+
+  .ini-filas__importe {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    &.ui-bien {
+      color: var(--bien);
+    }
+  }
+
+  // ---------- Móvil ----------
+  @media (max-width: 639px) {
+    .ini-lectura {
+      padding: 13px 14px;
+      font-size: 0.9375rem;
+    }
+
+    .ini-grafico {
+      grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .ini-grafico__eje,
+    .ini-grafico__lienzo {
+      height: 170px;
+    }
+
+    .ini-grafico__etiquetas {
+      margin-left: 52px;
+    }
+
+    .ini-filas li {
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 11px 14px;
+    }
+
+    .ini-filas__principal b,
+    .ini-filas__principal span {
+      white-space: normal;
+    }
+  }
+}
