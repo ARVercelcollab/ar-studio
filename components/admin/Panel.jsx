@@ -8,8 +8,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { TEXTOS_CHIP_CUOTA } from '../../lib/suscripciones/reglas'
-import { textoDuracion } from '../../lib/reservas/config'
 import Icono from './ui/Icono'
 import Logo from './ui/Logo'
 import { ImportesOcultos, ControlImportes, COOKIE_OCULTAR } from './ui/Importes'
@@ -224,47 +222,5 @@ export default function Panel({ titulo, sub, children, acciones, clase, ocultoIn
         </ImportesOcultos.Provider>
       </ControlImportes.Provider>
     </>
-  )
-}
-
-export function Chip({ tipo, children }) {
-  return <span className={`adm-chip adm-chip--${tipo}`}>{children}</span>
-}
-
-export function chipEstado(r) {
-  if (r.estado === 'conflicto') return <Chip tipo="error">Revisar pago</Chip>
-  if (r.estado === 'cancelada') return <Chip tipo="gris">{r.cuentaComoUsada ? 'Cancelada (cuenta)' : 'Cancelada'}</Chip>
-  if (r.estado === 'caducada') return <Chip tipo="gris">Caducada</Chip>
-  if (r.estado === 'pendiente') return <Chip tipo="aviso">Pagando…</Chip>
-  if (r.esPlan) return r.pagoEstado === 'pagado' ? <Chip tipo="plan">{r.planTexto || 'Suscripción'}</Chip> : <Chip tipo="aviso">Extra sin pagar</Chip>
-  if (r.pagoEstado === 'pagado') return <Chip tipo="ok">Pagada</Chip>
-  return <Chip tipo="aviso">Sin pagar</Chip>
-}
-
-// Botones de opción; el elegido, en marrón
-export function Segmento({ opciones, valor, onCambio }) {
-  return (
-    <div className="adm-segmento" role="radiogroup">
-      {opciones.map(([v, texto]) => (
-        <button key={v} type="button" role="radio" aria-checked={valor === v} className={valor === v ? 'is-activo' : ''} onClick={() => onCambio(v)}>{texto}</button>
-      ))}
-    </div>
-  )
-}
-
-const TIPO_CHIP_CUOTA = { pagada: 'ok', sin_pagar: 'aviso', atrasada: 'error', proxima: 'gris', sin_cargo: 'gris', anulada: 'gris', devuelta: 'gris' }
-
-export function ChipCuota({ chip }) {
-  return <Chip tipo={TIPO_CHIP_CUOTA[chip] || 'gris'}>{TEXTOS_CHIP_CUOTA[chip] || chip}</Chip>
-}
-
-export function BarraHoras({ usadas, total, conTexto = true }) {
-  const pct = total > 0 ? Math.min(100, Math.round((usadas / total) * 100)) : 0
-  const libres = Math.max(0, total - usadas)
-  return (
-    <div className="adm-barra-horas">
-      <div className="adm-barra-horas__pista"><div style={{ width: `${pct}%` }} /></div>
-      {conTexto && <span>{textoDuracion(libres, { corto: true })} libres de {textoDuracion(total, { corto: true })}</span>}
-    </div>
   )
 }

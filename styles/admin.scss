@@ -1,5 +1,11 @@
 @use './variables.scss' as *;
-// Diseño nuevo del panel (noviembre de 2026): variables, armazón y piezas comunes, y un parcial por pantalla
+
+// Panel del estudio (/admin) · diseño de noviembre de 2026.
+// - admin/_tokens: colores, letra y medidas (variables CSS colgadas de .adm)
+// - admin/_ui: armazón (menú, cabecera, barra del móvil) y piezas comunes (components/admin/ui)
+// - un parcial por pantalla
+// Debajo quedan solo las clases antiguas que aún usan formularios compartidos (gasto, ingreso,
+// gasto fijo, sesiones de miembros, entrada), ya con los colores y la letra nuevos.
 @use './admin/tokens';
 @use './admin/ui';
 @use './admin/inicio';
@@ -8,12 +14,6 @@
 @use './admin/movimientos';
 @use './admin/ajustes';
 @use './admin/anadir';
-
-// Panel del estudio (/admin)
-
-$borde: #e6ded5;
-$suave: #f6f3ef;
-$gris: #8a7a6c;
 
 .adm {
   // Letra, colores y fondo: los pone styles/admin/_ui.scss (Inter, var(--fondo)…)
@@ -26,8 +26,10 @@ $gris: #8a7a6c;
   }
 }
 
+// ---------- Tarjeta, formulario y campos ----------
+
 .adm-caja {
-  background: $white;
+  background: var(--superficie);
   border: 1px solid var(--linea);
   border-radius: var(--radio);
   padding: 20px;
@@ -35,197 +37,12 @@ $gris: #8a7a6c;
 
   h2 {
     font-size: 1.05rem;
-    font-weight: 400;
+    font-weight: 500;
     margin-bottom: 14px;
   }
 
   p {
-    font-weight: 300;
     line-height: 1.5;
-  }
-}
-
-.adm-cifras {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
-
-  @include media800px {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  div {
-    background: $white;
-    border: 1px solid $borde;
-    padding: 14px 16px;
-  }
-
-  span {
-    display: block;
-    font-size: 0.78rem;
-    color: $gris;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }
-
-  strong {
-    font-size: 1.6rem;
-    font-weight: 300;
-  }
-}
-
-.adm-filtros {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-  align-items: center;
-
-  a {
-    border: 1px solid $borde;
-    background: $white;
-    padding: 7px 12px;
-    font-size: 0.88rem;
-    font-weight: 300;
-
-    &.is-activo {
-      background: $brown;
-      color: $white;
-      border-color: $brown;
-    }
-  }
-
-  form {
-    margin-left: auto;
-    display: flex;
-    gap: 6px;
-
-    @include media600px {
-      margin-left: 0;
-      width: 100%;
-    }
-  }
-}
-
-.adm-dia {
-  margin-bottom: 16px;
-
-  h3 {
-    font-size: 0.82rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: $gris;
-    font-weight: 400;
-    margin: 0 0 8px;
-  }
-}
-
-.adm-fila {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) auto auto;
-  gap: 14px;
-  align-items: center;
-  background: $white;
-  border: 1px solid $borde;
-  border-top: none;
-  padding: 12px 14px;
-  font-weight: 300;
-  font-size: 0.95rem;
-
-  &:first-of-type {
-    border-top: 1px solid $borde;
-  }
-
-  &:hover {
-    background: #fdfbf8;
-  }
-
-  .adm-fila__hora {
-    font-weight: 400;
-  }
-
-  .adm-fila__quien small {
-    display: block;
-    color: $gris;
-    font-size: 0.8rem;
-    margin-top: 3px;
-  }
-
-  @include media600px {
-    grid-template-columns: 80px minmax(0, 1fr);
-
-    > :nth-child(3),
-    > :nth-child(4) {
-      grid-column: 2;
-    }
-  }
-}
-
-.adm-chip {
-  display: inline-block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 4px 8px 3px;
-  white-space: nowrap;
-  background: $suave;
-
-  &--ok {
-    background: #e8efe1;
-    color: #4f6b3a;
-  }
-
-  &--aviso {
-    background: #f6ead8;
-    color: #9a5b13;
-  }
-
-  &--error {
-    background: #f5e1dc;
-    color: #a33b2b;
-  }
-
-  &--gris {
-    background: #eeeae5;
-    color: $gris;
-  }
-}
-
-.adm-datos {
-  display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 9px 16px;
-  font-weight: 300;
-  font-size: 0.95rem;
-
-  dt {
-    color: $gris;
-  }
-
-  a {
-    text-decoration: underline;
-  }
-
-  @include media600px {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
-
-    dd {
-      margin-bottom: 8px;
-    }
-  }
-}
-
-.adm-dos {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 18px;
-  align-items: start;
-
-  @include media900px {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -247,19 +64,24 @@ $gris: #8a7a6c;
     flex-direction: column;
     gap: 5px;
     font-size: 0.82rem;
-    font-weight: 300;
-    color: $gris;
+    color: var(--texto-2);
+  }
+
+  label small {
+    font-size: 0.76rem;
+    color: var(--texto-3);
+    line-height: 1.4;
   }
 
   label.adm-check {
     flex-direction: row;
     align-items: center;
     gap: 8px;
-    color: $brown;
+    color: var(--texto);
     font-size: 0.9rem;
 
     input {
-      accent-color: $brown;
+      accent-color: var(--marron);
     }
   }
 }
@@ -272,14 +94,15 @@ $gris: #8a7a6c;
   font-size: 0.95rem;
   font-weight: 400;
   color: var(--texto);
-  background: $white;
+  background: var(--superficie);
   border-radius: 10px;
   outline: none;
   width: 100%;
   box-sizing: border-box;
 
   &:focus {
-    border-color: $brown;
+    border-color: var(--marron);
+    box-shadow: 0 0 0 3px rgba(75, 56, 40, 0.12);
   }
 }
 
@@ -288,8 +111,9 @@ $gris: #8a7a6c;
   resize: vertical;
 }
 
+// ---------- Botones (como ui-boton: principal marrón, secundario blanco) ----------
+
 .adm-boton {
-  // Igual que el botón principal nuevo (ui-boton--primario) hasta que cada pantalla se rehaga
   background: var(--marron);
   color: $white;
   padding: 10px 16px;
@@ -317,7 +141,7 @@ $gris: #8a7a6c;
   }
 
   &--claro {
-    background: $white;
+    background: var(--superficie);
     color: var(--marron);
     border: 1px solid var(--linea-fuerte);
 
@@ -328,297 +152,14 @@ $gris: #8a7a6c;
   }
 
   &--peligro {
-    background: #a33b2b;
+    background: var(--mal);
   }
 }
 
-.adm-mensaje {
-  padding: 10px 12px;
-  font-size: 0.9rem;
-  font-weight: 300;
-  margin: 10px 0;
-  background: #f1f5ec;
-  border-left: 3px solid #4f6b3a;
-
-  &.is-error {
-    background: #fbefec;
-    border-color: #a33b2b;
-  }
-}
-
-.adm-tabla {
-  width: 100%;
-  font-size: 0.9rem;
-  font-weight: 300;
-
-  th {
-    text-align: left;
-    color: $gris;
-    font-weight: 400;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    padding: 0 8px 8px 0;
-  }
-
-  td {
-    padding: 8px 8px 8px 0;
-    border-top: 1px solid $borde;
-    vertical-align: top;
-  }
-}
-
-.adm-historial {
-  font-size: 0.85rem;
-  font-weight: 300;
-
-  li {
-    padding: 6px 0;
-    border-top: 1px solid $borde;
-    display: flex;
-    gap: 10px;
-  }
-
-  time {
-    color: $gris;
-    flex: none;
-    width: 120px;
-  }
-}
-
-.adm-login {
-  max-width: 360px;
-  margin: 14vh auto;
-  background: $white;
-  border: 1px solid $borde;
-  padding: 28px;
-
-  .adm-login__logo {
-    height: 30px;
-    width: auto;
-    display: block;
-    margin-bottom: 22px;
-  }
-
-  h1 {
-    font-size: 1.4rem;
-    font-weight: 300;
-    margin-bottom: 18px;
-  }
-
-  form {
-    display: grid;
-    gap: 12px;
-  }
-}
-
-.adm-copiar {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-
-  input {
-    font-size: 0.8rem !important;
-  }
-}
-
-.adm-nota {
-  font-size: 0.85rem;
-  font-weight: 300;
-  color: $gris;
-}
-
-// ---------- Suscripciones ----------
-
-.adm-segmento {
-  display: inline-flex;
-  border: 1px solid $brown;
-  margin-bottom: 16px;
-
-  button {
-    padding: 8px 16px 7px;
-    font-size: 0.9rem;
-    font-weight: 300;
-    color: $brown;
-    background: $white;
-
-    & + button {
-      border-left: 1px solid $brown;
-    }
-
-    &.is-activo {
-      background: $brown;
-      color: $white;
-    }
-  }
-}
-
-.adm-tarjetas {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-
-  @include media600px {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  button {
-    border: 1px solid $borde;
-    background: $white;
-    padding: 14px;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    strong {
-      font-size: 1.1rem;
-      font-weight: 400;
-    }
-
-    span {
-      font-size: 0.85rem;
-      font-weight: 300;
-      color: $gris;
-    }
-
-    &.is-activo {
-      background: $brown;
-      border-color: $brown;
-      color: $white;
-
-      span {
-        color: $beige;
-      }
-    }
-  }
-}
-
-.adm-chip--plan {
-  background: #efe6dc;
-  color: $brown;
-}
-
-.adm-fila--plan {
-  box-shadow: inset 3px 0 0 $brown;
-}
-
-.adm-barra-horas {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.85rem;
-  font-weight: 300;
-
-  .adm-barra-horas__pista {
-    flex: 1;
-    min-width: 60px;
-    height: 6px;
-    background: $suave;
-    border: 1px solid $borde;
-
-    div {
-      height: 100%;
-      background: $brown;
-    }
-  }
-
-  span {
-    white-space: nowrap;
-  }
-}
-
-.adm-avisos {
-  background: #fbf4e8;
-  border-left: 3px solid #9a5b13;
-  padding: 10px 12px;
-  margin: 10px 0;
-  font-size: 0.88rem;
-  font-weight: 300;
-  line-height: 1.5;
-
-  strong {
-    font-weight: 400;
-    display: block;
-    margin-bottom: 4px;
-  }
-}
-
-.adm-notas {
-  font-size: 0.85rem;
-  font-weight: 300;
-  color: #9a5b13;
-  line-height: 1.5;
-  margin: 6px 0;
-}
-
-.adm-huecos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  font-size: 0.85rem;
-  font-weight: 300;
-  margin: 8px 0;
-
-  button {
-    border: 1px solid $borde;
-    background: $white;
-    padding: 4px 9px;
-    font-size: 0.85rem;
-
-    &.is-activo {
-      background: $brown;
-      color: $white;
-      border-color: $brown;
-    }
-  }
-}
-
-.adm-tareas {
-  li {
-    padding: 8px 0;
-    border-top: 1px solid $borde;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
-    font-weight: 300;
-    font-size: 0.92rem;
-    flex-wrap: wrap;
-
-    &:first-child {
-      border-top: none;
-    }
-
-    a {
-      text-decoration: underline;
-    }
-
-    &.is-urgente {
-      color: #a33b2b;
-    }
-  }
-}
-
-.adm-grande {
-  font-size: 1.6rem;
-  font-weight: 300;
-  margin: 4px 0 10px;
-}
-
-.adm-banner {
-  background: $white;
-  border: 1px solid $borde;
-  border-left: 3px solid #9a5b13;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  font-size: 0.92rem;
-  font-weight: 300;
-
-  a {
-    text-decoration: underline;
-    margin-left: 6px;
-  }
+.adm-mini {
+  padding: 5px 9px 4px !important;
+  min-height: 0 !important;
+  font-size: 0.78rem !important;
 }
 
 .adm-acciones {
@@ -629,10 +170,61 @@ $gris: #8a7a6c;
   align-items: center;
 }
 
+// ---------- Mensajes y notas ----------
+
+.adm-mensaje {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  margin: 10px 0;
+  border-radius: var(--radio-s);
+  background: var(--bien-fondo);
+  color: var(--texto);
+  border-left: 3px solid var(--bien);
+
+  &.is-error {
+    background: var(--mal-fondo);
+    border-color: var(--mal);
+  }
+}
+
+.adm-nota {
+  font-size: 0.85rem;
+  color: var(--texto-3);
+}
+
+.adm-avisos {
+  background: var(--aviso-fondo);
+  border-left: 3px solid var(--aviso);
+  border-radius: var(--radio-s);
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+
+  strong {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+  }
+}
+
+.adm-notas {
+  font-size: 0.85rem;
+  color: var(--aviso);
+  line-height: 1.5;
+  margin: 6px 0;
+}
+
+.adm-enlace {
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--marron);
+}
+
 .adm details > summary {
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 300;
   margin: 8px 0;
   list-style: none;
 
@@ -645,1308 +237,116 @@ $gris: #8a7a6c;
   content: '▾ ';
 }
 
-.adm-enlace {
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 300;
-}
+// ---------- Huecos libres (sesiones de miembros y Añadir → Reserva) ----------
 
-.adm-sus {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.3fr) auto auto;
-  gap: 14px;
+.adm-huecos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
-  background: $white;
-  border: 1px solid $borde;
-  border-top: none;
-  padding: 12px 14px;
-  font-weight: 300;
-  font-size: 0.95rem;
-  box-shadow: inset 3px 0 0 $brown;
+  font-size: 0.85rem;
+  margin: 8px 0;
 
-  &:first-of-type {
-    border-top: 1px solid $borde;
-  }
-
-  small {
-    display: block;
-    color: $gris;
-    font-size: 0.8rem;
-    margin-top: 3px;
-  }
-
-  .adm-sus__quien a {
-    font-weight: 400;
-    text-decoration: none;
+  button {
+    border: 1px solid var(--linea-fuerte);
+    border-radius: var(--radio-s);
+    background: var(--superficie);
+    color: var(--texto);
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
 
     &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  .adm-sus__botones {
-    display: flex;
-    gap: 6px;
-
-    .adm-boton {
-      padding: 7px 11px 6px;
-      font-size: 0.8rem;
-    }
-  }
-
-  @include media800px {
-    grid-template-columns: minmax(0, 1fr) auto;
-
-    .adm-sus__horas {
-      grid-column: 1 / -1;
-      grid-row: 2;
+      border-color: var(--marron);
     }
 
-    .adm-sus__botones {
-      grid-column: 1 / -1;
+    &.is-activo {
+      background: var(--marron);
+      color: $white;
+      border-color: var(--marron);
     }
   }
 }
 
-.adm-scroll {
-  overflow-x: auto;
-}
-
-.adm-cuota-form {
-  background: $suave;
-  border: 1px solid $borde;
-  padding: 12px;
-  margin: 6px 0 4px;
-}
-
-.adm-mini {
-  padding: 5px 9px 4px !important;
-  font-size: 0.78rem !important;
-}
-
-// En el móvil, cada cuota es una tarjeta (periodo e importe arriba, estado y botones debajo)
-.adm-tabla--cuotas {
-  @include media600px {
-    thead {
-      display: none;
-    }
-
-    tr {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 4px 12px;
-      border-top: 1px solid $borde;
-      padding: 10px 0;
-    }
-
-    td {
-      border-top: none !important;
-      padding: 0 !important;
-    }
-
-    td:nth-child(3),
-    td:nth-child(4),
-    td[colspan] {
-      grid-column: 1 / -1;
-    }
-
-    td:nth-child(4) > div {
-      justify-content: flex-start !important;
-    }
-  }
-}
-
-// ---------- Compartido con Finanzas ----------
-
-$gris-texto: #76675a;
-$c-ingresos: #8a4a1e;
-$c-gastos: #b9822f;
-$c-malo: #a33b2b;
+// ---------- Tabla sencilla (Movimientos → Categorías) ----------
 
 .num {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.adm-solo-lector {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+.adm-scroll {
+  overflow-x: auto;
 }
 
-// Selector de periodo (Inicio y Finanzas)
-.adm-periodo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 16px;
-  margin: 4px 0 6px;
+.adm-tabla {
+  width: 100%;
+  font-size: 0.9rem;
 
-  .adm-segmento {
-    margin-bottom: 0;
+  th {
+    text-align: left;
+    color: var(--texto-3);
+    font-weight: 500;
+    font-size: 0.78rem;
+    padding: 0 8px 8px 0;
   }
 
-  @include media600px {
-    .adm-segmento {
-      width: 100%;
-
-      button {
-        flex: 1;
-      }
-    }
+  td {
+    padding: 8px 8px 8px 0;
+    border-top: 1px solid var(--linea);
+    vertical-align: top;
   }
-}
 
-.adm-periodo__nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  strong {
+  // Filas con su etiqueta en <th scope="row">: como una celda normal
+  tbody th {
+    font-size: inherit;
+    color: inherit;
     font-weight: 400;
-    font-size: 1.05rem;
-    min-width: 170px;
-    text-align: center;
+    padding: 8px 8px 8px 0;
+    border-top: 1px solid var(--linea);
+    vertical-align: top;
   }
 
-  .adm-enlace,
-  .adm-chip {
-    margin-left: 6px;
-  }
-}
-
-.adm-periodo__flecha {
-  display: inline-grid;
-  place-items: center;
-  width: 40px;
-  height: 36px;
-  border: 1px solid $borde;
-  background: $white;
-  font-size: 1.2rem;
-
-  &:hover:not(.is-off) {
-    border-color: $brown;
+  tr.is-total th,
+  tr.is-total td {
+    font-weight: 500;
+    border-top: 1px solid var(--marron);
   }
 
-  &.is-off {
-    opacity: 0.35;
+  tr.is-apagado td {
+    color: var(--texto-3);
   }
 }
 
 .adm-fig__h3 {
   font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: $gris-texto;
-  font-weight: 400;
+  letter-spacing: 0.3px;
+  color: var(--texto-3);
+  font-weight: 500;
   margin: 14px 0 8px;
 }
 
-.adm-tabla--num td.num {
-  text-align: right;
-}
-
-// ---------- Inicio (dashboard) ----------
-// La portada del panel lleva su propio diseño, de app: tarjetas blancas redondeadas, cifras
-// grandes y pocos colores. Todo cuelga de .adm-inicio (la raíz del Panel en esa página), así
-// el resto del panel no cambia. Se escribe para el móvil primero.
-
-$i-tinta: #1e1915;
-$i-tinta-2: #625950;
-$i-apagado: #736a61; // texto pequeño en gris: llega a 4,5:1 sobre el blanco y el fondo
-$i-borde: #ebe6e0;
-$i-rejilla: #efebe6;
-$i-base: #d9d2ca;
-$i-lavado: #f7f4f1;
-$i-pista: #efeae4;
-$i-neutro-fondo: #f3efea;
-$i-gastos: #9c8f83;
-$i-reservado: #c4b5a6; // devoluciones: marrón claro
-$i-bien: #1f7a3a;
-$i-bien-fondo: #e8f4ec;
-$i-mal: #b3412e;
-$i-mal-fondo: #fbece8;
-$i-aviso: #94600f;
-$i-aviso-fondo: #fbf2df;
-$i-sombra: 0 1px 2px rgba(45, 32, 20, 0.04), 0 6px 20px rgba(45, 32, 20, 0.05);
-
-.adm-inicio {
-  // El armazón (Panel) pone ya el ancho, los márgenes y la cabecera de la pantalla
-
-  .adm-inicio__sub {
-    grid-area: sub;
-    margin-top: 2px;
-    font-size: 13px;
-    color: $i-apagado;
-
-    button {
-      text-decoration: underline;
-    }
-  }
-
-  .adm-inicio__hora {
-    display: none;
-
-    @media (min-width: 900px) {
-      display: inline;
-    }
-  }
-
-  .adm-inicio__ojo {
-    grid-area: ojo;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 36px;
-    padding: 0 12px;
-    border: 1px solid $i-borde;
-    border-radius: 999px;
-    background: $white;
-    font-size: 14px;
-    color: $i-tinta-2;
-    white-space: nowrap;
-
-    &:hover {
-      color: $i-tinta;
-      border-color: $i-base;
-    }
-
-    .adm-inicio__ico {
-      width: 16px;
-      height: 16px;
-    }
-  }
-
-  // Selector de periodo: Mes / Año en pastilla (el elegido en marrón) y las flechas redondas
-  .adm-periodo {
-    gap: 8px 12px;
-
-    .adm-segmento {
-      width: auto;
-      display: flex;
-      flex: none;
-      border: 0;
-      border-radius: 999px;
-      padding: 3px;
-      background: $i-borde;
-
-      button {
-        flex: none;
-        display: inline-flex;
-        align-items: center;
-        height: 32px;
-        padding: 0 14px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 400;
-        color: $i-tinta-2;
-        background: none;
-
-        & + button {
-          border-left: 0;
-        }
-
-        &.is-activo {
-          background: $brown;
-          color: $white;
-          font-weight: 600;
-        }
-      }
-    }
-  }
-
-  .adm-periodo__nav {
-    flex-wrap: wrap;
-    gap: 6px 8px;
-    min-width: 0;
-
-    strong {
-      min-width: 0;
-      font-size: 14px;
-      font-weight: 600;
-      white-space: nowrap;
-      color: $i-tinta;
-    }
-
-    .adm-enlace,
-    .adm-chip {
-      margin-left: 2px;
-    }
-
-    .adm-enlace {
-      font-size: 14px;
-      font-weight: 400;
-      color: $i-tinta-2;
-    }
-
-    @media (min-width: 600px) {
-      strong {
-        min-width: 128px;
-      }
-    }
-  }
-
-  .adm-periodo__flecha {
-    width: 32px;
-    height: 32px;
-    border-color: $i-borde;
-    border-radius: 999px;
-    font-size: 18px;
-    line-height: 1;
-    color: $i-tinta-2;
-
-    &:hover:not(.is-off) {
-      border-color: $i-base;
-      background: $i-lavado;
-    }
-  }
-
-  // Chips del panel (estado de reservas y cuotas), en pastilla y sin mayúsculas
-  .adm-chip {
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.4;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
-  .adm-chip--ok {
-    background: $i-bien-fondo;
-    color: $i-bien;
-  }
-
-  .adm-chip--aviso {
-    background: $i-aviso-fondo;
-    color: $i-aviso;
-  }
-
-  .adm-chip--error {
-    background: $i-mal-fondo;
-    color: $i-mal;
-  }
-
-  .adm-chip--gris {
-    background: $i-neutro-fondo;
-    color: $i-tinta-2;
-  }
-
-  // ---------- Rejilla y tarjetas ----------
-
-  .adm-inicio__contenido {
-    transition: opacity 0.15s;
-
-    &.is-cargando {
-      opacity: 0.5;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      transition: none;
-    }
-  }
-
-  // En el móvil, una columna detrás de otra; en el ordenador, el dinero a la izquierda
-  .adm-inicio__rejilla {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    @media (min-width: 900px) {
-      display: grid;
-      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-      gap: 20px;
-      align-items: start;
-    }
-  }
-
-  .adm-inicio__col {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-width: 0;
-
-    @media (min-width: 900px) {
-      gap: 20px;
-    }
-  }
-
-  .adm-inicio__tarjeta {
-    background: $white;
-    border: 1px solid $i-borde;
-    border-radius: 16px;
-    box-shadow: $i-sombra;
-    padding: 16px;
-    min-width: 0;
-
-    h2 {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      line-height: 1.3;
-
-      small {
-        font-size: 14px;
-        font-weight: 400;
-        color: $i-apagado;
-      }
-    }
-
-    @media (min-width: 600px) {
-      padding: 24px;
-    }
-  }
-
-  .adm-inicio__cab {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .adm-inicio__ayuda {
-    margin-top: 4px;
-    font-size: 14px;
-    color: $i-tinta-2;
-  }
-
-  .adm-inicio__nota {
-    margin-top: 10px;
-    font-size: 13px;
-    color: $i-apagado;
-  }
-
-  .adm-inicio__vacio {
-    padding: 4px 0;
-    font-size: 14px;
-    color: $i-tinta-2;
-  }
-
-  .adm-inicio__enlace {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    font-size: 14px;
-    color: $i-tinta-2;
-    white-space: nowrap;
-
-    &:hover {
-      color: $i-tinta;
-    }
-
-    .adm-inicio__ico {
-      width: 16px;
-      height: 16px;
-    }
-  }
-
-  .adm-inicio__mas {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    margin-top: 12px;
-    font-size: 14px;
-    color: $i-tinta-2;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-
-    &:hover {
-      color: $i-tinta;
-    }
-
-    .adm-inicio__ico {
-      width: 14px;
-      height: 14px;
-    }
-  }
-
-  .adm-inicio__ico {
-    width: 18px;
-    height: 18px;
-    flex: none;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .adm-inicio__etq {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: $i-tinta-2;
-  }
-
-  .adm-inicio__muestra {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-    flex: none;
-    background: $brown;
-
-    &.es-gas {
-      background: $i-gastos;
-    }
-  }
-
-  // Barra horizontal: pista clara y una o dos partes
-  .adm-inicio__medidor {
-    display: flex;
-    height: 8px;
-    border-radius: 999px;
-    background: $i-pista;
-    overflow: hidden;
-
-    i {
-      display: block;
-      flex: none;
-      height: 100%;
-      background: $brown;
-
-      &:only-child {
-        border-radius: 999px;
-      }
-
-      &.es-cero {
-        display: none;
-      }
-    }
-
-    .es-gas {
-      background: $i-gastos;
-    }
-
-    .es-resta {
-      background: $i-reservado;
-    }
-  }
-
-  // ---------- Beneficio ----------
-
-  .adm-inicio__heroe-cab {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 6px 8px;
-  }
-
-  .adm-inicio__pastilla {
-    padding: 3px 8px;
-    border-radius: 999px;
-    background: $i-neutro-fondo;
-    font-size: 12px;
-    color: $i-tinta-2;
-    white-space: nowrap;
-  }
-
-  .adm-inicio__cifra {
-    display: block;
-    margin: 10px 0 14px;
-    font-size: 44px;
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
-    font-variant-numeric: tabular-nums;
-
-    &.es-neg {
-      color: $i-mal;
-    }
-
-    @media (min-width: 600px) {
-      font-size: 56px;
-    }
-  }
-
-  // La frase que explica una barra, justo debajo
-  .adm-inicio__medidor + .adm-inicio__ayuda {
-    margin-top: 8px;
-  }
-
-  .adm-inicio__pares {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid $i-borde;
-  }
-
-  .adm-inicio__par {
-    min-width: 0;
-  }
-
-  .adm-inicio__par + .adm-inicio__par {
-    padding-left: 16px;
-    border-left: 1px solid $i-borde;
-  }
-
-  .adm-inicio__par-v {
-    display: block;
-    margin: 2px 0 6px;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    font-variant-numeric: tabular-nums;
-
-    @media (min-width: 600px) {
-      font-size: 28px;
-    }
-  }
-
-  .adm-inicio__delta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 6px;
-    font-size: 13px;
-    color: $i-apagado;
-  }
-
-  // Diferencia con el periodo comparado: flecha y cifra (verde, roja o neutra)
-  .adm-inicio__var {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    padding: 1px 8px 1px 6px;
-    border-radius: 999px;
-    background: $i-neutro-fondo;
-    color: $i-tinta-2;
-    font-weight: 600;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-
-    .adm-inicio__ico {
-      width: 12px;
-      height: 12px;
-      stroke-width: 2.5;
-    }
-
-    &.es-bien {
-      background: $i-bien-fondo;
-      color: $i-bien;
-    }
-
-    &.es-mal {
-      background: $i-mal-fondo;
-      color: $i-mal;
-    }
-  }
-
-  // ---------- Ingresos y gastos por mes ----------
-
-  // Las cifras del mes tocado (o el elegido), encima de la gráfica
-  .adm-inicio__lectura {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px 8px;
-    margin-bottom: 12px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: $i-lavado;
-
-    .adm-inicio__etq {
-      font-size: 13px;
-    }
-
-    strong {
-      display: block;
-      font-size: 17px;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-
-      &.es-neg {
-        color: $i-mal;
-      }
-
-      &.es-pos {
-        color: $i-bien;
-      }
-    }
-  }
-
-  .adm-inicio__lectura-mes {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: $i-tinta-2;
-
-    .adm-inicio__enlace {
-      font-size: 13px;
-      font-weight: 400;
-    }
-  }
-
-  .adm-inicio__lectura-aviso {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: $i-aviso;
-
-    a {
-      text-decoration: underline;
-    }
-
-    .adm-inicio__ico {
-      width: 14px;
-      height: 14px;
-    }
-  }
-
-  // Barras por parejas. La altura sale de CSS: valor ÷ tope × alto. En el móvil solo se ven
-  // los últimos 6 meses, con su propio tope (--tope-movil) y sus etiquetas del eje.
-  .adm-inicio__grafica {
-    --alto: 172px;
-    --tope: var(--tope-ancho);
-    display: grid;
-    grid-template-columns: 52px minmax(0, 1fr);
-    padding-top: 10px;
-
-    @media (max-width: 599px) {
-      --tope: var(--tope-movil);
-    }
-  }
-
-  .adm-inicio__eje {
-    position: relative;
-    height: var(--alto);
-
-    span {
-      position: absolute;
-      right: 8px;
-      top: calc((1 - var(--f)) * var(--alto));
-      transform: translateY(-50%);
-      font-size: 12px;
-      color: $i-apagado;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
-
-    b {
-      font-weight: 400;
-    }
-
-    .es-movil {
-      display: none;
-    }
-
-    @media (max-width: 599px) {
-      .es-ancho {
-        display: none;
-      }
-
-      .es-movil {
-        display: inline;
-      }
-    }
-  }
-
-  .adm-inicio__lienzo {
-    position: relative;
-    display: flex;
-    min-width: 0;
-  }
-
-  .adm-inicio__rej {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc((1 - var(--f)) * var(--alto));
-    border-top: 1px solid $i-rejilla;
-
-    &.es-base {
-      border-top-color: $i-base;
-    }
-  }
-
-  // Cada mes es un botón (ratón, teclado o dedo); va por encima de las líneas del eje
-  .adm-inicio__mes {
-    position: relative;
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 0 2px 6px;
-    border-radius: 10px;
-    cursor: pointer;
-
-    &:hover {
-      background: rgba($brown, 0.04);
-    }
-
-    &.is-sel {
-      background: rgba($brown, 0.07);
-    }
-
-    @media (max-width: 599px) {
-      &.es-antiguo {
-        display: none;
-      }
-    }
-  }
-
-  .adm-inicio__barras {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 4px;
-    height: var(--alto);
-
-    i {
-      display: block;
-      width: clamp(6px, 30%, 24px);
-      height: calc(var(--alto) * var(--v) / var(--tope));
-      min-height: 2px;
-      border-radius: 6px 6px 0 0;
-      background: $brown;
-
-      &.es-gas {
-        background: $i-gastos;
-      }
-
-      &.es-cero {
-        min-height: 0;
-      }
-    }
-  }
-
-  // El mes en curso, aún sin cerrar: relleno claro y borde de puntos
-  .adm-inicio__mes.es-curso .adm-inicio__barras i {
-    border: 1.5px dashed $brown;
-    border-bottom: 0;
-    background: rgba($brown, 0.16);
-
-    &.es-gas {
-      border-color: $i-gastos;
-      background: rgba($i-gastos, 0.16);
-    }
-
-    &.es-cero {
-      border: 0;
-    }
-  }
-
-  // En columna flexible, la etiqueta queda centrada bajo sus barras aunque no quepa (con
-  // text-align se pegaba a la izquierda y se metía en el mes de al lado)
-  .adm-inicio__mes-etq {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 8px;
-    font-size: 12px;
-    line-height: 1.2;
-    text-align: center;
-    white-space: nowrap;
-    color: $i-apagado;
-
-    small {
-      font-size: 11px;
-      white-space: normal; // «en curso» pasa a dos líneas si el mes es estrecho
-    }
-
-    // Dos columnas, pero aún estrechas: 12 meses de unos 33–45 px
-    @media (min-width: 900px) and (max-width: 1139px) {
-      font-size: 11px;
-    }
-  }
-
-  // La frase de encima de la gráfica: en el móvil habla solo de los meses que se ven
-  .adm-inicio__ayuda {
-    .es-movil {
-      display: none;
-    }
-
-    @media (max-width: 599px) {
-      .es-ancho {
-        display: none;
-      }
-
-      .es-movil {
-        display: inline;
-      }
-    }
-  }
-
-  .adm-inicio__mes.is-sel .adm-inicio__mes-etq {
-    font-weight: 600;
-    color: $i-tinta;
-
-    small {
-      font-weight: 400;
-      color: $i-tinta-2;
-    }
-  }
-
-  // ---------- Detalle: entra y sale ----------
-
-  .adm-inicio__bloques {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-
-    @media (min-width: 600px) {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 32px;
-    }
-  }
-
-  .adm-inicio__bloque-cab {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+// ---------- Formularios de gasto, ingreso y gasto fijo (components/admin/Finanzas.jsx) ----------
+
+.adm-fin-form {
+  h2 {
+    font-size: 1rem;
+    font-weight: 500;
     margin-bottom: 10px;
-    font-size: 14px;
-    color: $i-tinta-2;
-
-    strong {
-      font-size: 15px;
-      font-weight: 600;
-      color: $i-tinta;
-      font-variant-numeric: tabular-nums;
-    }
   }
 
-  .adm-inicio__barras-h {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-
-    .adm-inicio__medidor i {
-      min-width: 8px;
-    }
-  }
-
-  .adm-inicio__barra-fila {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 6px;
-    font-size: 14px;
-
-    &:hover .adm-inicio__barra-nombre {
-      text-decoration: underline;
-    }
-  }
-
-  .adm-inicio__barra-nombre {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    em {
-      font-style: normal;
-      color: $i-apagado;
-    }
-  }
-
-  .adm-inicio__barra-v {
-    font-weight: 600;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
-  // ---------- Filas tipo app (Para hacer, Hoy, Próximos pagos) ----------
-
-  .adm-inicio__filas {
-    margin: 0 -8px;
-    container-type: inline-size;
-
-    .es-separada {
-      position: relative;
-      margin-top: 4px;
-      padding-top: 4px;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 8px;
-        right: 8px;
-        border-top: 1px solid $i-borde;
-      }
-    }
-  }
-
-  .adm-inicio__fila {
-    display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) auto;
-    gap: 12px;
-    align-items: center;
-    padding: 8px;
-    border-radius: 12px;
-
-    // Reserva de hoy ya hecha: el título en gris (el «· hecha» de debajo ya lo dice)
-    &.es-apagada .adm-inicio__fila-titulo {
-      color: $i-tinta-2;
-    }
-  }
-
-  // Lista estrecha (móvil, o la columna de la derecha en pantallas medianas): el chip baja
-  // debajo del texto en vez de apretarlo
-  @container (max-width: 340px) {
-    .adm-inicio__fila:has(.adm-chip) {
-      grid-template-columns: 36px minmax(0, 1fr);
-      row-gap: 4px;
-
-      .adm-inicio__fila-ico {
-        grid-row: span 2;
-        align-self: start;
-      }
-
-      .adm-inicio__fila-fin {
-        grid-column: 2;
-        justify-self: start;
-      }
-    }
-  }
-
-  a.adm-inicio__fila:hover {
-    background: $i-lavado;
-  }
-
-  .adm-inicio__fila-ico {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: $i-neutro-fondo;
-    color: $brown;
-
-    &.es-error {
-      background: $i-mal-fondo;
-      color: $i-mal;
-    }
-
-    &.es-aviso {
-      background: $i-aviso-fondo;
-      color: $i-aviso;
-    }
-
-    &.es-info {
-      color: $i-tinta-2;
-    }
-  }
-
-  .adm-inicio__fila-texto {
-    min-width: 0;
-  }
-
-  .adm-inicio__fila-titulo {
-    display: block;
-    font-size: 15px;
-    overflow-wrap: anywhere;
-  }
-
-  // «18:30 – 22:00» siempre en una línea
-  .adm-inicio__franja {
-    white-space: nowrap;
-  }
-
-  .adm-inicio__fila-sub {
-    display: block;
-    margin-top: 1px;
-    font-size: 13px;
-    color: $i-tinta-2;
-
-    &.es-error {
-      color: $i-mal;
-    }
-
-    &.es-aviso {
-      color: $i-aviso;
-    }
-  }
-
-  .adm-inicio__fila-fin {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: $i-apagado;
-  }
-
-  .adm-inicio__fila-mas {
-    padding: 2px 8px 4px 56px;
-    font-size: 14px;
-    color: $i-tinta-2;
-
-    a {
-      text-decoration: underline;
-    }
-  }
-
-  .adm-inicio__importe {
-    font-weight: 600;
-    color: $i-tinta;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
-  // Fecha en una tarjetita de calendario
-  .adm-inicio__dia {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 40px;
-    border-radius: 10px;
-    background: $i-neutro-fondo;
-    line-height: 1.05;
-
-    b {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    i {
-      font-size: 11px;
-      font-style: normal;
-      color: $i-tinta-2;
-    }
-  }
-
-  .adm-inicio__contador {
-    padding: 1px 8px;
-    border-radius: 999px;
-    background: $i-neutro-fondo;
-    font-size: 12px;
-    font-weight: 600;
-    color: $i-tinta-2;
-
-    &.es-error {
-      background: $i-mal-fondo;
-      color: $i-mal;
-    }
-
-    &.es-aviso {
-      background: $i-aviso-fondo;
-      color: $i-aviso;
-    }
-  }
-
-  .adm-inicio__mas-tareas > summary {
-    margin: 4px 0 0;
-    padding: 4px 8px;
-    font-size: 14px;
-    font-weight: 400;
-    color: $i-tinta-2;
-  }
-
-  // ---------- Ocupación ----------
-
-  .adm-inicio__ocup-cab {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
+  .ui-conmutador {
     margin-bottom: 10px;
-
-    strong {
-      flex: none; // «12 %» no se parte: se estrecha el título
-      font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -0.015em;
-      line-height: 1;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
   }
-}
-
-// ---------- Finanzas ----------
-
-.adm-fin-submenu {
-  flex-wrap: wrap;
-}
-
-.adm-importe-negativo {
-  color: $c-malo !important;
-}
-
-.adm-tabla tr.is-total th,
-.adm-tabla tr.is-total td {
-  font-weight: 400;
-  border-top: 1px solid $brown;
-}
-
-.adm-tabla tr.is-apagado td {
-  color: $gris-texto;
-}
-
-.adm-tabla--mov {
-  @include media600px {
-    thead {
-      display: none;
-    }
-
-    tr {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 2px 10px;
-      border-top: 1px solid $borde;
-      padding: 9px 0;
-    }
-
-    td {
-      border-top: none !important;
-      padding: 0 !important;
-    }
-
-    td:nth-child(1) {
-      grid-column: 1;
-      grid-row: 2;
-      font-size: 0.8rem;
-      color: $gris-texto;
-    }
-
-    td:nth-child(2) {
-      grid-column: 1;
-      grid-row: 1;
-    }
-
-    td:nth-child(3) {
-      grid-column: 2;
-      grid-row: 2;
-      font-size: 0.8rem;
-      text-align: right;
-    }
-
-    td:nth-child(4) {
-      grid-column: 2;
-      grid-row: 1;
-    }
-  }
-}
-
-.adm-fin-form h2 {
-  margin-bottom: 10px;
 }
 
 .adm-fin-grupo {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 
   h3 {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: $gris-texto;
-    font-weight: 400;
+    font-size: 0.78rem;
+    color: var(--texto-3);
+    font-weight: 500;
     margin-bottom: 6px;
   }
 }
@@ -1961,21 +361,23 @@ $i-sombra: 0 1px 2px rgba(45, 32, 20, 0.04), 0 6px 20px rgba(45, 32, 20, 0.05);
   }
 
   button {
-    border: 1px solid $borde;
-    background: $white;
-    padding: 10px 8px;
+    border: 1px solid var(--linea-fuerte);
+    border-radius: var(--radio-s);
+    background: var(--superficie);
+    color: var(--texto);
+    padding: 10px;
     font-size: 0.86rem;
-    font-weight: 300;
     text-align: left;
     min-height: 44px;
+    cursor: pointer;
 
     &:hover {
-      border-color: $brown;
+      border-color: var(--marron);
     }
 
     &.is-activo {
-      background: $brown;
-      border-color: $brown;
+      background: var(--marron);
+      border-color: var(--marron);
       color: $white;
     }
   }
@@ -1990,15 +392,15 @@ $i-sombra: 0 1px 2px rgba(45, 32, 20, 0.04), 0 6px 20px rgba(45, 32, 20, 0.05);
 }
 
 .adm .adm-fin-importe {
-  font-size: 1.6rem !important;
-  font-weight: 300 !important;
+  font-size: 1.5rem !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums;
 }
 
 .adm-fin-etq {
   display: block;
   font-size: 0.82rem;
-  font-weight: 300;
-  color: $gris;
+  color: var(--texto-2);
   margin-bottom: 6px;
 }
 
@@ -2012,67 +414,18 @@ $i-sombra: 0 1px 2px rgba(45, 32, 20, 0.04), 0 6px 20px rgba(45, 32, 20, 0.05);
 
   legend {
     font-size: 0.82rem;
-    font-weight: 300;
-    color: $gris;
+    color: var(--texto-2);
     margin-bottom: 6px;
   }
 }
 
 .adm-fin-botones {
   @include media600px {
+    .ui-boton,
     .adm-boton {
       width: 100%;
     }
   }
-}
-
-.adm-chip--boton {
-  border: none;
-  cursor: pointer;
-
-  &:hover {
-    background: $beige;
-  }
-}
-
-.adm-fila--gasto {
-  grid-template-columns: 70px minmax(0, 1fr) auto auto;
-
-  &.is-anulado {
-    opacity: 0.55;
-  }
-
-  @include media600px {
-    grid-template-columns: 60px minmax(0, 1fr);
-  }
-}
-
-.adm-fila__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.adm-fijo {
-  grid-template-columns: minmax(0, 1fr) auto;
-  margin-bottom: 0;
-
-  &.is-terminado {
-    opacity: 0.75;
-  }
-
-  .adm-sus__quien small {
-    display: block;
-  }
-
-  @include media800px {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.adm-fijo__form {
-  grid-column: 1 / -1;
 }
 
 .adm-fin-mes {
@@ -2080,30 +433,35 @@ $i-sombra: 0 1px 2px rgba(45, 32, 20, 0.04), 0 6px 20px rgba(45, 32, 20, 0.05);
   flex-direction: column;
   gap: 5px;
   font-size: 0.82rem;
-  font-weight: 300;
-  color: $gris;
+  color: var(--texto-2);
   max-width: 280px;
 }
 
-.adm-form label small {
-  font-size: 0.76rem;
-  color: $gris-texto;
-  line-height: 1.4;
-}
+// ---------- Entrada al panel ----------
 
-// Filas de tabla con su etiqueta en <th scope="row">: como una celda normal
-.adm-tabla tbody th {
-  text-transform: none;
-  font-size: inherit;
-  color: inherit;
-  font-weight: 300;
-  letter-spacing: 0;
-  padding: 8px 8px 8px 0;
-  border-top: 1px solid $borde;
-  text-align: left;
-  vertical-align: top;
-}
+.adm-login {
+  max-width: 360px;
+  margin: 14vh auto;
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 28px;
 
-.adm-tabla--num th:not(:first-child) {
-  text-align: right;
+  .adm-login__logo {
+    height: 30px;
+    width: auto;
+    display: block;
+    margin-bottom: 22px;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+
+  form {
+    display: grid;
+    gap: 12px;
+  }
 }

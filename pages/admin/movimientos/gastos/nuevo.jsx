@@ -1,5 +1,5 @@
 // Apuntar un gasto
-import Link from 'next/link'
+import { Boton } from '../../../../components/admin/ui'
 import Panel from '../../../../components/admin/Panel'
 import { FormularioGasto } from '../../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../../lib/admin/auth'
@@ -8,7 +8,7 @@ import { fechaMadrid } from '../../../../lib/reservas/tiempo'
 
 export default function NuevoGasto({ datos, hoy, volver, categoria }) {
   return (
-    <Panel titulo="Apuntar gasto" acciones={<Link href={volver} className="adm-boton adm-boton--claro">Cancelar</Link>}>
+    <Panel titulo="Añadir gasto" acciones={<Boton variante="secundario" href={volver}>Cancelar</Boton>}>
       <FormularioGasto datos={datos} hoy={hoy} volver={volver} categoriaInicial={categoria} />
     </Panel>
   )

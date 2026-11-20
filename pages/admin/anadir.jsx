@@ -50,7 +50,7 @@ export async function getServerSideProps(ctx) {
     const c = Number(q.categoria)
     if (datosGasto.categorias.some((x) => x.id === c)) inicial.categoriaId = c
   }
-  const ok = typeof q.ok === 'string' && /^gasto:\d+$/.test(q.ok) ? q.ok : null
+  const ok = typeof q.ok === 'string' && /^(gasto|ingreso):\d+$/.test(q.ok) ? q.ok : null
 
   return {
     props: JSON.parse(JSON.stringify({

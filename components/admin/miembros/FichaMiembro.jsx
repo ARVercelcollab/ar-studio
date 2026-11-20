@@ -46,7 +46,7 @@ export default function FichaMiembro(p) {
           </div>
           <div className="mb-cab__acciones">
             <Contacto telefono={sus.telefono} email={sus.email} nombre={sus.nombre} conCorreo />
-            {estado !== 'finalizada' && <Boton href={`/admin/nueva?suscripcion=${sus.id}`} icono="mas">Reservar sesión</Boton>}
+            {estado !== 'finalizada' && <Boton href={`/admin/anadir?tipo=reserva&suscripcion=${sus.id}`} icono="mas">Reservar sesión</Boton>}
           </div>
         </div>
       </div>

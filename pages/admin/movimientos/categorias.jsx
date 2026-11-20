@@ -1,6 +1,6 @@
 // Categorías de los gastos: nombre, grupo, cómo suele ser la factura, IVA, retención y aviso si falta
-import Link from 'next/link'
 import { useState } from 'react'
+import { Boton } from '../../../components/admin/ui'
 import Panel from '../../../components/admin/Panel'
 import { useAccion, Mensaje } from '../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
@@ -61,7 +61,7 @@ function Categorias({ categorias }) {
 
 export default function PaginaCategorias({ categorias }) {
   return (
-    <Panel titulo="Categorías de gastos" sub="Cómo se agrupan los gastos en Movimientos y en Mes a mes." acciones={<Link href="/admin/movimientos" className="adm-boton adm-boton--claro">← Movimientos</Link>}>
+    <Panel titulo="Categorías de gastos" sub="Cómo se agrupan los gastos en Movimientos y en Mes a mes." acciones={<Boton variante="secundario" href="/admin/movimientos" icono="izq">Movimientos</Boton>}>
       <Categorias categorias={categorias} />
     </Panel>
   )

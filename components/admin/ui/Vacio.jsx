@@ -18,8 +18,8 @@ export default function Vacio({ texto, icono = 'info', tono, accion, compacto = 
 
 // Aviso en caja (ámbar «Es una cuenta orientativa», rojo «No puede usar el estudio», azul informativo)
 //   <Aviso tono="aviso" titulo="Es una cuenta orientativa.">Sirve para saber cuánto apartar…</Aviso>
-export function Aviso({ tono = 'aviso', titulo, children, className = '' }) {
-  const icono = tono === 'mal' ? 'aviso' : tono === 'info' ? 'info' : 'aviso'
+export function Aviso({ tono = 'aviso', titulo, children, className = '', icono: iconoPedido }) {
+  const icono = iconoPedido || (tono === 'mal' ? 'aviso' : tono === 'info' ? 'info' : 'aviso')
   return (
     <div className={`ui-aviso ui-aviso--${tono}${className ? ` ${className}` : ''}`} role={tono === 'mal' ? 'alert' : undefined}>
       <Icono nombre={icono} />

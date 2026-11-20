@@ -2,7 +2,7 @@
 import { useRouter } from 'next/router'
 import { useEffect, useMemo, useState } from 'react'
 import Panel from '../Panel'
-import { Conmutador, Icono } from '../ui'
+import { Conmutador, Icono, Aviso } from '../ui'
 import { FormularioGasto, FormularioIngreso } from '../Finanzas'
 import Chat from './Chat'
 import FormReserva from './FormReserva'
@@ -31,12 +31,15 @@ export default function PantallaAnadir({ hoy, miembros, datosGasto, reservasIngr
   const [form, setForm] = useState({ pestana: entrada.tipo || 'reserva', inicial: entrada.inicial, vez: 0 })
   const [anadidos, anadir] = useAnadidos()
 
-  // Al volver de guardar un gasto (?ok=gasto:ID), sale en «Añadido desde el panel»
+  // Al volver de guardar un gasto o un ingreso (?ok=gasto:ID / ingreso:ID), sale en «Añadido desde el panel»
+  const [avisoOk, setAvisoOk] = useState(null)
   useEffect(() => {
     if (!entrada.ok) return
     const [que, id] = entrada.ok.split(':')
-    if (que === 'gasto' && id) anadir({ texto: 'Gasto apuntado', enlace: `/admin/movimientos/gastos/${id}` })
-    router.replace({ pathname: '/admin/anadir', query: { tipo: 'gasto' } }, undefined, { shallow: true, scroll: false })
+    if (que === 'gasto' && id) anadir({ texto: 'Gasto añadido', enlace: `/admin/movimientos/gastos/${id}` })
+    if (que === 'ingreso' && id) anadir({ texto: 'Ingreso añadido', enlace: `/admin/movimientos/ingresos/${id}` })
+    setAvisoOk(que === 'ingreso' ? 'Ingreso añadido. Sale en Movimientos.' : 'Gasto añadido. Sale en Movimientos.')
+    router.replace({ pathname: '/admin/anadir', query: { tipo: que === 'ingreso' ? 'ingreso' : 'gasto' } }, undefined, { shallow: true, scroll: false })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const contexto = useMemo(() => ({
@@ -71,6 +74,7 @@ export default function PantallaAnadir({ hoy, miembros, datosGasto, reservasIngr
     >
       <div className="adm-anadir__rejilla">
         <div className="adm-anadir__principal">
+          {avisoOk && <Aviso tono="marron" icono="ok" titulo={avisoOk} />}
           {vista === 'escribirlo' ? (
             <Chat contexto={contexto} mes={mes} facturas={facturas} onAnadido={anadir} onCorregir={corregir} />
           ) : (
@@ -131,7 +135,7 @@ export default function PantallaAnadir({ hoy, miembros, datosGasto, reservasIngr
 function Formulario({ pestana, inicial, hoy, miembros, datosGasto, reservasIngreso, cuotas, facturas, onAnadido }) {
   if (pestana === 'reserva') return <FormReserva miembros={miembros} hoy={hoy} inicial={inicial} onAnadido={onAnadido} />
   if (pestana === 'gasto') return <div className="adm-anadir__legado"><FormularioGasto datos={datosGasto} hoy={hoy} volver="/admin/anadir?tipo=gasto" inicial={inicialGasto(inicial, datosGasto, hoy)} categoriaInicial={inicial.categoriaId || null} /></div>
-  if (pestana === 'ingreso') return <div className="adm-anadir__legado"><FormularioIngreso hoy={hoy} reservas={reservasIngreso} inicial={inicialIngreso(inicial, hoy)} /></div>
+  if (pestana === 'ingreso') return <div className="adm-anadir__legado"><FormularioIngreso hoy={hoy} reservas={reservasIngreso} inicial={inicialIngreso(inicial, hoy)} volver="/admin/anadir?tipo=ingreso" /></div>
   if (pestana === 'cuota') return <FormCuota cuotas={cuotas} hoy={hoy} facturas={facturas} inicial={inicial} onAnadido={onAnadido} />
   return <FormBloqueo inicial={inicial} onAnadido={onAnadido} />
 }

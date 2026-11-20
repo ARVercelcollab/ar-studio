@@ -239,7 +239,7 @@ export function Sesiones({ sesionesActual, otras, estado, susId }) {
     <Tarjeta
       titulo="Sesiones"
       nota="Las de este mes"
-      acciones={estado !== 'finalizada' ? <Boton variante="secundario" tam="peq" icono="mas" href={`/admin/nueva?suscripcion=${susId}`}>Reservar sesión</Boton> : null}
+      acciones={estado !== 'finalizada' ? <Boton variante="secundario" tam="peq" icono="mas" href={`/admin/anadir?tipo=reserva&suscripcion=${susId}`}>Reservar sesión</Boton> : null}
       className="mb-bloque"
     >
       {sesionesActual.length === 0 ? <p className="ui-t3">No tiene sesiones este mes.</p> : <ul className="mb-sesiones">{sesionesActual.map(fila)}</ul>}

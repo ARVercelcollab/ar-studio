@@ -1,33 +1,13 @@
-// Piezas de las páginas de Finanzas: submenú, selector de mes, avisos y formularios
+// Piezas compartidas del dinero: selector de mes, acciones con mensaje y formularios de gasto, ingreso y gasto fijo
+// (los usan Movimientos, Añadir y Ajustes → Gastos fijos)
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useMemo, useState } from 'react'
-import { Chip, Segmento } from './Panel'
+import { Boton, Conmutador, Etiqueta } from './ui'
 import { pedirJson } from '../../lib/reservas/navegador'
 import { euros, leerImporte, desgloseGasto, textoMes, sumarMesesMes, costeGasto } from '../../lib/finanzas/calculos'
 import { GRUPOS, TIPOS_FACTURA, TIPOS_FACTURA_CORTO, RETENCIONES, METODOS_GASTO, METODOS_INGRESO, TIPOS_INGRESO, CADA_MESES } from '../../lib/finanzas/config'
 import { desglose } from '../../lib/facturas/iva'
-
-// Las pantallas del dinero (las de Ajustes que aún lo usan enlazan aquí también)
-const PESTANAS = [
-  ['/admin/movimientos', 'Movimientos'],
-  ['/admin/mes-a-mes', 'Mes a mes'],
-  ['/admin/impuestos', 'Impuestos'],
-  ['/admin/ajustes/fijos', 'Gastos fijos'],
-]
-
-export function SubmenuFinanzas({ p }) {
-  const { pathname } = useRouter()
-  return (
-    <nav className="adm-filtros adm-fin-submenu" aria-label="Finanzas">
-      {PESTANAS.map(([href, t]) => {
-        const activo = href === '/admin/movimientos' ? pathname === href || pathname.startsWith(`${href}/`) : pathname.startsWith(href)
-        const conP = p && href === '/admin/movimientos' ? `${href}?p=${p}` : href
-        return <Link key={href} href={conP} className={activo ? 'is-activo' : ''}>{t}</Link>
-      })}
-    </nav>
-  )
-}
 
 export function SelectorMes({ valor, onCambio, desde, hasta, extra = [] }) {
   const meses = []
@@ -38,11 +18,6 @@ export function SelectorMes({ valor, onCambio, desde, hasta, extra = [] }) {
       {meses.map((m) => <option key={m} value={m}>{textoMes(m)}</option>)}
     </select>
   )
-}
-
-export function MensajeOk({ texto }) {
-  if (!texto) return null
-  return <p className="adm-mensaje">{texto}</p>
 }
 
 export function useAccion() {
@@ -71,29 +46,6 @@ export function useAccion() {
 export function Mensaje({ estado }) {
   if (!estado.mensaje) return null
   return <p className={`adm-mensaje${estado.error ? ' is-error' : ''}`}>{estado.mensaje}</p>
-}
-
-// Recuadro «Para revisar»
-export function ParaRevisar({ avisos }) {
-  const [estado, ejecutar] = useAccion()
-  if (!avisos.length) return null
-  const fila = (a) => (
-    <li key={a.clave} className={a.urgente ? 'is-urgente' : ''}>
-      <span>{a.texto}</span>
-      <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        {a.boton && <button type="button" className="adm-boton adm-boton--claro adm-mini" disabled={estado.enviando} onClick={() => ejecutar('/api/admin/finanzas/avisos', { clave: a.clave })}>{a.boton}</button>}
-        {a.enlace && <Link href={a.enlace}>{a.textoEnlace}</Link>}
-      </span>
-    </li>
-  )
-  return (
-    <div className="adm-caja">
-      <h2>Para revisar</h2>
-      <ul className="adm-tareas">{avisos.slice(0, 8).map(fila)}</ul>
-      {avisos.length > 8 && <details><summary>y {avisos.length - 8} más</summary><ul className="adm-tareas">{avisos.slice(8).map(fila)}</ul></details>}
-      <Mensaje estado={estado} />
-    </div>
-  )
 }
 
 const ivaTexto = (v) => (v === 'mano' ? 'IVA a mano' : `IVA ${v} %`)
@@ -161,7 +113,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
       if (otro) {
         setF({ ...vacio(null), fecha: f.fecha })
         setClaveActual(`${clave}-${Date.now()}`)
-        setEstado({ enviando: false, error: null, ok: `Apuntado: ${r.concepto} · ${euros(r.totalCent, { decimales: true })}` })
+        setEstado({ enviando: false, error: null, ok: `Añadido: ${r.concepto} · ${euros(r.totalCent, { decimales: true })}` })
         return
       }
       const destino = volver.startsWith('/admin') ? volver : '/admin/movimientos'
@@ -172,12 +124,12 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
   }
 
   return (
-    <form className="adm-caja adm-fin-form" onSubmit={(e) => { e.preventDefault(); guardar(false) }}>
+    <form className="ui-tarjeta adm-fin-form" onSubmit={(e) => { e.preventDefault(); guardar(false) }}>
       {!fijo && <p className="adm-nota">No apuntes aquí el IVA ni el IRPF que pagáis a Hacienda, ni la cuota de autónomos: no son gastos del estudio.</p>}
       {fijo && <p className="adm-nota">Este cambio es solo para {textoMes(gasto.mes.slice(0, 7))}. Para cambiarlo todos los meses, ve a <Link href="/admin/ajustes/fijos" className="adm-enlace">Gastos fijos</Link>.</p>}
       <h2>¿Qué es?</h2>
       {fijo ? (
-        <p><Chip tipo="plan">{cat?.nombre}</Chip></p>
+        <p><Etiqueta tono="marron">{cat?.nombre}</Etiqueta></p>
       ) : (
         ['variable', 'material', 'fijo'].map((g) => {
           const cs = categorias.filter((c) => c.grupo === g && (c.activa || c.id === Number(f.categoriaId)))
@@ -197,20 +149,20 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
       {cat?.ayuda && <p className="adm-nota">{cat.ayuda}</p>}
 
       <h2 style={{ marginTop: 18 }}>¿Cuánto?</h2>
-      <Segmento opciones={[['pagado', 'Lo que has pagado'], ['base', 'Sin IVA (base)']]} valor={f.importeEs} onCambio={(v) => poner('importeEs', v)} />
+      <Conmutador etiqueta={'Importe'} opciones={([['pagado', 'Lo que has pagado'], ['base', 'Sin IVA (base)']]).map(([valor, texto]) => ({ valor, texto }))} valor={f.importeEs} onCambio={(v) => poner('importeEs', v)} />
       <div className="adm-form">
         <label className="adm-ancho">{f.importeEs === 'base' ? 'Importe sin IVA (€)' : 'Importe pagado (€)'}
           <input className="adm-fin-importe" inputMode="decimal" placeholder="0,00" value={f.importe} onChange={(e) => poner('importe', e.target.value)} required />
         </label>
-        {ultimo && <p className="adm-ancho"><button type="button" className="adm-chip adm-chip--gris adm-chip--boton" onClick={comoLaUltima}>Como la última vez: {euros(ultimo.totalCent, { decimales: true })}</button></p>}
+        {ultimo && <p className="adm-ancho"><button type="button" className="ui-boton ui-boton--secundario ui-boton--peq" onClick={comoLaUltima}>Como la última vez: {euros(ultimo.totalCent, { decimales: true })}</button></p>}
         <p className={`adm-ancho ${des && !des.ok ? 'adm-notas' : 'adm-nota'}`} aria-live="polite">{linea}</p>
         <label>Fecha de la factura (o del cargo)
           <input type="date" value={f.fecha} max={fijo ? undefined : hoy} onChange={(e) => poner('fecha', e.target.value)} required />
         </label>
         {!fijo && (
           <p style={{ alignSelf: 'end', display: 'flex', gap: 6 }}>
-            <button type="button" className="adm-chip adm-chip--gris adm-chip--boton" onClick={() => poner('fecha', hoy)}>Hoy</button>
-            <button type="button" className="adm-chip adm-chip--gris adm-chip--boton" onClick={() => {
+            <button type="button" className="ui-boton ui-boton--secundario ui-boton--peq" onClick={() => poner('fecha', hoy)}>Hoy</button>
+            <button type="button" className="ui-boton ui-boton--secundario ui-boton--peq" onClick={() => {
               const d = new Date(`${hoy}T12:00:00Z`)
               d.setUTCDate(d.getUTCDate() - 1)
               poner('fecha', d.toISOString().slice(0, 10))
@@ -233,13 +185,13 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
           {conIva && (
             <div className="adm-ancho">
               <span className="adm-fin-etq">IVA de la factura</span>
-              <Segmento opciones={[[21, '21 %'], [10, '10 %'], [4, '4 %'], ['mano', 'A mano']]} valor={f.ivaPct} onCambio={(v) => poner('ivaPct', v)} />
+              <Conmutador etiqueta={'IVA'} opciones={([[21, '21 %'], [10, '10 %'], [4, '4 %'], ['mano', 'A mano']]).map(([valor, texto]) => ({ valor, texto }))} valor={f.ivaPct} onCambio={(v) => poner('ivaPct', v)} />
               {f.ivaPct === 'mano' && <label>IVA en euros (el total que pone la factura)<input inputMode="decimal" value={f.iva} onChange={(e) => poner('iva', e.target.value)} /></label>}
             </div>
           )}
           <div className="adm-ancho">
             <span className="adm-fin-etq">Retención de IRPF</span>
-            <Segmento opciones={RETENCIONES.map(([p, t]) => [p, t])} valor={Number(f.retencionPct)} onCambio={(v) => poner('retencionPct', v)} />
+            <Conmutador etiqueta={'Retención'} opciones={(RETENCIONES.map(([p, t]) => [p, t])).map(([valor, texto]) => ({ valor, texto }))} valor={Number(f.retencionPct)} onCambio={(v) => poner('retencionPct', v)} />
             <p className="adm-nota">Solo si la factura pone «Retención IRPF». Lo retenido no se paga al proveedor: lo ingresa la gestoría a Hacienda (alquiler: modelo 115; profesionales: modelo 111).</p>
           </div>
           <label>Proveedor
@@ -261,8 +213,8 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
       {estado.ok && <p className="adm-mensaje">{estado.ok}</p>}
       {estado.error && <p className="adm-mensaje is-error">{estado.error}</p>}
       <div className="adm-acciones adm-fin-botones">
-        <button type="submit" className="adm-boton" disabled={estado.enviando || !f.categoriaId}>{estado.enviando ? 'Guardando…' : 'Guardar gasto'}</button>
-        {!gasto && <button type="button" className="adm-boton adm-boton--claro" disabled={estado.enviando || !f.categoriaId} onClick={() => guardar(true)}>Guardar y apuntar otro</button>}
+        <Boton type="submit" disabled={estado.enviando || !f.categoriaId}>{estado.enviando ? 'Guardando…' : 'Guardar gasto'}</Boton>
+        {!gasto && <Boton variante="secundario" disabled={estado.enviando || !f.categoriaId} onClick={() => guardar(true)}>Guardar y añadir otro</Boton>}
       </div>
     </form>
   )
@@ -270,7 +222,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
 
 // ---------- Formulario de otro ingreso ----------
 
-export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = null, reservaInicial = null, sentidoInicial = 'cobro' }) {
+export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = null, reservaInicial = null, sentidoInicial = 'cobro', volver = null }) {
   const router = useRouter()
   const [f, setF] = useState(() => inicial || {
     tipo: 'extras', sentido: sentidoInicial, fecha: hoy, concepto: '', importe: '', ivaPct: 21, iva: '', reservaId: reservaInicial ? String(reservaInicial) : '',
@@ -289,13 +241,14 @@ export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = nul
       const r = ingreso
         ? await pedirJson(`/api/admin/finanzas/ingresos/${ingreso.id}`, { method: 'POST', body: { ...f, accion: 'editar', version: ingreso.version } })
         : await pedirJson('/api/admin/finanzas/ingresos/nuevo', { method: 'POST', body: { ...f, clave } })
-      router.push(`/admin/movimientos?p=${String(f.fecha || hoy).slice(0, 7)}&ok=ingreso:${r.id}`)
+      const destino = volver && volver.startsWith('/admin') ? volver : `/admin/movimientos?p=${String(f.fecha || hoy).slice(0, 7)}`
+      router.push(`${destino}${destino.includes('?') ? '&' : '?'}ok=ingreso:${r.id}`)
     } catch (err) {
       setEstado({ enviando: false, error: err.message })
     }
   }
   return (
-    <form className="adm-caja adm-fin-form" onSubmit={guardar}>
+    <form className="ui-tarjeta adm-fin-form" onSubmit={guardar}>
       <h2>¿Qué es?</h2>
       <div className="adm-fin-chips adm-fin-chips--3">
         {TIPOS_INGRESO.map(([id, t]) => <button key={id} type="button" className={f.tipo === id ? 'is-activo' : ''} aria-pressed={f.tipo === id} onClick={() => poner('tipo', id)}>{t}</button>)}
@@ -306,14 +259,14 @@ export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = nul
           : f.tipo === 'extras' ? 'Lo que se cobra el día de la reserva aparte del alquiler: fondos (20 € + IVA por metro), kit de podcast, teleprompter…'
             : f.tipo === 'factura_manual' ? 'Facturas hechas fuera del panel. Si es de una reserva o de unas horas aparte que ya están en el panel como pagadas, no la apuntes: ya cuenta.' : 'Cualquier otro ingreso que no pase por el panel.'}
       </p>
-      <div style={{ margin: '12px 0' }}><Segmento opciones={[['cobro', 'Cobro'], ['devolucion', 'Devolución']]} valor={f.sentido} onCambio={(v) => poner('sentido', v)} /></div>
+      <div style={{ margin: '12px 0' }}><Conmutador etiqueta={'Cobro o devolución'} opciones={([['cobro', 'Cobro'], ['devolucion', 'Devolución']]).map(([valor, texto]) => ({ valor, texto }))} valor={f.sentido} onCambio={(v) => poner('sentido', v)} /></div>
       <div className="adm-form">
         <label className="adm-ancho">Concepto<input required value={f.concepto} placeholder={ejemplo} onChange={(e) => poner('concepto', e.target.value)} /></label>
         <label>Importe (con IVA, €)<input className="adm-fin-importe" inputMode="decimal" required placeholder="0,00" value={f.importe} onChange={(e) => poner('importe', e.target.value)} /></label>
         <label>{f.sentido === 'devolucion' ? 'Fecha de la devolución' : 'Fecha'}<input type="date" max={hoy} required value={f.fecha} onChange={(e) => poner('fecha', e.target.value)} /></label>
         <div className="adm-ancho">
           <span className="adm-fin-etq">IVA</span>
-          <Segmento opciones={[[21, '21 %'], [10, '10 %'], [4, '4 %'], [0, 'Sin IVA'], ['mano', 'A mano']]} valor={f.ivaPct} onCambio={(v) => poner('ivaPct', v)} />
+          <Conmutador etiqueta={'IVA'} opciones={([[21, '21 %'], [10, '10 %'], [4, '4 %'], [0, 'Sin IVA'], ['mano', 'A mano']]).map(([valor, texto]) => ({ valor, texto }))} valor={f.ivaPct} onCambio={(v) => poner('ivaPct', v)} />
           {f.ivaPct === 'mano' && <label>IVA en euros<input inputMode="decimal" value={f.iva} onChange={(e) => poner('iva', e.target.value)} /></label>}
           {d && <p className="adm-nota" aria-live="polite">Base {euros(d.baseCent, { decimales: true })} · IVA {euros(d.ivaCent, { decimales: true })}</p>}
         </div>
@@ -341,7 +294,7 @@ export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = nul
       </div>
       {estado.error && <p className="adm-mensaje is-error">{estado.error}</p>}
       <div className="adm-acciones adm-fin-botones">
-        <button type="submit" className="adm-boton" disabled={estado.enviando}>{estado.enviando ? 'Guardando…' : ingreso ? 'Guardar cambios' : 'Apuntar'}</button>
+        <Boton type="submit" disabled={estado.enviando}>{estado.enviando ? 'Guardando…' : ingreso ? 'Guardar cambios' : 'Guardar ingreso'}</Boton>
       </div>
     </form>
   )
@@ -382,7 +335,7 @@ export function FormularioFijo({ categorias, hoy, onHecho }) {
       </label>
       <div className="adm-ancho">
         <span className="adm-fin-etq">¿Cuánto?</span>
-        <Segmento opciones={[['pagado', 'Lo que has pagado'], ['base', 'Sin IVA (base)']]} valor={f.importeEs} onCambio={(v) => poner('importeEs', v)} />
+        <Conmutador etiqueta={'Importe'} opciones={([['pagado', 'Lo que has pagado'], ['base', 'Sin IVA (base)']]).map(([valor, texto]) => ({ valor, texto }))} valor={f.importeEs} onCambio={(v) => poner('importeEs', v)} />
       </div>
       <label>Importe (€)<input className="adm-fin-importe" inputMode="decimal" placeholder="0,00" value={f.importe} onChange={(e) => poner('importe', e.target.value)} /></label>
       <p className="adm-nota" style={{ alignSelf: 'end' }}>{des?.ok ? `Base ${euros(des.baseCent, { decimales: true })} + IVA ${euros(des.ivaCent, { decimales: true })}${des.retencionCent ? ` − retención ${euros(des.retencionCent, { decimales: true })}` : ''} = ${euros(des.totalCent, { decimales: true })}` : des?.texto || ''}</p>
@@ -413,7 +366,7 @@ export function FormularioFijo({ categorias, hoy, onHecho }) {
       <p className="adm-ancho adm-nota">Si el IVA cambia cada mes (por ejemplo la luz), apúntalo como gasto variable cuando llegue la factura.</p>
       <div className="adm-ancho">
         <Mensaje estado={estado} />
-        <button type="button" className="adm-boton" disabled={estado.enviando} onClick={() => ejecutar('/api/admin/finanzas/fijos/nuevo', f, { despues: onHecho })}>Guardar gasto fijo</button>
+        <Boton disabled={estado.enviando} onClick={() => ejecutar('/api/admin/finanzas/fijos/nuevo', f, { despues: onHecho })}>Guardar gasto fijo</Boton>
       </div>
     </div>
   )

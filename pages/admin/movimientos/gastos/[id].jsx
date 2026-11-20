@@ -1,6 +1,7 @@
 // Cambiar un gasto (o el mes de un gasto fijo)
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { Boton } from '../../../../components/admin/ui'
 import Panel from '../../../../components/admin/Panel'
 import { FormularioGasto, useAccion, Mensaje } from '../../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../../lib/admin/auth'
@@ -23,7 +24,7 @@ export default function FichaGasto({ ficha, datos, hoy }) {
   }
   const titulo = g.fijoId ? `${g.concepto} · ${textoMes(g.mes.slice(0, 7))} (gasto fijo)` : 'Cambiar gasto'
   return (
-    <Panel titulo={titulo} acciones={<Link href={volver} className="adm-boton adm-boton--claro">← Movimientos</Link>}>
+    <Panel titulo={titulo} acciones={<Boton variante="secundario" href={volver} icono="izq">Movimientos</Boton>}>
       {ficha.trimestrePasado && <div className="adm-avisos">Es de un trimestre ya pasado: si la gestoría ya lo presentó, avisadla del cambio.</div>}
       {ficha.esComisionCalendly ? (
         <div className="adm-caja">

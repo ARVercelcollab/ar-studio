@@ -13,14 +13,11 @@ apuntan a Calendly y `/reservar` redirige allí.
 |---|---|---|
 | Reservar | `/reservar` | Duración (2, 3, 4, 6, 8 y 10 h), calendario con los huecos libres, datos del cliente (las mismas preguntas que Calendly) y pago |
 | Página de la reserva | `/reserva/[enlace privado]` | Estado, reintentar el pago, añadir al calendario, pedir un cambio o cancelación |
-| Panel | `/admin` | Agenda, ficha de cada reserva, reservas a mano, mover, marcar pagada (Bizum, transferencia…), cancelar con la devolución que toca según las condiciones, bloqueos y festivos |
+| Panel | `/admin` | Inicio, Reservas (calendario, lista y clientes), Miembros, Movimientos, Mes a mes, Impuestos, Ajustes y **Añadir**. Ver «El panel del estudio» más abajo |
 | Correos | Resend (`reservas@studioar.es`) | Confirmación al cliente con el `.ics`, aviso al estudio, recordatorio el día antes, avisos de pagos raros |
-| Facturas | PDF por correo | **Todo lo cobrado lleva factura.** Al confirmarse el pago se emite sola y se le envía en PDF con copia al estudio: **completa** (serie AR-W) si ha dado nombre, NIF y dirección, y **simplificada** (serie AR-S, sin datos del cliente) si no. Si después pide la completa (desde la página de su reserva o el estudio desde el panel), se hace una AR-W que dice a qué simplificada sustituye; la simplificada queda marcada, no se borra. Cada serie tiene su numeración correlativa por año. Desde el panel se emite, se descarga o se reenvía («Reenviar» manda la que hay: para cambiar la simplificada por la completa hay que pedirlo con los datos). Si una factura no se puede emitir o enviar (p. ej. falla el correo), queda apuntado, el estudio recibe un aviso y sale en *Para hacer* («cobros sin factura») |
-| Google Calendar | `/admin/google` | Cada reserva confirmada (web, panel y sesiones de los planes) y cada bloqueo entran **al momento** en el calendario de Google del estudio, con todos los datos del cliente (nombre, WhatsApp, correo, qué va a hacer, fondos, equipo, comentarios, horas, importe, si está pagada, factura y enlace a su ficha). Si se mueve o se cancela, se actualiza o se quita solo. Ver «Google Calendar» más abajo |
+| Facturas | PDF por correo | **Todo lo cobrado lleva factura.** Al confirmarse el pago se emite sola y se le envía en PDF con copia al estudio: **completa** (serie AR-W) si ha dado nombre, NIF y dirección, y **simplificada** (serie AR-S, sin datos del cliente) si no. Si después pide la completa (desde la página de su reserva o el estudio desde el panel), se hace una AR-W que dice a qué simplificada sustituye; la simplificada queda marcada, no se borra. Cada serie tiene su numeración correlativa por año. Desde el panel se emite, se descarga o se reenvía («Reenviar» manda la que hay: para cambiar la simplificada por la completa hay que pedirlo con los datos). Si una factura no se puede emitir o enviar (p. ej. falla el correo), queda apuntado, el estudio recibe un aviso y sale en el Inicio («cobros sin factura») |
+| Google Calendar | `/admin/ajustes/google` | Cada reserva confirmada (web, panel y sesiones de los planes) y cada bloqueo entran **al momento** en el calendario de Google del estudio, con todos los datos del cliente (nombre, WhatsApp, correo, qué va a hacer, fondos, equipo, comentarios, horas, importe, si está pagada, factura y enlace a su ficha). Si se mueve o se cancela, se actualiza o se quita solo. Ver «Google Calendar» más abajo |
 | Calendario para suscribirse | `/api/admin/calendario?clave=…` | Alternativa sin conectar la cuenta (Google solo lo refresca cada varias horas) |
-| Inicio | `/admin` | Cómo va el estudio de un vistazo: reservas de hoy, lo que hay que hacer, ingresos, gastos, beneficio y ocupación con gráficas, comparado con el mes (o trimestre, o año) anterior |
-| Finanzas | `/admin/finanzas` | Facturación, gastos (fijos, variables y materiales), gastos fijos que se apuntan solos, lo cobrado por Calendly, IVA orientativo y CSV para la gestoría. Ver «Finanzas» más abajo |
-| Suscripciones | `/admin/suscripciones` | Planes mensuales (Starter, Creator, Pro): altas, horas de cada mes, sesiones, cuotas, fianza y bajas. Ver «Suscripciones» más abajo |
 | Alta de miembros | `/planmensual/alta` | La persona elige plan, paga el primer mes con tarjeta y después firma su contrato en la web (`/contrato/[enlace privado]`); las cuotas siguientes se cobran solas cada mes en esa tarjeta (si falla, le llega un enlace: `/cuota/[enlace privado]`). Ver «Alta de miembros por la web» más abajo |
 
 Reglas copiadas de Calendly (se cambian en `lib/reservas/config.js`):
@@ -135,9 +132,9 @@ el correo, que sale en el panel y que el pago aparece en el portal de pruebas de
 ### 5. El día del cambio
 
 1. Poner el TPV en **real** y `NEXT_PUBLIC_RESERVAS_PROPIAS=1` en Producción, y volver a desplegar.
-2. Apuntar en el panel (*Nueva reserva*, marcada como pagada con **Cómo: Por Calendly (ya cobrada en Stripe)** y la fecha del cobro) las reservas futuras que haya en Calendly.
+2. Apuntar en el panel (*Añadir → Reserva*, marcada como pagada con **Cómo: Por Calendly (ya cobrada en Stripe)** y la fecha del cobro) las reservas futuras que haya en Calendly.
 3. Desactivar los tipos de evento de Calendly ese mismo día, para que nadie reserve en los dos sitios.
-4. En *Finanzas → Ajustes*, poner el último mes en que se cobró por Calendly.
+4. En *Movimientos → Ajustes de las cuentas* (al final de la página), poner el último mes en que se cobró por Calendly.
 5. Hacer una reserva real pequeña y devolverla desde el portal del TPV.
 6. Comprobar en *Google Calendar* (panel) que está conectado y al día. Las reservas que vienen de Calendly no se copian (Calendly ya las pone), así que no hay duplicados mientras convivan.
 7. Cuando todo vaya bien un par de semanas, dar de baja Calendly.
@@ -160,7 +157,7 @@ ya las pone en el calendario.
 
 - **Si Google falla** (o no está conectado), la reserva sigue adelante igual: queda pendiente y se
   vuelve a intentar sola en los siguientes cambios y en la tarea diaria. En *Google Calendar*
-  (panel) hay un botón **Volver a sincronizar** y el Inicio avisa si algo no ha llegado.
+  (panel → *Ajustes → Google Calendar*) hay un botón **Volver a sincronizar** y el Inicio avisa si algo no ha llegado.
 - **Nunca se duplica:** cada evento tiene un número fijo sacado de la reserva.
 - **Qué se guarda:** solo el permiso de Google (el «refresh token»), **cifrado** con `SESSION_SECRET`.
   Si se cambia `SESSION_SECRET`, hay que volver a conectar.
@@ -204,9 +201,49 @@ conexión de producción (nunca se usa ni se revoca desde una vista previa) y lo
 producción no se tocan. En una vista previa hay que conectar aparte, y mejor con un calendario
 de pruebas para no llenar el de verdad.
 
+## El panel del estudio
+
+El panel (`/admin`) tiene el diseño de noviembre de 2026 (calcado a la organización del panel de
+Gartalia): menú lateral beige con el logo, el botón **Añadir** arriba y 7 secciones. En el móvil,
+cabecera con el logo y barra abajo: Inicio · Reservas · **Añadir** · Miembros · Más.
+
+| Sección | Dónde | Qué hay |
+|---|---|---|
+| **Inicio** | `/admin` | Saludo y selector de mes; 4 cifras sin IVA (ingresos, gastos, beneficio y horas reservadas con la ocupación) comparadas con el mes anterior a la misma altura; la frase del mes; **Pendiente ahora** (hoy en el estudio, por cobrar, miembros por resolver e IVA a apartar, con llamar y WhatsApp); ingresos y gastos por mes y en qué se va el dinero; últimos movimientos |
+| **Reservas** | `/admin/reservas` | Tres vistas: **Calendario** (la semana, con reservas por horas, sesiones de miembros con raya marrón, sin pagar y bloqueos), **Lista** (`/admin/reservas/lista`: buscador, filtros, totales y factura de cada una) y **Clientes** (`/admin/reservas/clientes`). La ficha de cada reserva está en `/admin/reserva/[id]` |
+| **Miembros** | `/admin/miembros` | Los planes mensuales en lista o tablero por estado (contrato por firmar, fianza pendiente, al día, cuota sin pagar, baja), la ficha de cada miembro y el alta a mano. Ver «Suscripciones» más abajo |
+| **Movimientos** | `/admin/movimientos` | Todo el dinero apunte a apunte, con IVA: cobros de reservas, cuotas, Calendly, otros ingresos, gastos (los fijos marcados), devoluciones; filtros, totales, la factura de cada uno y **Exportar CSV** para la gestoría. Las categorías de gastos, en `/admin/movimientos/categorias` |
+| **Mes a mes** | `/admin/mes-a-mes` | Tabla del año por categorías y meses, sin IVA (cuadra con el Inicio). Cada cifra lleva a sus movimientos |
+| **Impuestos** | `/admin/impuestos` | El IVA del trimestre: lo cobrado − lo pagado = lo que conviene apartar (orientativo), ingresos por tipo de factura, gastos sin factura y las facturas del trimestre |
+| **Ajustes** | `/admin/ajustes` | Precios y reglas (solo lectura), planes, **gastos fijos**, **Google Calendar**, **Calendly**, festivos y bloqueos |
+| **Añadir** | `/admin/anadir` | Una reserva (por horas o sesión de un miembro), un gasto, otro ingreso, el cobro de una cuota o un bloqueo. Con **Formulario** o **Escribirlo** (ver abajo) |
+
+- **Clientes:** cada persona que ha reservado tiene su ficha. Las reservas se juntan por **correo**
+  (en minúsculas) y, si no hay correo, por las **9 últimas cifras del teléfono**; entran también las
+  sesiones de los miembros y las de Calendly pasadas a la agenda (las canceladas solo en el
+  historial). La ficha enseña sus datos y facturación, reservas este año y en total, horas, lo
+  pagado, qué suele hacer, próximas reservas, historial y **notas del estudio** (se guardan en la
+  base de datos, tabla `clientes_notas`, migración 14). Desde la ficha: llamar, WhatsApp, correo y
+  «Nueva reserva para este cliente». Para traer el historial de Calendly haría falta importar el CSV
+  que exporta Calendly (fecha y hora, nombre, correo, teléfono, respuestas, importe, estado e id).
+- **Añadir → Escribirlo:** se escribe con palabras normales («Reserva de Laura el lunes de 17 a 19»,
+  «Aquaservice 32 € con tarjeta», «Cobrado 199 € de cuota de Irene por Bizum», «Bloquear el sábado
+  por la mañana», «¿Cómo va el mes?»). Lo entiende un intérprete de palabras clave
+  (`lib/admin/interprete.js`), **sin inteligencia artificial ni servicios de fuera**: siempre enseña
+  «He entendido esto» y solo guarda al pulsar **Guardar**; «Corregir en el formulario» abre la
+  pestaña con los datos puestos. Las sesiones de los miembros se guardan siempre desde el formulario.
+- **Ocultar importes:** el ojo del pie del menú (o de la cabecera en el móvil) difumina todas las
+  cantidades del panel, por si hay alguien delante. Se recuerda en este navegador.
+- **Direcciones antiguas:** siguen funcionando y llevan a las nuevas (`/admin/agenda` → Reservas,
+  `/admin/suscripciones` → Miembros, `/admin/finanzas` → Movimientos, `/admin/finanzas/fijos` y
+  `/admin/finanzas/calendly` → Ajustes, `/admin/google`, `/admin/festivos` y `/admin/bloqueos` →
+  Ajustes, `/admin/nueva` → Añadir).
+- **Piezas comunes** del diseño en `components/admin/ui` (tarjetas, cifras, botones, filtros,
+  tablas, fichas laterales…) y colores en `styles/admin/_tokens.scss`.
+
 ## Suscripciones (planes mensuales)
 
-Las suscripciones se llevan **dentro del panel**, en *Suscripciones*. Las sesiones de los
+Las suscripciones se llevan **dentro del panel**, en *Miembros*. Las sesiones de los
 miembros son reservas normales de la agenda (salen con una raya marrón y «Incluida»), así
 nadie puede reservar encima.
 
@@ -214,9 +251,9 @@ nadie puede reservar encima.
 
 | Dónde | Qué |
 |---|---|
-| *Suscripciones* | Quién está con plan, cuántas horas le quedan este mes, si la cuota está pagada y el recuadro **Para hacer** (cuotas sin pagar, fin del mes de prueba, horas que se van a perder, cobros de Stripe que hay que cancelar, fianzas) |
-| *+ Nueva suscripción* | Plan, datos, día del primer cobro (de ahí salen los periodos), mes de prueba, cómo paga, primera cuota, fianza, contrato y **condiciones especiales** si se ha pactado algo distinto |
-| *Nueva reserva → Suscripción* | Elegir a la persona, día y horas. Debajo sale en directo cuántas horas gasta del plan, cuántas van aparte (con precio orientativo; 0 = de regalo), los huecos libres en su horario y los avisos |
+| *Miembros* | Quién está con plan (en lista o en tablero), cuántas horas le quedan este mes, si la cuota está pagada y el recuadro **Para hacer** (cuotas sin pagar, fin del mes de prueba, horas que se van a perder, cobros de Stripe que hay que cancelar, fianzas) |
+| *Miembros → Nueva suscripción* | Plan, datos, día del primer cobro (de ahí salen los periodos), mes de prueba, cómo paga, primera cuota, fianza, contrato y **condiciones especiales** si se ha pactado algo distinto |
+| *Añadir → Reserva → Sesión de un miembro* (o «Reservar sesión» en su ficha) | Elegir a la persona, día y horas. Debajo sale en directo cuántas horas gasta del plan, cuántas van aparte (con precio orientativo; 0 = de regalo), los huecos libres en su horario y los avisos |
 | Ficha de cada miembro | Horas del periodo y sesiones, cuotas (marcar pagada, factura, recordatorio por WhatsApp, editar, anular, devolver), fianza, condiciones, datos, notas y baja |
 | Ficha de una sesión | Mover (comprobando sus reglas) y cancelar (con la casilla «Cuenta como usada») |
 
@@ -270,7 +307,7 @@ El texto del contrato está en `lib/suscripciones/contrato.js` (plantilla sin da
 Sin datos personales en el repositorio (es público): todo se mete desde el panel.
 
 1. En el Stripe del estudio, apuntar el `sub_…` de su suscripción, el día del primer cobro y el enlace a esa factura.
-2. *Suscripciones → + Nueva suscripción*:
+2. *Miembros → Nueva suscripción*:
    - plan **Starter**, su nombre, correo y WhatsApp;
    - «Empieza el» = el día del primer cobro de Stripe;
    - ☑ primer mes de prueba;
@@ -279,39 +316,37 @@ Sin datos personales en el repositorio (es público): todo se mete desde el pane
    - fianza «Ya cobrada» por transferencia, con su fecha;
    - enlace al contrato en Drive;
    - **Condiciones especiales** como en su contrato: cuota 149 €, 8 h al mes, duraciones `4`, máximo 2 sesiones, 14:00–20:00 (y la permanencia, renovación y preaviso que diga el contrato).
-3. Meter por *Nueva reserva → Suscripción* las sesiones que ya haya hecho este periodo y las que tenga reservadas.
+3. Meter por *Añadir → Reserva → Sesión de un miembro* las sesiones que ya haya hecho este periodo y las que tenga reservadas.
 4. Antes del segundo cobro (el recuadro *Para hacer* avisa 7 días antes):
    - **si sigue:** nada en Stripe; cuando cobre, marcar la cuota 2 como pagada (Stripe);
    - **si avisó por escrito de que lo deja:** *Ha avisado de que lo deja* → el panel propone el último día del mes de prueba y devolver la fianza → cancelar su suscripción en Stripe a mano y marcar «Ya lo he cancelado» → devolverle la fianza por transferencia → *Fianza → Apuntar devuelta*.
 
-## Inicio y Finanzas
+## El dinero (Inicio, Movimientos, Mes a mes e Impuestos)
 
-### Qué hay en cada sitio
-
-| Dónde | Qué |
-|---|---|
-| *Inicio* | Hoy y lo que viene, «Para hacer» (cuotas sin pagar, avisos de finanzas y de suscripciones, configuración), cuatro cifras (ingresos, gastos, beneficio, ocupación) con su comparación, ingresos y gastos de los últimos 12 meses, cómo va el mes día a día, de lo que entra a lo que queda, de dónde vienen los ingresos, en qué se va el dinero, cuándo se usa el estudio (mapa por día y hora), reservas por duración, suscripciones, IVA del trimestre y próximos gastos fijos. «Ocultar importes» tapa las cifras de dinero (por si hay alguien delante) |
-| *Finanzas → Resumen* | Las cifras del periodo con y sin IVA, de dónde viene la facturación y en qué se va, mes a mes, **Para Hacienda** (IVA del trimestre, retenciones del alquiler y de profesionales) y **Para la gestoría** (CSV de ingresos, gastos y facturas emitidas) |
-| *Finanzas → Facturación* | Cada cobro y cada devolución, con su factura; lo cobrado por Calendly de cada mes; lo que falta por cobrar |
-| *Finanzas → Gastos* | Todos los gastos del periodo en tres grupos: **fijos** (alquiler, alarma, internet, seguro, gestoría, programas), **variables** (luz, agua, Aquaservice, limpieza, reparaciones, comisiones, publicidad) y **herramientas y materiales** (fondos, material del estudio, equipo). Las categorías se pueden cambiar, añadir u ocultar. La cuota de autónomos no va aquí: es de la academia, no del estudio |
-| *Finanzas → Gastos fijos* | Lo que se paga cada mes (o cada 2, 3, 6 o 12 meses): se apunta solo en Gastos el mes que toca. Se puede programar una subida («desde enero son 950 €») o terminarlo |
+Qué hay en cada pantalla: ver la tabla de «El panel del estudio». Los gastos van en tres grupos:
+**fijos** (alquiler, alarma, internet, seguro, gestoría, programas), **variables** (luz, agua,
+Aquaservice, limpieza, reparaciones, comisiones, publicidad) y **herramientas y materiales** (fondos,
+material, equipo). Las categorías se pueden cambiar, añadir u ocultar (*Movimientos → Categorías*).
+La cuota de autónomos no va aquí: es de la academia, no del estudio. Los **gastos fijos** (cada
+mes o cada 2, 3, 6 o 12 meses) se apuntan solos en Movimientos el mes que toca, y se puede
+programar una subida («desde enero son 950 €») o terminarlos (*Ajustes → Gastos fijos*).
 
 ### Qué cuenta y qué no
 
 - **Criterio de caja**: un cobro cuenta el día en que entra el dinero y una devolución el día en que sale. Los gastos, el día de su factura o cargo; los fijos cuentan en su mes desde el día 1.
 - Todo se enseña **sin IVA** (con el IVA al lado). El beneficio es facturación menos gastos, antes del IRPF.
-- Las reservas por horas, las horas aparte de los planes y las cuotas cuentan solas. **Lo cobrado por Calendly no llega solo**: se apunta una vez al mes en *Facturación → Calendly* (con las pistas de lo que Stripe ya cobró y está en el panel, para no sumarlo dos veces). Las reservas de Calendly pasadas a la agenda no suman.
+- Las reservas por horas, las horas aparte de los planes y las cuotas cuentan solas. **Lo cobrado por Calendly no llega solo**: se apunta una vez al mes en *Ajustes → Calendly* (con las pistas de lo que Stripe ya cobró y está en el panel, para no sumarlo dos veces). Las reservas de Calendly pasadas a la agenda no suman.
 - Las fianzas no son ingreso hasta que se resuelven: solo cuenta lo que el estudio se queda.
-- Cobros que no pasan por el panel (fondos o equipo del día, facturas hechas a mano AR-M, otros): *Facturación → + Apuntar otro ingreso*.
+- Cobros que no pasan por el panel (fondos o equipo del día, facturas hechas a mano AR-M, otros): *Añadir → Otro ingreso*.
 - Gastos: con factura a nombre del estudio y su NIF, el IVA se descuenta; un ticket sin NIF cuenta entero; seguros y banco no llevan IVA; las empresas de fuera de España (por ejemplo algunas apps) van aparte para la gestoría. El alquiler del estudio no lleva retención; si algún día el casero la aplicara (19 %, modelo 115), se marca en el gasto.
 - El IVA del trimestre es **orientativo**: lo que vale es lo que presente la gestoría.
 
 ### Para empezar
 
-1. *Finanzas → Gastos fijos → + Nuevo gasto fijo*: alquiler (con su IVA, si lo factura con IVA), alarma, internet, seguro, gestoría y programas, cada uno con su día de cargo y desde qué mes.
-2. Cada vez que llegue una factura variable (luz, agua, Aquaservice…) o se compre material, *+ Apuntar gasto*. Si se pega el enlace de Drive de la factura, la gestoría la tiene a mano.
-3. Al acabar cada mes, mientras se cobre por Calendly: *Facturación → Calendly* con lo cobrado, lo devuelto y las comisiones del informe de Stripe.
-4. Cada trimestre, *Finanzas → Resumen → Para la gestoría*: los tres CSV. El de facturas lleva las completas y las simplificadas, con su tipo y qué simplificada sustituye cada completa.
+1. *Ajustes → Gastos fijos → Nuevo gasto fijo*: alquiler (con su IVA, si lo factura con IVA), alarma, internet, seguro, gestoría y programas, cada uno con su día de cargo y desde qué mes.
+2. Cada vez que llegue una factura variable (luz, agua, Aquaservice…) o se compre material, *Añadir → Gasto* (o escribirlo: «Aquaservice 32 € con tarjeta»). Si se pega el enlace de Drive de la factura, la gestoría la tiene a mano.
+3. Al acabar cada mes, mientras se cobre por Calendly: *Ajustes → Calendly* con lo cobrado, lo devuelto y las comisiones del informe de Stripe.
+4. Cada trimestre, *Movimientos → Exportar CSV* (o *Impuestos → Exportar CSV*): los tres CSV. El de facturas lleva las completas y las simplificadas, con su tipo y qué simplificada sustituye cada completa.
 
 ### Pendiente de decidir (con la gestoría)
 

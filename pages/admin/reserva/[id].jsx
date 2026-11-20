@@ -149,7 +149,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
               <h3>Cobros del día</h3>
               {cobrosDia.length === 0 && <p className="ui-t3 rsv-peq">Ninguno (fondos, equipo…).</p>}
               {cobrosDia.map((x) => <p key={x.id} className="rsv-peq">{x.sentido === 'devolucion' ? 'Devolución: ' : ''}{x.concepto} · <span className="ui-imp">{(x.totalCent / 100).toFixed(2).replace('.', ',')} €</span> (<Link href={`/admin/movimientos/ingresos/${x.id}`}>ver</Link>)</p>)}
-              <Boton variante="texto" tam="peq" icono="mas" href={`/admin/movimientos/ingresos/nuevo?reserva=${r.id}`}>Apuntar un cobro del día</Boton>
+              <Boton variante="texto" tam="peq" icono="mas" href={`/admin/movimientos/ingresos/nuevo?reserva=${r.id}`}>Añadir un cobro del día</Boton>
             </div>
           </Tarjeta>
 

@@ -1,6 +1,6 @@
 // Cambiar o borrar otro ingreso
-import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { Boton } from '../../../../components/admin/ui'
 import Panel from '../../../../components/admin/Panel'
 import { FormularioIngreso, useAccion, Mensaje } from '../../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../../lib/admin/auth'
@@ -19,7 +19,7 @@ export default function FichaIngreso({ ingreso, hoy, reservas }) {
   }
   const lista = i.reservaId && !reservas.some((r) => r.id === i.reservaId) ? [{ id: i.reservaId, texto: i.reservaCodigo || `Reserva ${i.reservaId}` }, ...reservas] : reservas
   return (
-    <Panel titulo="Cambiar ingreso" acciones={<Link href={`/admin/movimientos?p=${i.fecha.slice(0, 7)}`} className="adm-boton adm-boton--claro">← Movimientos</Link>}>
+    <Panel titulo="Cambiar ingreso" acciones={<Boton variante="secundario" href={`/admin/movimientos?p=${i.fecha.slice(0, 7)}`} icono="izq">Movimientos</Boton>}>
       <FormularioIngreso hoy={hoy} reservas={lista} inicial={inicial} ingreso={i} />
       <div className="adm-caja">
         <Mensaje estado={estado} />
