@@ -8,10 +8,11 @@ import { euros, leerImporte, desgloseGasto, textoMes, sumarMesesMes, costeGasto 
 import { GRUPOS, TIPOS_FACTURA, TIPOS_FACTURA_CORTO, RETENCIONES, METODOS_GASTO, METODOS_INGRESO, TIPOS_INGRESO, CADA_MESES } from '../../lib/finanzas/config'
 import { desglose } from '../../lib/facturas/iva'
 
+// Las pantallas del dinero (las de Ajustes que aún lo usan enlazan aquí también)
 const PESTANAS = [
-  ['/admin/movimientos', 'Resumen'],
-  ['/admin/movimientos/ingresos', 'Facturación'],
-  ['/admin/movimientos/gastos', 'Gastos'],
+  ['/admin/movimientos', 'Movimientos'],
+  ['/admin/mes-a-mes', 'Mes a mes'],
+  ['/admin/impuestos', 'Impuestos'],
   ['/admin/ajustes/fijos', 'Gastos fijos'],
 ]
 
@@ -20,8 +21,8 @@ export function SubmenuFinanzas({ p }) {
   return (
     <nav className="adm-filtros adm-fin-submenu" aria-label="Finanzas">
       {PESTANAS.map(([href, t]) => {
-        const activo = href === '/admin/movimientos' ? pathname === href : pathname.startsWith(href)
-        const conP = p && href !== '/admin/ajustes/fijos' ? `${href}?p=${p}` : href
+        const activo = href === '/admin/movimientos' ? pathname === href || pathname.startsWith(`${href}/`) : pathname.startsWith(href)
+        const conP = p && href === '/admin/movimientos' ? `${href}?p=${p}` : href
         return <Link key={href} href={conP} className={activo ? 'is-activo' : ''}>{t}</Link>
       })}
     </nav>
@@ -99,7 +100,7 @@ const ivaTexto = (v) => (v === 'mano' ? 'IVA a mano' : `IVA ${v} %`)
 
 // ---------- Formulario de gasto (alta y edición) ----------
 
-export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo = null, volver = '/admin/movimientos/gastos', categoriaInicial = null }) {
+export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo = null, volver = '/admin/movimientos', categoriaInicial = null }) {
   const router = useRouter()
   const { categorias, ultimos, proveedores } = datos
   const porId = useMemo(() => Object.fromEntries(categorias.map((c) => [c.id, c])), [categorias])
@@ -163,7 +164,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
         setEstado({ enviando: false, error: null, ok: `Apuntado: ${r.concepto} · ${euros(r.totalCent, { decimales: true })}` })
         return
       }
-      const destino = volver.startsWith('/admin') ? volver : '/admin/movimientos/gastos'
+      const destino = volver.startsWith('/admin') ? volver : '/admin/movimientos'
       router.push(`${destino}${destino.includes('?') ? '&' : '?'}ok=${gasto ? 'cambiado' : 'gasto'}:${r.id}`)
     } catch (e) {
       setEstado({ enviando: false, error: e.message, ok: null })
@@ -288,7 +289,7 @@ export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = nul
       const r = ingreso
         ? await pedirJson(`/api/admin/finanzas/ingresos/${ingreso.id}`, { method: 'POST', body: { ...f, accion: 'editar', version: ingreso.version } })
         : await pedirJson('/api/admin/finanzas/ingresos/nuevo', { method: 'POST', body: { ...f, clave } })
-      router.push(`/admin/movimientos/ingresos?ok=ingreso:${r.id}`)
+      router.push(`/admin/movimientos?p=${String(f.fecha || hoy).slice(0, 7)}&ok=ingreso:${r.id}`)
     } catch (err) {
       setEstado({ enviando: false, error: err.message })
     }

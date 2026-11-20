@@ -1,15 +1,14 @@
 // Apuntar otro ingreso o una devolución
 import Link from 'next/link'
 import Panel from '../../../../components/admin/Panel'
-import { SubmenuFinanzas, FormularioIngreso } from '../../../../components/admin/Finanzas'
+import { FormularioIngreso } from '../../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../../lib/admin/auth'
 import { reservasParaIngreso } from '../../../../lib/finanzas/servicio'
 import { fechaMadrid } from '../../../../lib/reservas/tiempo'
 
 export default function NuevoIngreso({ hoy, reservas, reserva, sentido }) {
   return (
-    <Panel titulo="Apuntar otro ingreso" acciones={<Link href="/admin/movimientos/ingresos" className="adm-boton adm-boton--claro">Cancelar</Link>}>
-      <SubmenuFinanzas />
+    <Panel titulo="Apuntar otro ingreso" acciones={<Link href="/admin/movimientos" className="adm-boton adm-boton--claro">Cancelar</Link>}>
       <FormularioIngreso hoy={hoy} reservas={reservas} reservaInicial={reserva} sentidoInicial={sentido} />
     </Panel>
   )

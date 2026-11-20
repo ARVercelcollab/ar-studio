@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Panel from '../../../../components/admin/Panel'
-import { SubmenuFinanzas, FormularioIngreso, useAccion, Mensaje } from '../../../../components/admin/Finanzas'
+import { FormularioIngreso, useAccion, Mensaje } from '../../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../../lib/admin/auth'
 import { fichaIngreso, reservasParaIngreso } from '../../../../lib/finanzas/servicio'
 import { fechaMadrid } from '../../../../lib/reservas/tiempo'
@@ -19,13 +19,12 @@ export default function FichaIngreso({ ingreso, hoy, reservas }) {
   }
   const lista = i.reservaId && !reservas.some((r) => r.id === i.reservaId) ? [{ id: i.reservaId, texto: i.reservaCodigo || `Reserva ${i.reservaId}` }, ...reservas] : reservas
   return (
-    <Panel titulo="Cambiar ingreso" acciones={<Link href={`/admin/movimientos/ingresos?p=${i.fecha.slice(0, 7)}`} className="adm-boton adm-boton--claro">← Facturación</Link>}>
-      <SubmenuFinanzas />
+    <Panel titulo="Cambiar ingreso" acciones={<Link href={`/admin/movimientos?p=${i.fecha.slice(0, 7)}`} className="adm-boton adm-boton--claro">← Movimientos</Link>}>
       <FormularioIngreso hoy={hoy} reservas={lista} inicial={inicial} ingreso={i} />
       <div className="adm-caja">
         <Mensaje estado={estado} />
         <button type="button" className="adm-boton adm-boton--peligro" disabled={estado.enviando} onClick={() => {
-          if (window.confirm('¿Borrar este ingreso?')) ejecutar(`/api/admin/finanzas/ingresos/${i.id}`, { accion: 'borrar', version: i.version }, { despues: () => router.push('/admin/movimientos/ingresos?ok=borrado') })
+          if (window.confirm('¿Borrar este ingreso?')) ejecutar(`/api/admin/finanzas/ingresos/${i.id}`, { accion: 'borrar', version: i.version }, { despues: () => router.push(`/admin/movimientos?p=${i.fecha.slice(0, 7)}&ok=borrado`) })
         }}>Borrar</button>
       </div>
     </Panel>

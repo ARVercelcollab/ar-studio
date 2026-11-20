@@ -1,3 +1,718 @@
-// Panel · pantalla «movimientos». La rellena la tanda que rehace esta pantalla.
+// Panel · Movimientos, Mes a mes e Impuestos (el dinero). Como las pantallas de Gartalia.
 // Todo bajo .adm; usa las variables de _tokens.scss (var(--marron), var(--linea)…).
 @use 'tokens' as *;
+
+.adm {
+  // ---------- Comunes ----------
+  .mov-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--texto);
+    white-space: nowrap;
+  }
+
+  .mov-importe {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .mov-importe--anulado {
+    color: var(--texto-3);
+    text-decoration: line-through;
+  }
+
+  .mov-enlace {
+    color: var(--marron);
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  // Botón dentro de la celda del concepto (la fila se puede tocar entera; esto da el foco)
+  .mov-abrir {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+  }
+
+  .mov-tabla__fecha {
+    white-space: nowrap;
+    color: var(--texto-2);
+  }
+
+  .mov-tabla td:nth-child(2) {
+    min-width: 220px;
+  }
+
+  .mov-fila--anulada {
+    color: var(--texto-3);
+  }
+
+  .mov-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    cursor: pointer;
+
+    input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--marron);
+    }
+  }
+
+  // Sin el triángulo que ponen los <details> del panel antiguo
+  .mov-plegable > summary::before,
+  .mov-plegable[open] > summary::before,
+  .mov-exportar > summary::before,
+  .mov-exportar[open] > summary::before {
+    content: none;
+  }
+
+  // ---------- Movimientos ----------
+  .mov-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4px 16px;
+
+    .ui-chips {
+      flex: 1 1 auto;
+    }
+
+    .mov-check {
+      margin-bottom: 14px;
+      min-height: 30px;
+    }
+  }
+
+  .mov-solo-movil {
+    display: inline-flex;
+  }
+
+  @media (max-width: $movil-max) {
+    .mov-filtros:not(.is-abiertos) .mov-filtros__extra {
+      display: none;
+    }
+  }
+
+  @media (min-width: $ancho-min) {
+    .mov-solo-movil {
+      display: none;
+    }
+  }
+
+  .mov-pie {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    margin: 18px 0 14px;
+  }
+
+  // Tarjeta que se despliega (Ajustes de las cuentas, Cómo se calcula)
+  .mov-plegable {
+    margin-bottom: 12px;
+    padding: 0;
+
+    > summary {
+      margin: 0;
+      font-size: 0.9375rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      font-weight: 500;
+      cursor: pointer;
+      list-style: none;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      .ui-icono {
+        color: var(--texto-3);
+        transition: transform 0.15s;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--marron);
+        outline-offset: -2px;
+        border-radius: var(--radio);
+      }
+    }
+
+    &[open] > summary .ui-icono {
+      transform: rotate(90deg);
+    }
+  }
+
+  .mov-plegable__cuerpo {
+    padding: 0 18px 18px;
+    border-top: 1px solid var(--linea);
+    padding-top: 14px;
+  }
+
+  .mov-explica p {
+    margin: 0 0 8px;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
+  .mov-ajustes {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 12px;
+
+    .ui-campo > span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--texto-2);
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+
+    small {
+      display: block;
+      margin-top: 4px;
+    }
+  }
+
+  .mov-ajustes__control select {
+    width: 100%;
+    max-width: 360px;
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--linea-fuerte);
+    border-radius: 10px;
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+  }
+
+  @media (min-width: $tablet-min) {
+    .mov-ajustes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  // «Para revisar»
+  .mov-revisar {
+    margin-bottom: 16px;
+  }
+
+  .mov-revisar__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 4px 10px;
+      align-items: start;
+      padding: 10px 0;
+      border-top: 1px solid var(--linea);
+      font-size: 0.9063rem;
+
+      > .ui-icono {
+        margin-top: 2px;
+        color: var(--texto-3);
+      }
+
+      &.is-urgente > .ui-icono {
+        color: var(--mal);
+      }
+    }
+
+    li:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+  }
+
+  .mov-revisar__acciones {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+
+  @media (min-width: $ancho-min) {
+    .mov-revisar__lista li {
+      grid-template-columns: 18px minmax(0, 1fr) auto;
+    }
+
+    .mov-revisar__acciones {
+      grid-column: 3;
+      justify-content: flex-end;
+    }
+  }
+
+  .mov-revisar__mas {
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  // Desplegable «Exportar CSV»
+  .mov-exportar {
+    position: relative;
+
+    > summary {
+      margin: 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      list-style: none;
+      cursor: pointer;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+    }
+  }
+
+  .mov-exportar__menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    min-width: 240px;
+    padding: 8px;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra-capa);
+
+    p {
+      margin: 4px 8px 6px;
+      font-size: 0.75rem;
+    }
+
+    a {
+      padding: 9px 10px;
+      border-radius: var(--radio-s);
+      color: var(--texto);
+      font-size: 0.9063rem;
+      text-decoration: none;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--superficie-2);
+      }
+    }
+  }
+
+  @media (max-width: $movil-max) {
+    .mov-exportar__menu {
+      left: 0;
+      right: auto;
+    }
+  }
+
+  // Ficha lateral de un movimiento
+  .mov-ficha__importe {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .mov-ficha__nota {
+    margin: 2px 0 0;
+    font-size: 0.8125rem;
+  }
+
+  .mov-ficha__marcas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .mov-ficha__factura {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 0.875rem;
+  }
+
+  .mov-ficha__mensaje {
+    flex-basis: 100%;
+    margin: 6px 0 0;
+    font-size: 0.875rem;
+  }
+
+  // ---------- Mes a mes ----------
+  .mam-barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+    font-size: 0.875rem;
+  }
+
+  .mam-caja {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mam-tabla {
+    min-width: 640px;
+
+    th,
+    td {
+      padding: 10px 12px;
+    }
+
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    thead th.num {
+      text-align: right;
+    }
+
+    tbody th {
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    // La primera columna se queda fija al desplazar en el móvil
+    th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: var(--superficie);
+      box-shadow: 1px 0 0 var(--linea);
+    }
+
+    thead th:first-child {
+      background: var(--superficie-2);
+    }
+
+    // Última columna: el total
+    td:last-child,
+    thead th:last-child {
+      background: var(--superficie-2);
+      font-weight: 600;
+    }
+  }
+
+  @media (max-width: $movil-max) {
+    .mam-tabla {
+      min-width: 0;
+
+      tbody th:first-child,
+      thead th:first-child {
+        min-width: 132px;
+        max-width: 150px;
+        white-space: normal;
+      }
+    }
+
+    .mam-cat {
+      padding-left: 18px !important;
+    }
+  }
+
+  .mam-grupo > * {
+    background: var(--superficie-3);
+    font-weight: 500;
+  }
+
+  .mam-grupo > th:first-child {
+    background: var(--superficie-3);
+    font-weight: 500;
+  }
+
+  .mam-cat {
+    padding-left: 28px !important;
+    color: var(--texto-2);
+  }
+
+  .mam-total {
+    font-weight: 600;
+  }
+
+  .mam-resultado > * {
+    border-top: 1px solid var(--linea-fuerte);
+    font-weight: 600;
+  }
+
+  .mam-resultado > th:first-child {
+    font-weight: 600;
+  }
+
+  .mam-vacia {
+    color: var(--texto-3);
+  }
+
+  .mam-celda {
+    display: inline-block;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 6px;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      background: var(--marron-suave);
+      color: var(--marron);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 1px;
+    }
+  }
+
+  .mam-nota {
+    margin: 12px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+  }
+
+  // ---------- Impuestos ----------
+  .imp-cuenta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    align-items: stretch;
+    margin-bottom: 14px;
+  }
+
+  .imp-cuenta__parte {
+    p {
+      margin: 0;
+    }
+
+    .ui-t3 {
+      margin-top: 4px;
+      font-size: 0.8125rem;
+    }
+  }
+
+  .imp-cuenta__nombre {
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+
+  .imp-cuenta__valor {
+    margin-top: 4px !important;
+    font-size: 1.625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .imp-cuenta__parte--final {
+    background: var(--marron);
+    border-color: var(--marron);
+    color: #fff;
+
+    .imp-cuenta__nombre,
+    .imp-cuenta__pie {
+      color: rgba(255, 255, 255, 0.86);
+    }
+
+    .imp-cuenta__pie {
+      margin-top: 6px;
+      font-size: 0.8125rem;
+      line-height: 1.45;
+    }
+  }
+
+  .imp-cuenta__signo {
+    display: none;
+    align-self: center;
+    justify-self: center;
+    color: var(--texto-3);
+    font-size: 1.25rem;
+  }
+
+  @media (min-width: $ancho-min) {
+    .imp-cuenta {
+      grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) 20px minmax(0, 1fr);
+    }
+
+    .imp-cuenta__signo {
+      display: block;
+    }
+  }
+
+  .imp-dos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  @media (min-width: $ancho-min) {
+    .imp-dos {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .imp-medidor {
+    display: flex;
+    gap: 2px;
+    height: 10px;
+    margin-bottom: 14px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--superficie-3);
+
+    i {
+      display: block;
+      height: 100%;
+      min-width: 3px;
+    }
+  }
+
+  .imp-leyenda {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto 44px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-top: 1px solid var(--linea);
+      font-size: 0.875rem;
+    }
+
+    li:first-child {
+      border-top: 0;
+    }
+
+    b {
+      font-weight: 500;
+      text-align: right;
+    }
+  }
+
+  .imp-leyenda__pct {
+    text-align: right;
+    font-size: 0.8125rem;
+  }
+
+  .imp-sin__resumen {
+    margin: 0 0 8px;
+    font-size: 0.875rem;
+
+    b {
+      font-weight: 500;
+    }
+  }
+
+  .imp-sin__lista {
+    margin: 0 -18px -18px;
+    padding: 0;
+    list-style: none;
+
+    li {
+      border-top: 1px solid var(--linea);
+    }
+  }
+
+  .imp-sin__fila {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 18px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--superficie-2);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: -2px;
+    }
+  }
+
+  .imp-sin__fecha {
+    font-size: 0.8125rem;
+  }
+
+  .imp-sin__concepto {
+    min-width: 0;
+
+    b {
+      display: block;
+      font-weight: 500;
+    }
+
+    small {
+      display: block;
+      font-size: 0.8125rem;
+    }
+  }
+
+  .imp-avisos {
+    margin-bottom: 14px;
+  }
+
+  .imp-avisos__lista {
+    margin: 0 0 8px;
+    padding-left: 18px;
+    font-size: 0.875rem;
+    line-height: 1.55;
+
+    li {
+      margin-bottom: 4px;
+    }
+
+    .is-aviso {
+      color: #5C3D00;
+    }
+  }
+
+  .imp-tabla td:nth-child(2) {
+    min-width: 200px;
+  }
+}

@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Panel from '../../../../components/admin/Panel'
-import { SubmenuFinanzas, FormularioGasto, useAccion, Mensaje } from '../../../../components/admin/Finanzas'
+import { FormularioGasto, useAccion, Mensaje } from '../../../../components/admin/Finanzas'
 import { redirigirSiNoAdmin } from '../../../../lib/admin/auth'
 import { fichaGasto, datosFormularioGasto, listarCategorias } from '../../../../lib/finanzas/servicio'
 import { textoMes, euros } from '../../../../lib/finanzas/calculos'
@@ -15,7 +15,7 @@ export default function FichaGasto({ ficha, datos, hoy }) {
   const g = ficha.gasto
   const [estado, ejecutar] = useAccion()
   const url = `/api/admin/finanzas/gastos/${g.id}`
-  const volver = `/admin/movimientos/gastos?p=${(g.mes || g.fecha).slice(0, 7)}`
+  const volver = `/admin/movimientos?p=${(g.mes || g.fecha).slice(0, 7)}`
   const inicial = {
     categoriaId: g.categoriaId, importeEs: 'pagado', importe: aTexto(g.totalCent), fecha: g.fecha, concepto: g.concepto, proveedor: g.proveedor,
     numFactura: g.numFactura, tipoFactura: g.tipoFactura, ivaPct: g.ivaPct ?? (['nif', 'ticket'].includes(g.tipoFactura) ? 'mano' : 21),
@@ -23,12 +23,11 @@ export default function FichaGasto({ ficha, datos, hoy }) {
   }
   const titulo = g.fijoId ? `${g.concepto} · ${textoMes(g.mes.slice(0, 7))} (gasto fijo)` : 'Cambiar gasto'
   return (
-    <Panel titulo={titulo} acciones={<Link href={volver} className="adm-boton adm-boton--claro">← Gastos</Link>}>
-      <SubmenuFinanzas />
+    <Panel titulo={titulo} acciones={<Link href={volver} className="adm-boton adm-boton--claro">← Movimientos</Link>}>
       {ficha.trimestrePasado && <div className="adm-avisos">Es de un trimestre ya pasado: si la gestoría ya lo presentó, avisadla del cambio.</div>}
       {ficha.esComisionCalendly ? (
         <div className="adm-caja">
-          <p>Son las comisiones de Stripe de {textoMes(g.calendlyMes.slice(0, 7))} ({euros(g.totalCent, { decimales: true })}): se cambian en Facturación → <Link href={`/admin/ajustes/calendly?mes=${g.calendlyMes.slice(0, 7)}`} className="adm-enlace">Calendly</Link>.</p>
+          <p>Son las comisiones de Stripe de {textoMes(g.calendlyMes.slice(0, 7))} ({euros(g.totalCent, { decimales: true })}): se cambian en Ajustes → <Link href={`/admin/ajustes/calendly?mes=${g.calendlyMes.slice(0, 7)}`} className="adm-enlace">Calendly</Link>.</p>
         </div>
       ) : g.estado === 'anulado' ? (
         <div className="adm-caja">
