@@ -9,6 +9,7 @@ import { urlBase } from '../../../../lib/http.js'
 import { textoDuracion } from '../../../../lib/reservas/config.js'
 import { registrarEvento } from '../../../../lib/reservas/servicio.js'
 import { cambiarCobroAutomatico } from '../../../../lib/suscripciones/alta.js'
+import { enviarAcceso } from '../../../../lib/miembros/acceso.js'
 
 const numero = (v) => (v === '' || v === null || v === undefined ? null : Number(String(v).replace(',', '.')))
 
@@ -85,6 +86,9 @@ export default rutaAdmin(async (req, res) => {
     case 'fianza':
       await SUS.resolverFianza(id, { accion: b.fianza, importeCent: centimos(b.euros), metodo: b.metodo, fecha: b.fecha, nota: b.nota })
       return res.status(200).json({ ok: true, mensaje: 'Fianza actualizada.' })
+    case 'enviar_acceso':
+      // Enlace para entrar en su área de miembro (studioar.es/miembros)
+      return res.status(200).json(await enviarAcceso(id, urlBase(req)))
     case 'notas':
       await SUS.guardarNotasSuscripcion(id, b.notas)
       return res.status(200).json({ ok: true, mensaje: 'Notas guardadas.' })

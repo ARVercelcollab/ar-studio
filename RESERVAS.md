@@ -321,6 +321,20 @@ Sin datos personales en el repositorio (es público): todo se mete desde el pane
    - **si sigue:** nada en Stripe; cuando cobre, marcar la cuota 2 como pagada (Stripe);
    - **si avisó por escrito de que lo deja:** *Ha avisado de que lo deja* → el panel propone el último día del mes de prueba y devolver la fianza → cancelar su suscripción en Stripe a mano y marcar «Ya lo he cancelado» → devolverle la fianza por transferencia → *Fianza → Apuntar devuelta*.
 
+### Área de miembros (`/miembros`)
+
+Cada miembro tiene su área en `studioar.es/miembros`, sin contraseña. Se abre a la vez que las reservas propias (`NEXT_PUBLIC_RESERVAS_PROPIAS`; en local y en las vistas previas está abierta).
+
+- **Entrar:** pone su correo y le llega un enlace que **vale 30 minutos y una sola vez**. A quien pide el enlace se le contesta siempre lo mismo, exista o no su correo. El enlace lleva a `/miembros/entrar`, donde hay que pulsar «Entrar» (así los antivirus del correo que abren enlaces no lo gastan). Queda una sesión de 30 días (cookie `ar_miembro`, firmada con una clave propia sacada de `SESSION_SECRET`). De los enlaces solo se guarda su resumen (sha256). Límites: 5 enlaces cada 15 minutos por conexión y 3 por correo.
+- **Qué suscripción ve:** la más reciente que no ha terminado; si todas terminaron, la última durante 90 días (solo para ver facturas y contrato, sin reservar).
+- **Qué ve:** sus horas del mes (usadas, reservadas y las que le quedan, y cuándo se pierden), sus próximas sesiones y las últimas, sus cuotas con su factura, las facturas de las horas aparte, su contrato en PDF, la tarjeta guardada y los avisos: cuota sin pagar (con el enlace para pagarla si se puede), contrato por firmar, fianza pendiente (IBAN de `ESTUDIO_IBAN`, importe y concepto) y tarjeta que caduca antes del próximo cobro.
+- **Reservar:** con las reglas de su plan **sin «reservar igualmente»**: solo sus días y su horario, sus duraciones (o exactamente las horas que le quedan), con su antelación y como mucho hasta el final del mes siguiente (en el mes de prueba, solo ese mes). No reserva con una cuota sin pagar ni con el contrato por firmar.
+- **Horas aparte:** solo cuando ya no le quedan horas del plan (fines de semana, festivos y fuera de su horario no valen). Se pagan al reservar por el TPV, al precio de la web, y la hora queda guardada 20 minutos mientras paga (una sola a la vez por miembro). Al confirmarse el pago: su correo, el aviso al estudio, la factura de las horas aparte (completa si la suscripción tiene datos de factura) y Google Calendar. Si el pago llega tarde y la hora ya está dada o ya no le caben las horas del plan, la sesión queda «en revisión» y el estudio recibe el aviso: el cobro nunca se pierde.
+- **Cambiar y cancelar:** con más de su aviso (48 h) cambia sus sesiones sin horas aparte. Cancelar con menos de 48 h hace que cuente como usada (se le avisa antes). Una sesión con horas aparte pagadas no se cancela desde el área: tiene que escribir al estudio (hay que devolverlas a mano).
+- **Avisos al estudio:** solo por correo. Cada sesión que reserva, cambia o cancela un miembro llega a `RESERVAS_EMAIL_ESTUDIO` con sus datos y las horas que le quedan; al miembro le llega su confirmación con el `.ics`. Desde el área puede escribir al estudio o pedir la baja (la baja no se apunta sola). En el historial de su ficha, lo que hace él sale con autor «cliente».
+- **Desde el panel:** en la ficha del miembro se ve cuándo entró por última vez y se le puede **enviar el acceso** (el mismo enlace por correo).
+- **En local:** el correo con el enlace se guarda en `.data/correos/`.
+
 ## El dinero (Inicio, Movimientos, Mes a mes e Impuestos)
 
 Qué hay en cada pantalla: ver la tabla de «El panel del estudio». Los gastos van en tres grupos:
