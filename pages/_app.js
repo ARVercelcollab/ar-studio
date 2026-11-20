@@ -3,6 +3,7 @@ import '../styles/reservas.scss'
 import '../styles/miembros.scss'
 import '../styles/admin.scss'
 import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 import Head from 'next/head'
 import Header from '../components/header.jsx';
 import Footer from '../components/footer.jsx';
@@ -10,9 +11,23 @@ import CookieConsent from '../components/CookieConsent.jsx';
 // Chat desactivado de momento: import ChatWidget from '../components/ChatWidget.jsx';
 
 
+// Si se entra en el área de miembros navegando desde otra página de la web (el píxel de Meta
+// ya está cargado), que el píxel no apunte esas direcciones al cambiar de página
+function usePixelFueraDelArea(router) {
+  useEffect(() => {
+    const alCambiar = (url) => {
+      if (window.fbq) window.fbq.disablePushState = String(url).startsWith('/miembros')
+    }
+    router.events.on('routeChangeStart', alCambiar)
+    return () => router.events.off('routeChangeStart', alCambiar)
+  }, [router])
+}
+
 export default function MyApp({ Component, pageProps }) {
   // El panel del estudio y el TPV de pruebas van sin la cabecera ni el pie de la web
-  const { pathname } = useRouter()
+  const router = useRouter()
+  const { pathname } = router
+  usePixelFueraDelArea(router)
   if (pathname.startsWith('/admin') || pathname === '/pago-simulado') return <Component {...pageProps} />
 
   return (

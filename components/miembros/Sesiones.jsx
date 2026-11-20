@@ -1,7 +1,7 @@
 // Próximas sesiones (con Cambiar y Cancelar) y sesiones pasadas (plegadas).
 // Cada sesión: { codigo, inicio, fin, horas, horasPlan, horasExtra, precioCent, pagoEstado, estado,
 //   puedeCambiar, puedeCancelar, cancelarCuentaComoUsada, textoCancelar, motivoNoCambiar }
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Dialogo from './Dialogo'
@@ -83,36 +83,39 @@ function Cancelar({ s, abierto, onCerrar }) {
   )
 }
 
-// Sesión retenida con horas aparte sin pagar (el pago no se completó): volver a pagar
-function PagarAhora({ s }) {
+// Sesión retenida con horas aparte sin pagar (el pago no se completó): volver a pagar.
+// Se llama otra vez a reservar con el mismo hueco y el servidor reutiliza la sesión.
+function PagarAhora({ s, onError }) {
   const router = useRouter()
-  const [estado, setEstado] = useState({ enviando: false, error: null })
+  const [enviando, setEnviando] = useState(false)
+  const marca = useRef(false)
   const pagar = async () => {
+    if (enviando || marca.current) return
+    marca.current = true
     const { fecha, desde, horas } = partesSesion(s)
-    setEstado({ enviando: true, error: null })
+    setEnviando(true)
+    onError(null)
     try {
       const r = await pedirJson('/api/miembros/reservar', { method: 'POST', body: { fecha, desde, horas, aceptoPagoExtra: true } })
-      if (r?.estado === 'pago' && r.pago) return irAlTpv(r.pago)
+      if (r?.estado === 'pago' && r.pago) return irAlTpv(r.pago) // (el botón sigue desactivado mientras sale hacia el banco)
       router.replace(`/miembros?reservada=${encodeURIComponent(r?.codigo || s.codigo)}`)
     } catch (e) {
-      setEstado({ enviando: false, error: e.message })
+      marca.current = false
+      setEnviando(false)
+      onError(e.message)
     }
   }
-  return (
-    <>
-      <button type="button" className="mbr-boton mbr-boton--peq" onClick={pagar} disabled={estado.enviando}>{estado.enviando ? 'Abriendo el pago…' : 'Pagar ahora'}</button>
-      {estado.error && <p className="mbr-sesion__motivo mbr-sesion__error" role="alert">{estado.error}</p>}
-    </>
-  )
+  return <button type="button" className="mbr-boton mbr-boton--peq" onClick={pagar} disabled={enviando} aria-busy={enviando}>{enviando ? 'Abriendo el pago…' : 'Pagar ahora'}</button>
 }
 
 function Sesion({ s, pasada = false }) {
   const [cancelando, setCancelando] = useState(false)
+  const [error, setError] = useState(null)
   const { fecha, desde, hasta, horas } = partesSesion(s)
   const pagar = !pasada && s.estado === 'pendiente'
   const acciones = !pasada && (s.puedeCambiar || s.puedeCancelar || pagar)
   return (
-    <li className={`mbr-sesion${pasada ? ' is-pasada' : ''}${s.estado === 'cancelada' ? ' is-cancelada' : ''}`}>
+    <li id={`sesion-${s.codigo}`} className={`mbr-sesion${pasada ? ' is-pasada' : ''}${s.estado === 'cancelada' ? ' is-cancelada' : ''}`}>
       <Fecha fecha={fecha} />
       <div className="mbr-sesion__datos">
         <p className="mbr-sesion__hora">{desde} – {hasta} <span>· {h(horas)}</span></p>
@@ -122,11 +125,13 @@ function Sesion({ s, pasada = false }) {
       </div>
       {acciones && (
         <div className="mbr-sesion__acciones">
-          {pagar && <PagarAhora s={s} />}
+          {pagar && <PagarAhora s={s} onError={setError} />}
           {s.puedeCambiar && <Link className="mbr-boton mbr-boton--claro mbr-boton--peq" href={`/miembros/reservar?cambiar=${encodeURIComponent(s.codigo)}`}>Cambiar</Link>}
           {s.puedeCancelar && <button type="button" className="mbr-boton mbr-boton--texto mbr-boton--peq" onClick={() => setCancelando(true)}>{s.estado === 'pendiente' ? 'Soltar la hora' : 'Cancelar'}</button>}
         </div>
       )}
+      {/* Los errores de la sesión, a todo el ancho debajo de la fila */}
+      {error && <p className="mbr-aviso mbr-aviso--mal mbr-sesion__error" role="alert">{error}</p>}
       {s.puedeCancelar && <Cancelar s={s} abierto={cancelando} onCerrar={() => setCancelando(false)} />}
     </li>
   )

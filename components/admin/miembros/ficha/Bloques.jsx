@@ -276,6 +276,19 @@ export function AreaMiembros({ sus, acceso, estado: estadoSus }) {
         ['Último acceso', ultimo || 'Aún no ha entrado'],
         ['Último enlace enviado', enviado ? `${enviado} · a ${sus.email}` : 'Ninguno'],
       ]} />
+      {ultimo && (
+        <div className="mb-botones">
+          <Boton
+            variante="texto"
+            tam="peq"
+            icono="salir"
+            disabled={estado.enviando}
+            onClick={() => { if (window.confirm('¿Cerrar su sesión en el área de miembros? Tendrá que pedir otro enlace para entrar.')) ejecutar(`/api/admin/suscripciones/${sus.id}`, { accion: 'cerrar_sesiones' }) }}
+          >
+            Cerrar su sesión en el área
+          </Boton>
+        </div>
+      )}
       <Mensaje estado={estado} />
     </Tarjeta>
   )

@@ -142,6 +142,8 @@ export function avisoDeVuelta(q = {}) {
       ? { tono: 'aviso', texto: 'Sesión cancelada. Como faltaban menos de 48 horas, sus horas cuentan como usadas.' }
       : { tono: 'bien', texto: 'Sesión cancelada. Sus horas vuelven a tu plan.' }
   }
+  if (uno(q.pago) === 'revision') return { tono: 'aviso', texto: 'Hemos recibido el pago, pero tenemos que revisar tu sesión. Te escribimos enseguida.' }
+  if (uno(q.pago) === 'espera') return { tono: 'info', texto: 'Estamos esperando la confirmación del banco. En unos minutos la verás aquí; si no, escríbenos.' }
   if (uno(q.pago) === 'ko') return { tono: 'mal', texto: 'El pago no se ha completado y la sesión aún no está reservada. Te guardamos la hora unos minutos: en «Próximas sesiones» puedes pagarla o soltarla. Si el banco te ha cobrado, escríbenos.' }
   return null
 }

@@ -44,7 +44,13 @@ function Lista({ items, tono }) {
   if (!items?.length) return null
   return (
     <ul className={`mbr-mensajes mbr-mensajes--${tono}`}>
-      {items.map((x, i) => <li key={`${x.codigo || ''}${i}`}>{x.texto || x}</li>)}
+      {items.map((x, i) => (
+        <li key={`${x.codigo || ''}${i}`}>
+          {x.texto || x}
+          {/* Otra sesión suya esperando el pago: enlace para ir a ella en su área */}
+          {x.codigo === 'retenida' && x.sesion && <> <Link className="mbr-enlace" href={`/miembros#sesion-${encodeURIComponent(x.sesion)}`}>Ir a esa sesión</Link></>}
+        </li>
+      ))}
     </ul>
   )
 }
@@ -84,6 +90,7 @@ export default function Reservar(props) {
   const [revisando, setRevisando] = useState(false)
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const enviandoRef = useRef(false)
   const [hecho, setHecho] = useState(null)
   const [ronda, setRonda] = useState(0) // sube al empezar otra reserva: vuelve a pedir los días
   const refDia = useRef(null)
@@ -164,7 +171,8 @@ export default function Reservar(props) {
   const listo = Boolean(horas && fecha && hora && revision && !errores.length && !revisando)
 
   async function confirmar() {
-    if (!listo || enviando) return
+    if (!listo || enviando || enviandoRef.current) return
+    enviandoRef.current = true
     setEnviando(true)
     setError(null)
     const base = { fecha, desde: hora, horas }
@@ -177,10 +185,14 @@ export default function Reservar(props) {
       if (r?.estado === 'pago' && r.pago) return irAlTpv(r.pago)
       setHecho({ fecha, desde: hora, hasta: horaFin(hora, horas), codigo: r?.codigo || null, restantes: r?.restantes ?? r?.restantesDespues ?? revision?.restantesDespues ?? null })
     } catch (e) {
+      enviandoRef.current = false
       setEnviando(false)
       // Reglas del plan (409 'reglas'): se enseñan en la lista de errores del resumen
       if (Array.isArray(e.datos?.errores) && e.datos.errores.length) {
         setRevision((r) => ({ ...(r || {}), errores: e.datos.errores }))
+      } else if (e.datos?.error === 'retenida') {
+        // Tiene otra sesión esperando el pago
+        setError({ texto: e.message, retenida: e.datos.codigo || null })
       } else {
         setError(e.message)
       }
@@ -206,6 +218,7 @@ export default function Reservar(props) {
     setLibres(null)
     setRevision(null)
     setEnviando(false)
+    enviandoRef.current = false
     setDias({})
     setRonda((n) => n + 1)
     router.replace(router.asPath, undefined, { scroll: true })
@@ -225,7 +238,6 @@ export default function Reservar(props) {
     )
   }
 
-  const restantes = fecha ? periodos.find((p) => fecha <= (p.ultimoDia || p.hasta))?.restantes : undefined
   return (
     <main className="mbr">
       <Link className="mbr-volver" href="/miembros">‹ Mi área</Link>
@@ -312,7 +324,7 @@ export default function Reservar(props) {
               </>
             )}
             <dt>Te quedarán</dt>
-            <dd>{revision?.restantesDespues != null ? h(revision.restantesDespues) : restantes != null && horas ? h(Math.max(0, restantes - horas)) : '—'}</dd>
+            <dd>{hora && revision?.restantesDespues != null ? h(revision.restantesDespues) : '—'}</dd>
           </dl>
           {revisando && <p className="mbr-cargando">Comprobando…</p>}
           <Lista items={errores} tono="mal" />
@@ -320,8 +332,13 @@ export default function Reservar(props) {
           {extra > 0 && !errores.length && (
             <p className="mbr-aviso mbr-aviso--info">No te quedan horas del plan para toda la sesión: {h(extra)} van aparte{precioExtra ? ` (${precioExtra}, IVA incluido)` : ''} y se pagan ahora con tarjeta o Bizum. Te guardamos la hora unos minutos mientras pagas.</p>
           )}
-          {error && <p className="mbr-aviso mbr-aviso--mal" role="alert">{error}</p>}
-          <button type="button" className="mbr-boton" disabled={!listo || enviando} onClick={confirmar}>
+          {error && (
+            <p className="mbr-aviso mbr-aviso--mal" role="alert">
+              {error.texto || error}
+              {error.retenida && <> <Link className="mbr-enlace" href={`/miembros#sesion-${encodeURIComponent(error.retenida)}`}>Ir a esa sesión</Link></>}
+            </p>
+          )}
+          <button type="button" className="mbr-boton" disabled={!listo || enviando} aria-busy={enviando} onClick={confirmar}>
             {enviando ? (extra > 0 && !cambiando ? 'Abriendo el pago…' : 'Guardando…') : cambiando ? 'Cambiar a esta hora' : extra > 0 ? `Pagar ${precioExtra || ''} y reservar`.replace('  ', ' ') : 'Reservar'}
           </button>
           {!hora && <p className="mbr-nota mbr-nota--centro">Elige día y hora.</p>}

@@ -64,6 +64,7 @@ export const EVENTOS = {
   cobro_desactivado: 'Cobro automático parado',
   // Área de miembros
   acceso_enviado: 'Enlace de acceso enviado', acceso_miembro: 'Entró en su área', mensaje_miembro: 'Mensaje desde su área',
+  sesiones_cerradas: 'Sesiones del área cerradas',
 }
 
 const FIANZA_ACCION = { cobrada: 'cobrada', devolver: 'devuelta', retener: 'retenida', sin_fianza: 'sin fianza' }

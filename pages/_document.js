@@ -1,6 +1,11 @@
 import { Html, Head, Main, NextScript } from 'next/document'
 
-export default function Document() {
+// El área de miembros (/miembros/*) va sin el píxel de Meta: el enlace para entrar lleva un
+// código en la dirección y el píxel manda la dirección completa a Facebook.
+const sinPixel = (pagina = '') => pagina === '/miembros' || pagina.startsWith('/miembros/')
+
+export default function Document(props) {
+  const pixel = !sinPixel(props.__NEXT_DATA__?.page)
   return (
     <Html>
       <Head>
@@ -9,6 +14,7 @@ export default function Document() {
           rel="stylesheet"
         />
         {/* Meta Pixel Code */}
+        {pixel && (<>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -35,6 +41,7 @@ fbq('track', 'InitiateCheckout');
             alt=""
           />
         </noscript>
+        </>)}
         {/* End Meta Pixel Code */}
       </Head>
       <body>

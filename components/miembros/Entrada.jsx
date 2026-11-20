@@ -1,7 +1,7 @@
 // Entrada al área de miembros: pedir el enlace por correo (sin contraseñas) y, desde el
 // enlace del correo, entrar con un botón (así los programas que abren los enlaces del
 // correo para revisarlos no lo gastan).
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { pedirJson } from '../../lib/reservas/navegador'
@@ -92,15 +92,36 @@ export default function Entrada({ aviso = null, cerrada = false }) {
 }
 
 // /miembros/entrar?t=…: un botón que gasta el enlace y abre la sesión
-export function EntrarConEnlace({ token }) {
+export function EntrarConEnlace({ token: tokenInicial }) {
   const router = useRouter()
+  // El código del enlace se guarda en memoria y se quita de la barra de direcciones en cuanto
+  // carga la página (para que no quede en el historial ni lo vea ningún script de terceros)
+  const [token] = useState(tokenInicial)
+  const marca = useRef(false)
+  useEffect(() => {
+    const limpiar = () => {
+      if (window.location.pathname !== '/miembros/entrar' || !window.location.search) return
+      const limpia = window.location.pathname
+      const st = window.history.state
+      // Se mantiene el estado del router de Next, con la dirección ya sin el código
+      const nuevo = st && typeof st === 'object' ? { ...st, url: limpia, as: limpia } : st
+      window.history.replaceState(nuevo, '', limpia)
+    }
+    limpiar()
+    // Por si el router de Next vuelve a apuntar la dirección de entrada justo después
+    const t = setTimeout(limpiar, 500)
+    return () => clearTimeout(t)
+  }, [])
   const [estado, setEstado] = useState({ entrando: false, error: null })
   const entrar = async () => {
+    if (marca.current) return
+    marca.current = true
     setEstado({ entrando: true, error: null })
     try {
       await pedirJson('/api/miembros/entrar', { method: 'POST', body: { token } })
       router.replace('/miembros')
     } catch (e) {
+      marca.current = false
       setEstado({ entrando: false, error: e.message || 'El enlace no es válido o ha caducado.' })
     }
   }

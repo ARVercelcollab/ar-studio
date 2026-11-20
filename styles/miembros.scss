@@ -599,11 +599,20 @@ $info: #5b6f86;
     color: $gris;
     margin-top: 6px;
     line-height: 1.4;
+  }
 
-    &.mbr-sesion__error {
-      color: $error;
-      flex-basis: 100%;
-    }
+  // Error de una sesión (p. ej. «Pagar ahora»): a todo el ancho, debajo de la fila
+  .mbr-sesion__error {
+    grid-column: 1 / -1;
+    margin: 8px 0 0;
+    font-size: 0.88rem;
+  }
+
+  // Al llegar con #sesion-CODIGO (p. ej. desde «tienes otra sesión esperando el pago»)
+  &:target {
+    background: #fbf7f2;
+    box-shadow: 0 0 0 8px #fbf7f2;
+    border-radius: 6px;
   }
 
   .mbr-sesion__acciones {
