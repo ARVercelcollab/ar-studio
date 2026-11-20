@@ -4,6 +4,7 @@
 import { recibirResultado } from '../../../../../lib/reservas/flujo.js'
 import { reservaPorToken } from '../../../../../lib/reservas/servicio.js'
 import { urlBase, sinCache } from '../../../../../lib/http.js'
+import { vueltaMiembro } from '../../../../../lib/miembros/api.js'
 
 export default async function handler(req, res) {
   sinCache(res)
@@ -22,9 +23,6 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error('[pagos] vuelta: reserva no encontrada', e.message)
   }
-  if (reserva?.origen === 'plan') {
-    const codigo = encodeURIComponent(reserva.codigo)
-    return res.redirect(302, estado === 'ok' ? `/miembros?reservada=${codigo}` : `/miembros?pago=ko&codigo=${codigo}`)
-  }
+  if (reserva?.origen === 'plan') return res.redirect(302, vueltaMiembro(reserva, estado))
   res.redirect(302, `/reserva/${encodeURIComponent(String(token))}?pago=${estado}`)
 }

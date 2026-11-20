@@ -22,7 +22,8 @@ import { crearReservaManual, reservaPorToken } from '../lib/reservas/servicio.js
 import { recibirResultado } from '../lib/reservas/flujo.js'
 import { facturaDeReserva } from '../lib/facturas/servicio.js'
 import { firmaSimulada } from '../lib/pagos/simulado.js'
-import { fechaMadrid, sumarDias, diaSemana, madridAInstante } from '../lib/reservas/tiempo.js'
+import { fechaMadrid, sumarDias, diaSemana, madridAInstante, textoFechaCorta } from '../lib/reservas/tiempo.js'
+import { vueltaMiembro } from '../lib/miembros/api.js'
 
 after(() => cerrarDb())
 
@@ -54,6 +55,28 @@ async function miembro(extra = {}, condiciones = {}) {
     ...extra,
   }, { confirmado: true })
   return suscripcion
+}
+
+// Para las pruebas que cuentan horas de un periodo: cada miembro empieza más adelante, en su
+// propia ventana de días, y dia() da tardes libres dentro de su primer periodo
+let proximoInicio = 45
+let ventana = null
+async function miembroAparte(extra = {}, condiciones = {}) {
+  const fechaInicio = sumarDias(HOY, proximoInicio)
+  proximoInicio += 35
+  const sus = await miembro({ fechaInicio, ...extra }, condiciones)
+  ventana = { desde: fechaInicio, hasta: R.periodoNumero(sus, 1).hasta }
+  return sus
+}
+async function dia() {
+  const { rows } = await query('SELECT fecha::text AS fecha FROM festivos')
+  const fest = new Set(rows.map((r) => r.fecha))
+  for (let f = ventana.desde; f < ventana.hasta; f = sumarDias(f, 1)) {
+    if ([0, 6].includes(diaSemana(f)) || fest.has(f) || usados.tarde.has(f)) continue
+    usados.tarde.add(f)
+    return f
+  }
+  throw new Error('No quedan tardes libres en el periodo de prueba')
 }
 
 async function pagar(campos, resultado = 'ok', importe = campos.importe) {
@@ -103,18 +126,70 @@ test('enlace para entrar: de un solo uso, caduca y con un correo desconocido no 
   assert.equal(cuarto.motivo, 'limite')
 })
 
-test('la cookie del miembro: firmada, con caducidad y distinta de la del panel', () => {
+test('la cookie del miembro: firmada, con caducidad y distinta de la del panel', async () => {
   const v = ACC.valorCookie('Socia@Example.com')
-  assert.deepEqual(ACC.leerCookie(v), { email: 'socia@example.com' })
-  const [e, caduca, f] = v.split('.')
+  assert.equal(ACC.leerCookie(v).email, 'socia@example.com')
+  assert.ok(Math.abs(ACC.leerCookie(v).abiertaMs - Date.now()) < 5000)
+  const [e, abierta, caduca, f] = v.split('.')
   const otro = Buffer.from('otra@example.com').toString('base64url')
-  assert.equal(ACC.leerCookie(`${otro}.${caduca}.${f}`), null)
-  assert.equal(ACC.leerCookie(`${e}.${Number(caduca) + 1}.${f}`), null)
+  assert.equal(ACC.leerCookie(`${otro}.${abierta}.${caduca}.${f}`), null)
+  assert.equal(ACC.leerCookie(`${e}.${abierta}.${Number(caduca) + 1}.${f}`), null)
+  assert.equal(ACC.leerCookie(`${e}.${Number(abierta) + 1}.${caduca}.${f}`), null)
   assert.equal(ACC.leerCookie(v, Date.now() + 31 * 24 * H), null)
   assert.equal(ACC.leerCookie(`${caduca}.${f}`), null) // la del panel tiene otra forma
+  assert.equal(ACC.leerCookie(`${e}.${caduca}.${f}`), null) // la de antes (sin hora de apertura)
   assert.equal(ACC.leerCookie(''), null)
-  assert.equal(ACC.miembroDeLaPeticion({ cookies: { ar_miembro: v } }).email, 'socia@example.com')
-  assert.equal(ACC.miembroDeLaPeticion({ cookies: {} }), null)
+  assert.equal(ACC.cookieDeLaPeticion({ cookies: { ar_miembro: v } }).email, 'socia@example.com')
+  assert.equal(await ACC.miembroDeLaPeticion({ cookies: {} }), null)
+  // Con la cookie buena pero sin suscripción con ese correo: no entra
+  assert.equal(await ACC.miembroDeLaPeticion({ cookies: { ar_miembro: v } }), null)
+  const sus = await miembro()
+  assert.equal((await ACC.miembroDeLaPeticion({ cookies: { ar_miembro: ACC.valorCookie(sus.email) } })).email, sus.email)
+})
+
+test('cerrar sesiones desde el panel (y al cambiar el correo): la cookie y los enlaces dejan de valer', async () => {
+  const sus = await miembro()
+  const antes = { cookies: { ar_miembro: ACC.valorCookie(sus.email, Date.now() - 1000) } }
+  const enlace = await ACC.pedirEnlace(sus.email, BASE)
+  assert.ok(await ACC.sesionDelMiembro(antes))
+  const r = await ACC.cerrarSesiones(sus.id)
+  assert.deepEqual(r, { ok: true, mensaje: 'Sesiones cerradas: tendrá que pedir otro enlace.' })
+  assert.equal(await ACC.sesionDelMiembro(antes), null)
+  assert.equal(await ACC.miembroDeLaPeticion(antes), null)
+  await assert.rejects(ACC.entrar(tokenDe(enlace.url)), (e) => e.codigo === 'enlace')
+  assert.equal((await ACC.redirigirSiNoMiembro({ req: antes })).redirect.destination, '/miembros')
+  // Una sesión nueva (después de cerrar) sí vale
+  await new Promise((r) => setTimeout(r, 5))
+  const despues = { cookies: { ar_miembro: ACC.valorCookie(sus.email) } }
+  assert.equal((await ACC.sesionDelMiembro(despues)).sus.id, sus.id)
+  assert.equal(await ACC.redirigirSiNoMiembro({ req: despues }), null)
+  assert.ok((await SUS.fichaSuscripcion(sus.id)).eventos.some((e) => e.tipo === 'sesiones_cerradas' && e.autor === 'panel'))
+
+  // Cambiar el correo cierra las sesiones (también las de un correo nuevo abiertas antes)
+  const nuevo = correo()
+  const delNuevo = { cookies: { ar_miembro: ACC.valorCookie(nuevo, Date.now() - 1000) } }
+  await SUS.editarSuscripcion(sus.id, { email: nuevo })
+  assert.equal(await ACC.sesionDelMiembro(despues), null)
+  assert.equal(await ACC.sesionDelMiembro(delNuevo), null)
+  await new Promise((r) => setTimeout(r, 5))
+  assert.equal((await ACC.sesionDelMiembro({ cookies: { ar_miembro: ACC.valorCookie(nuevo) } })).sus.id, sus.id)
+})
+
+test('pedir el enlace tarda lo mismo exista o no el correo', async () => {
+  const sus = await miembro()
+  for (const email of [sus.email, 'nadie-de-nada@example.com']) {
+    const inicio = Date.now()
+    await ACC.pedirEnlace(email, BASE)
+    await ACC.esperarMinimo(inicio, 300, 50)
+    assert.ok(Date.now() - inicio >= 300)
+  }
+  assert.ok(ACC.MINIMO_RESPUESTA_MS >= 1000)
+})
+
+test('los límites no se pasan aunque lleguen varias peticiones a la vez', async () => {
+  const { dentroDelLimite } = await import('../lib/db/index.js')
+  const r = await Promise.all(Array.from({ length: 6 }, () => dentroDelLimite('prueba:paralelo', 3, 15)))
+  assert.equal(r.filter(Boolean).length, 3)
 })
 
 test('qué suscripción ve: la viva; una terminada solo 90 días y sin reservar', async () => {
@@ -123,6 +198,17 @@ test('qué suscripción ve: la viva; una terminada solo 90 días y sin reservar'
   assert.equal(await ACC.suscripcionVisible(vieja.email), null)
   assert.equal((await ACC.pedirEnlace(vieja.email, BASE)).enviado, false)
   await assert.rejects(ACC.enviarAcceso(vieja.id, BASE), (e) => e.codigo === 'acceso')
+
+  // Una que va a empezar no tapa a la que está en marcha
+  const enMarcha = await miembro()
+  await SUS.crearSuscripcion({
+    plan: 'creator', nombre: 'Marta', apellidos: 'Ejemplo', email: enMarcha.email, fechaInicio: sumarDias(HOY, 40),
+    metodoHabitual: 'transferencia', fianza: { estado: 'sin_fianza' },
+  }, { confirmado: true })
+  assert.equal((await ACC.suscripcionVisible(enMarcha.email)).id, enMarcha.id)
+  // Solo con la que va a empezar, se ve esa
+  const futura = await miembro({ fechaInicio: sumarDias(HOY, 10) })
+  assert.equal((await ACC.suscripcionVisible(futura.email)).id, futura.id)
 
   const reciente = await miembro()
   await query(`UPDATE suscripciones SET fecha_inicio = $2::date - 100, ultimo_dia = $2::date - 10 WHERE id = $1`, [reciente.id, HOY])
@@ -186,6 +272,27 @@ test('reglas del área: sin «reservar igualmente» y con textos para el miembro
   assert.deepEqual(codigos(R.validarSesion({ sus: SOCIA, ...franja('2026-11-28', '14:00', '18:00'), ahora: AHORA }).errores), [])
 })
 
+test('reglas del área: «lo que te queda» no vale para pasarse de la sesión más larga del plan', () => {
+  const PRO = { ...SOCIA, plan: 'pro', horasPeriodo: 16, duracionesH: null, sesionMinH: 4, sesionMaxH: 8, maxSesiones: null, franjaDesde: '09:00', franjaHasta: '20:00' }
+  const seis = [{ id: 1, estado: 'confirmada', horasPlan: 6, ...franja('2026-11-24', '09:00', '15:00') }]
+  const diez = R.validarSesion({ sus: PRO, sesionesPeriodo: seis, ...franja('2026-11-25', '09:00', '19:00'), ahora: AHORA, modo: 'cliente' })
+  assert.ok(codigos(diez.errores).includes('duracion'))
+  const ocho = R.validarSesion({ sus: PRO, sesionesPeriodo: seis, ...franja('2026-11-25', '09:00', '17:00'), ahora: AHORA, modo: 'cliente' })
+  assert.deepEqual(codigos(ocho.errores), [])
+  // 2 h que le quedan (menos que la sesión mínima): sí
+  const catorce = [{ id: 1, estado: 'confirmada', horasPlan: 8, ...franja('2026-11-24', '09:00', '17:00') }, { id: 2, estado: 'confirmada', horasPlan: 6, ...franja('2026-11-26', '09:00', '15:00') }]
+  assert.deepEqual(codigos(R.validarSesion({ sus: PRO, sesionesPeriodo: catorce, ...franja('2026-11-25', '09:00', '11:00'), ahora: AHORA, modo: 'cliente' }).errores), [])
+  assert.deepEqual(AREA.duracionesDe(PRO, 10).map((x) => x.horas), [4, 5, 6, 7, 8])
+  assert.deepEqual(AREA.duracionesDe(PRO, 2).map((x) => x.horas), [2, 4, 5, 6, 7, 8])
+})
+
+test('textos de las sesiones: horas aparte sin cargo', () => {
+  const r = { codigo: 'AR-X', estado: 'confirmada', inicio: madridAInstante('2026-12-01', '14:00'), fin: madridAInstante('2026-12-01', '18:00'), duracionHoras: 4, horasPlan: 0, precioCent: 0, pagoEstado: 'pagado' }
+  assert.equal(AREA.aSesion(r, SOCIA, AHORA).extraTexto, '4 h aparte · sin cargo')
+  assert.equal(AREA.aSesion({ ...r, precioCent: 18392 }, SOCIA, AHORA).extraTexto, '4 h aparte · 183,92 € · pagadas')
+  assert.equal(AREA.aSesion(r, SOCIA, AHORA).fechaTexto, 'martes 1 de diciembre')
+})
+
 test('reglas del área: horas aparte solo si se pagan al reservar', () => {
   const sin = cliente({ sesionesPeriodo: usadas(2), ...franja('2026-12-01', '14:00', '18:00') })
   assert.ok(codigos(sin.errores).includes('extra'))
@@ -236,10 +343,10 @@ test('reservar una sesión del plan: confirmada, en su área y con autor «clien
 })
 
 test('sin horas del plan: las horas aparte se pagan por el TPV y llevan su factura', async () => {
-  const sus = await miembro()
-  await M.reservarMiembro(sus, { fecha: await laborable(5), desde: '14:00', horas: 4 }, BASE)
-  await M.reservarMiembro(sus, { fecha: await laborable(6), desde: '14:00', horas: 4 }, BASE)
-  const fecha = await laborable(7)
+  const sus = await miembroAparte()
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const fecha = await dia()
   const c = await M.comprobarMiembro(sus, { fecha, desde: '15:00', horas: 4 })
   assert.equal(c.ok, true, JSON.stringify(c.errores))
   assert.equal(c.horasExtra, 4)
@@ -256,7 +363,10 @@ test('sin horas del plan: las horas aparte se pagan por el TPV y llevan su factu
   const pendiente = area.proximas.find((s) => s.codigo === r.codigo)
   assert.equal(pendiente.estado, 'pendiente')
   assert.equal(pendiente.puedeCambiar, false)
-  assert.equal((await M.huecosMiembro(sus, { fecha, horas: 4 })).huecos.includes('15:00'), false)
+  // A ella le sale libre (para volver a pagarla); a otra persona, no
+  assert.ok((await M.huecosMiembro(sus, { fecha, horas: 4 })).huecos.includes('15:00'))
+  const vecina = await miembro({ fechaInicio: sus.fechaInicio })
+  assert.equal((await M.huecosMiembro(vecina, { fecha, horas: 4 })).huecos.includes('15:00'), false)
 
   const res = await pagar(r.pago.campos)
   assert.equal(res.aviso, 'confirmada')
@@ -269,6 +379,8 @@ test('sin horas del plan: las horas aparte se pagan por el TPV y llevan su factu
   assert.match(factura.lineas[0].descripcion, /^Horas aparte/)
   area = await AREA.datosArea(sus.email)
   assert.equal(area.facturasSesiones.length, 1)
+  assert.match(area.facturasSesiones[0].fechaTexto, /^sesión del \d+ \S+$/)
+  assert.equal(area.facturasSesiones[0].fechaTexto, `sesión del ${textoFechaCorta(fecha)}`)
   const pagada = area.proximas.find((s) => s.codigo === r.codigo)
   assert.equal(pagada.puedeCancelar, false)
   assert.match(pagada.textoCancelar, /horas aparte pagadas/)
@@ -283,10 +395,10 @@ test('sin horas del plan: las horas aparte se pagan por el TPV y llevan su factu
 
 test('pago de las horas aparte que llega tarde: si ya no cabe, queda en revisión (nunca se pierde)', async () => {
   // Sin hueco: mientras tanto el estudio ha dado esa hora a otra persona
-  const sus = await miembro()
-  await M.reservarMiembro(sus, { fecha: await laborable(5), desde: '14:00', horas: 4 }, BASE)
-  await M.reservarMiembro(sus, { fecha: await laborable(6), desde: '14:00', horas: 4 }, BASE)
-  const fecha = await laborable(7)
+  const sus = await miembroAparte()
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const fecha = await dia()
   const r = await M.reservarMiembro(sus, { fecha, desde: '14:00', horas: 4, aceptoPagoExtra: true }, BASE)
   await query(`UPDATE reservas SET expira_en = now() - interval '1 minute' WHERE codigo = $1`, [r.codigo])
   await crearReservaManual({ fecha, desde: '14:00', hasta: '18:00', nombre: 'Otra', apellidos: 'Persona', email: 'otra@example.com', pagoEstado: 'pendiente' })
@@ -296,38 +408,155 @@ test('pago de las horas aparte que llega tarde: si ya no cabe, queda en revisió
   assert.equal(res.reserva.pagoEstado, 'pagado')
 
   // Sin horas del plan: mientras tanto se han gastado en otra sesión
-  const otra = await miembro({}, { horasPeriodo: 6, maxSesiones: null })
-  await M.reservarMiembro(otra, { fecha: await laborable(8), desde: '14:00', horas: 4 }, BASE)
-  const f2 = await laborable(9)
+  const otra = await miembroAparte({}, { horasPeriodo: 6, maxSesiones: null })
+  await M.reservarMiembro(otra, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const f2 = await dia()
   const mixta = await M.comprobarMiembro(otra, { fecha: f2, desde: '14:00', horas: 4 })
   assert.equal(mixta.horasPlan, 2)
   assert.equal(mixta.horasExtra, 2)
   const r2 = await M.reservarMiembro(otra, { fecha: f2, desde: '14:00', horas: 4, aceptoPagoExtra: true }, BASE)
   await query(`UPDATE reservas SET expira_en = now() - interval '1 minute' WHERE codigo = $1`, [r2.codigo])
-  await M.reservarMiembro(otra, { fecha: await laborable(10), desde: '14:00', horas: 2 }, BASE) // las 2 h que le quedaban
+  await M.reservarMiembro(otra, { fecha: await dia(), desde: '14:00', horas: 2 }, BASE) // las 2 h que le quedaban
   const res2 = await pagar(r2.pago.campos)
   assert.equal(res2.aviso, 'conflicto')
 })
 
-test('una sola sesión retenida a la vez: al volver a reservar se suelta la anterior', async () => {
-  const sus = await miembro({}, { horasPeriodo: 4, maxSesiones: 1 })
-  await M.reservarMiembro(sus, { fecha: await laborable(5), desde: '14:00', horas: 4 }, BASE)
-  const a = await M.reservarMiembro(sus, { fecha: await laborable(6), desde: '14:00', horas: 4, aceptoPagoExtra: true }, BASE)
-  const b = await M.reservarMiembro(sus, { fecha: await laborable(7), desde: '14:00', horas: 4, aceptoPagoExtra: true }, BASE)
-  const { rows } = await query(`SELECT codigo, estado FROM reservas WHERE codigo IN ($1, $2)`, [a.codigo, b.codigo])
-  const estado = Object.fromEntries(rows.map((x) => [x.codigo, x.estado]))
-  assert.equal(estado[a.codigo], 'caducada')
-  assert.equal(estado[b.codigo], 'pendiente')
-  // Y la pendiente se puede soltar desde el área sin que cuente
-  const c = await M.cancelarMiembro(sus, { codigo: b.codigo }, BASE)
-  assert.equal(c.cuentaComoUsada, false)
+test('sesión retenida: en otro hueco no se suelta sola; en el mismo, doble clic o volver a pagar la reutilizan', async () => {
+  const sus = await miembroAparte({}, { horasPeriodo: 4, maxSesiones: 1 })
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const fecha = await dia()
+  const datos = { fecha, desde: '14:00', horas: 4, aceptoPagoExtra: true }
+  const a = await M.reservarMiembro(sus, datos, BASE)
+  // Doble clic: la misma sesión con otro pago
+  const b = await M.reservarMiembro(sus, datos, BASE)
+  assert.equal(b.estado, 'pago')
+  assert.equal(b.codigo, a.codigo)
+  assert.notEqual(b.pago.campos.pedido, a.pago.campos.pedido)
+  // Otro hueco: no, y la retenida sigue como estaba
+  const otro = await dia()
+  await assert.rejects(M.reservarMiembro(sus, { fecha: otro, desde: '14:00', horas: 4, aceptoPagoExtra: true }, BASE), (e) => e.codigo === 'retenida' && e.datos.codigo === a.codigo)
+  const c = await M.comprobarMiembro(sus, { fecha: otro, desde: '14:00', horas: 4 })
+  assert.equal(c.ok, false)
+  assert.equal(c.errores[0].codigo, 'retenida')
+  assert.equal(c.errores[0].sesion, a.codigo)
+  const d = await AREA.datosReservar(sus.email)
+  assert.equal(d.retenida.codigo, a.codigo)
+  // Su propio hueco le sale libre (para volver a pagarlo); para otra persona, no
+  assert.ok((await M.huecosMiembro(sus, { fecha, horas: 4 })).huecos.includes('14:00'))
+  const otra = await miembro({ fechaInicio: sus.fechaInicio })
+  assert.equal((await M.huecosMiembro(otra, { fecha, horas: 4 })).huecos.includes('14:00'), false)
+  // Pagar el primer formulario (el que se abrió en el banco) la confirma, sin conflicto
+  const res = await pagar(a.pago.campos)
+  assert.equal(res.aviso, 'confirmada')
+  assert.equal(res.reserva.codigo, a.codigo)
+  // Si luego llegara también el segundo pago, se avisa al estudio para devolverlo
+  assert.equal((await pagar(b.pago.campos)).aviso, 'duplicado')
+})
+
+test('dos clics a la vez en «Pagar»: una sola sesión', async () => {
+  const sus = await miembroAparte({}, { horasPeriodo: 4, maxSesiones: 1 })
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const datos = { fecha: await dia(), desde: '14:00', horas: 4, aceptoPagoExtra: true }
+  const [x, y] = await Promise.all([M.reservarMiembro(sus, datos, BASE), M.reservarMiembro(sus, datos, BASE)])
+  assert.equal(x.codigo, y.codigo)
+  assert.equal((await pagar(x.pago.campos)).aviso, 'confirmada')
+})
+
+test('pago fallido: volver a pagar la misma sesión, y sus horas del plan no estorban a otra reserva', async () => {
+  const sus = await miembroAparte({}, { horasPeriodo: 8, duracionesH: [4, 6], sesionMinH: 4, sesionMaxH: 6, maxSesiones: null })
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE) // le quedan 4 h
+  const fecha = await dia()
+  const a = await M.reservarMiembro(sus, { fecha, desde: '14:00', horas: 6, aceptoPagoExtra: true }, BASE) // 4 del plan + 2 aparte
+  assert.equal(a.estado, 'pago')
+  const ko = await pagar(a.pago.campos, 'ko')
+  assert.equal(ko.aviso, 'fallido')
+  // Volver a pagar la misma: misma sesión, pago nuevo, mismas horas aparte
+  const c = await M.comprobarMiembro(sus, { fecha, desde: '14:00', horas: 6 })
+  assert.equal(c.ok, true, JSON.stringify(c.errores))
+  assert.equal(c.horasPlan, 4)
+  assert.equal(c.horasExtra, 2)
+  const otraVez = await M.reservarMiembro(sus, { fecha, desde: '14:00', horas: 6, aceptoPagoExtra: true }, BASE)
+  assert.equal(otraVez.codigo, a.codigo)
+  // Otra sesión de 4 h (que cabe en el plan sin contar la retenida): primero, pagar o soltar la retenida
+  const f = await dia()
+  const c2 = await M.comprobarMiembro(sus, { fecha: f, desde: '14:00', horas: 4 })
+  assert.equal(c2.horasPlan, 4)
+  assert.equal(c2.horasExtra, 0)
+  assert.deepEqual(c2.errores.map((e) => e.codigo), ['retenida'])
+  await assert.rejects(M.reservarMiembro(sus, { fecha: f, desde: '14:00', horas: 4 }, BASE), (e) => e.codigo === 'retenida')
+  assert.equal((await M.cancelarMiembro(sus, { codigo: a.codigo }, BASE)).cuentaComoUsada, false)
+  const ok = await M.reservarMiembro(sus, { fecha: f, desde: '14:00', horas: 4 }, BASE)
+  assert.equal(ok.estado, 'confirmada')
+  // El pago de la soltada, si llegara ahora, avisa al estudio (cobro tras cancelar)
+  assert.equal((await pagar(otraVez.pago.campos)).aviso, 'tras_cancelar')
+})
+
+test('volver a pagar una retenida tiene un máximo de intentos', async () => {
+  const sus = await miembroAparte({}, { horasPeriodo: 4, maxSesiones: 1 })
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const datos = { fecha: await dia(), desde: '14:00', horas: 4, aceptoPagoExtra: true }
+  for (let i = 0; i < 4; i++) await M.reservarMiembro(sus, datos, BASE)
+  await assert.rejects(M.reservarMiembro(sus, datos, BASE), (e) => e.codigo === 'intentos')
+})
+
+test('retenida del mismo hueco que ya no lleva horas aparte: se confirma sin pago', async () => {
+  const sus = await miembroAparte({}, { horasPeriodo: 8, maxSesiones: null })
+  const primera = await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const datos = { fecha: await dia(), desde: '14:00', horas: 4, aceptoPagoExtra: true }
+  const r = await M.reservarMiembro(sus, datos, BASE)
+  assert.equal(r.estado, 'pago')
+  // Mientras paga, el estudio le cancela otra sesión: vuelven 4 h y ya no hace falta pagar
+  await SUS.cancelarSesionPlan((await query('SELECT id FROM reservas WHERE codigo = $1', [primera.codigo])).rows[0].id, { motivo: 'prueba' })
+  const fin = await M.reservarMiembro(sus, datos, BASE)
+  assert.equal(fin.estado, 'confirmada')
+  assert.equal(fin.codigo, r.codigo)
+  const { rows } = await query('SELECT estado, precio_cent, horas_plan FROM reservas WHERE codigo = $1', [r.codigo])
+  assert.deepEqual([rows[0].estado, rows[0].precio_cent, Number(rows[0].horas_plan)], ['confirmada', 0, 4])
+  // Si aun así llega el pago del banco, se avisa para devolverlo
+  assert.equal((await pagar(r.pago.campos)).aviso, 'duplicado')
+})
+
+test('cancelar y pago a la vez: nunca queda cancelada una sesión con las horas aparte pagadas sin avisar', async () => {
+  // El pago llega antes: cancelar comprueba con la fila bloqueada y no deja
+  const sus = await miembroAparte({}, { horasPeriodo: 4, maxSesiones: 1 })
+  await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const r = await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4, aceptoPagoExtra: true }, BASE)
+  const { rows } = await query('SELECT id FROM reservas WHERE codigo = $1', [r.codigo])
+  await pagar(r.pago.campos)
+  const comprobar = (x) => { if (x.pagoEstado === 'pagado' && x.precioCent > 0) throw new Error('pagada') }
+  await assert.rejects(SUS.cancelarSesionPlan(rows[0].id, { motivo: 'x', cuentaComoUsada: false }, { comprobar }), /pagada/)
+  await assert.rejects(M.cancelarMiembro(sus, { codigo: r.codigo }, BASE), (e) => e.codigo === 'extra_pagado')
+
+  // A la vez: o se cancela y el pago avisa (tras_cancelar), o se paga y no se cancela
+  const otra = await miembroAparte({}, { horasPeriodo: 4, maxSesiones: 1 })
+  await M.reservarMiembro(otra, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
+  const s2 = await M.reservarMiembro(otra, { fecha: await dia(), desde: '14:00', horas: 4, aceptoPagoExtra: true }, BASE)
+  const [can, pago] = await Promise.allSettled([M.cancelarMiembro(otra, { codigo: s2.codigo }, BASE), pagar(s2.pago.campos)])
+  const { rows: fin } = await query('SELECT estado, pago_estado FROM reservas WHERE codigo = $1', [s2.codigo])
+  if (fin[0].estado === 'cancelada') {
+    assert.equal(can.status, 'fulfilled')
+    assert.equal(pago.value.aviso, 'tras_cancelar')
+  } else {
+    assert.equal(fin[0].estado, 'confirmada')
+    assert.equal(can.status, 'rejected')
+  }
+})
+
+test('vuelta del banco: a su área según cómo ha quedado la sesión', () => {
+  assert.equal(vueltaMiembro({ codigo: 'AR-1', estado: 'confirmada' }, 'ok'), '/miembros?reservada=AR-1')
+  assert.equal(vueltaMiembro({ codigo: 'AR-1', estado: 'confirmada' }, 'ko'), '/miembros?reservada=AR-1')
+  assert.equal(vueltaMiembro({ codigo: 'AR-1', estado: 'conflicto' }, 'ok'), '/miembros?pago=revision&codigo=AR-1')
+  assert.equal(vueltaMiembro({ codigo: 'AR-1', estado: 'cancelada' }, 'ok'), '/miembros?pago=revision&codigo=AR-1')
+  assert.equal(vueltaMiembro({ codigo: 'AR-1', estado: 'pendiente' }, 'ok'), '/miembros?pago=espera&codigo=AR-1')
+  assert.equal(vueltaMiembro({ codigo: 'AR-1', estado: 'pendiente' }, 'ko'), '/miembros?pago=ko&codigo=AR-1')
 })
 
 test('cambiar y cancelar: con su aviso de 48 h y solo sus sesiones', async () => {
-  const sus = await miembro()
-  const fecha = await laborable(8)
+  const sus = await miembroAparte()
+  const fecha = await dia()
   const { codigo } = await M.reservarMiembro(sus, { fecha, desde: '14:00', horas: 4 }, BASE)
-  const nueva = await laborable(9)
+  const nueva = await dia()
   const c = await M.comprobarMiembro(sus, { codigo, fecha: nueva, desde: '16:00', horas: 4 })
   assert.equal(c.ok, true, JSON.stringify(c.errores))
   const cambio = await M.cambiarMiembro(sus, { codigo, fecha: nueva, desde: '16:00', horas: 4 }, BASE)
@@ -341,12 +570,12 @@ test('cambiar y cancelar: con su aviso de 48 h y solo sus sesiones', async () =>
   const vista = AREA.aSesion(r, sus, tarde)
   assert.equal(vista.puedeCambiar, false)
   assert.equal(vista.cancelarCuentaComoUsada, true)
-  await assert.rejects(M.cambiarMiembro(sus, { codigo, fecha: await laborable(12), desde: '14:00', horas: 4 }, BASE, { ahora: tarde }), (e) => e.codigo === 'cambiar')
+  await assert.rejects(M.cambiarMiembro(sus, { codigo, fecha: await dia(), desde: '14:00', horas: 4 }, BASE, { ahora: tarde }), (e) => e.codigo === 'cambiar')
 
   // La sesión de otro miembro: como si no existiera
   const otra = await miembro()
   await assert.rejects(M.cancelarMiembro(otra, { codigo }, BASE), (e) => e.estadoHttp === 404)
-  await assert.rejects(M.cambiarMiembro(otra, { codigo, fecha: await laborable(13), desde: '14:00', horas: 4 }, BASE), (e) => e.estadoHttp === 404)
+  await assert.rejects(M.cambiarMiembro(otra, { codigo, fecha: await dia(), desde: '14:00', horas: 4 }, BASE), (e) => e.estadoHttp === 404)
   await assert.rejects(M.comprobarMiembro(otra, { codigo, fecha: nueva, desde: '14:00', horas: 4 }), (e) => e.estadoHttp === 404)
 
   const can = await M.cancelarMiembro(sus, { codigo }, BASE, { ahora: tarde })
@@ -357,7 +586,7 @@ test('cambiar y cancelar: con su aviso de 48 h y solo sus sesiones', async () =>
   await assert.rejects(M.cancelarMiembro(sus, { codigo }, BASE), (e) => e.codigo === 'estado')
 
   // Cancelar a tiempo: las horas vuelven
-  const otraSesion = await M.reservarMiembro(sus, { fecha: await laborable(14), desde: '14:00', horas: 4 }, BASE)
+  const otraSesion = await M.reservarMiembro(sus, { fecha: await dia(), desde: '14:00', horas: 4 }, BASE)
   const ok = await M.cancelarMiembro(sus, { codigo: otraSesion.codigo }, BASE)
   assert.equal(ok.cuentaComoUsada, false)
 })

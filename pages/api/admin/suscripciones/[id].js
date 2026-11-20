@@ -9,7 +9,7 @@ import { urlBase } from '../../../../lib/http.js'
 import { textoDuracion } from '../../../../lib/reservas/config.js'
 import { registrarEvento } from '../../../../lib/reservas/servicio.js'
 import { cambiarCobroAutomatico } from '../../../../lib/suscripciones/alta.js'
-import { enviarAcceso } from '../../../../lib/miembros/acceso.js'
+import { enviarAcceso, cerrarSesiones } from '../../../../lib/miembros/acceso.js'
 
 const numero = (v) => (v === '' || v === null || v === undefined ? null : Number(String(v).replace(',', '.')))
 
@@ -89,6 +89,9 @@ export default rutaAdmin(async (req, res) => {
     case 'enviar_acceso':
       // Enlace para entrar en su área de miembro (studioar.es/miembros)
       return res.status(200).json(await enviarAcceso(id, urlBase(req)))
+    case 'cerrar_sesiones':
+      // Cierra sus sesiones abiertas en el área (y los enlaces sin usar)
+      return res.status(200).json(await cerrarSesiones(id))
     case 'notas':
       await SUS.guardarNotasSuscripcion(id, b.notas)
       return res.status(200).json({ ok: true, mensaje: 'Notas guardadas.' })
