@@ -2,8 +2,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import Panel, { chipEstado } from '../../../components/admin/Panel'
+import Panel from '../../../components/admin/Panel'
 import SesionPlan from '../../../components/admin/SesionPlan'
+import { Tarjeta, Datos, Boton, Contacto, Etiqueta, Aviso } from '../../../components/admin/ui'
+import { EtiquetaEstado, EtiquetaFactura } from '../../../components/admin/reservas/comun'
+import { vecesDeReservas } from '../../../lib/reservas/clientes'
+import { textoVez } from '../../../lib/reservas/clientes-vista'
 import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
 import { vistaAdmin, fechaHoraTexto } from '../../../lib/admin/vista'
 import { reservaPorId, pagosDeReserva, eventosDeReserva } from '../../../lib/reservas/servicio'
@@ -55,7 +59,7 @@ function Mensaje({ estado }) {
   return <p className={`adm-mensaje${estado.error ? ' is-error' : ''}`}>{estado.mensaje}</p>
 }
 
-export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, enlaceCliente, factura, emisorListo, cobrosDia, hoy }) {
+export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, enlaceCliente, factura, emisorListo, cobrosDia, hoy, cliente }) {
   const router = useRouter()
   const [movida, setMovida] = useState(null)
   const [pago, setPago] = useState({ metodo: 'transferencia', enviarCorreo: false, fecha: '' })
@@ -76,114 +80,129 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
   const [datosFactura, setDatosFactura] = useState({ nombre: r.factura?.nombre || '', nif: r.factura?.nif || '', direccion: r.factura?.direccion || '' })
   const formularioFactura = (texto, boton) => (
     <>
-      {texto && <p className="adm-nota" style={{ marginBottom: 8 }}>{texto}</p>}
+      {texto && <p className="adm-nota rsv-texto-bloque">{texto}</p>}
       <div className="adm-form">
         <label className="adm-ancho">Nombre o razón social<input value={datosFactura.nombre} onChange={(e) => setDatosFactura({ ...datosFactura, nombre: e.target.value })} /></label>
         <label>NIF o CIF<input value={datosFactura.nif} onChange={(e) => setDatosFactura({ ...datosFactura, nif: e.target.value })} /></label>
         <label className="adm-ancho">Dirección<input value={datosFactura.direccion} onChange={(e) => setDatosFactura({ ...datosFactura, direccion: e.target.value })} /></label>
       </div>
-      <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura', ...datosFactura }, '')}>{boton}</button></p>
+      <div className="rsv-pie-acciones"><Boton disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura', ...datosFactura }, '')}>{boton}</Boton></div>
     </>
   )
 
   const puedeCobrarse = r.pagoEstado !== 'pagado' && r.estado !== 'cancelada'
-  const telefono = (r.telefono || '').replace(/[^0-9]/g, '')
+  const nombre = `${r.nombre} ${r.apellidos}`.trim()
+  const origenTexto = r.esPlan ? 'sesión de la suscripción' : r.origen === 'web' ? 'reservada en la web' : r.origen === 'manual' ? 'apuntada a mano' : 'desde Calendly'
+  const importeTexto = r.esPlan && !r.precioCent
+    ? (r.horasExtra > 0 ? `Incluida en la suscripción (${textoDuracion(r.horasExtra, { corto: true })} aparte, de regalo)` : 'Incluida en la suscripción')
+    : <><span className="ui-imp">{r.importe}</span>{r.esPlan ? ' (horas aparte)' : ''} · {r.pagoTexto}{r.metodoPago && r.metodoPago !== 'plan' ? ` (${r.metodoPago})` : ''}{r.reembolso ? <> · devuelto <span className="ui-imp">{r.reembolso}</span></> : ''}</>
 
   return (
     <Panel
-      titulo={`${r.nombre} ${r.apellidos}`}
+      titulo={nombre}
+      sub={`${r.fechaTexto}, de ${r.horaInicio} a ${r.horaFin} · ${r.duracionTexto} · ${r.codigo}`}
+      clase="adm-reservas"
       acciones={(
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Link href="/admin/reservas" className="adm-boton adm-boton--claro">← Agenda</Link>
-          {sus && <Link href={`/admin/miembros/${sus.id}`} className="adm-boton adm-boton--claro">Su suscripción</Link>}
-        </div>
+        <>
+          <Boton variante="secundario" href="/admin/reservas" icono="izq">Reservas</Boton>
+          {cliente && <Boton variante="secundario" href={`/admin/reservas/clientes?c=${encodeURIComponent(cliente.clave)}`} icono="persona">Su ficha de cliente</Boton>}
+          {sus && <Boton variante="secundario" href={`/admin/miembros/${sus.id}`} icono="gente">Su suscripción</Boton>}
+        </>
       )}
     >
-      {r.esPlan && sus?.impago && ['pendiente', 'confirmada'].includes(r.estado) && <p className="adm-mensaje is-error">{sus.impago}</p>}
-      <div className="adm-dos">
-        <div>
-          <div className="adm-caja">
-            <h2>{r.fechaTexto}, {r.horaInicio} – {r.horaFin} {chipEstado(r)}</h2>
-            <dl className="adm-datos">
-              <dt>Reserva</dt><dd>{r.codigo} · {r.esPlan ? <>sesión de la suscripción{sus ? <> <Link href={`/admin/miembros/${sus.id}`}>{sus.planNombre} ({sus.codigo})</Link></> : null}</> : r.origen === 'web' ? 'reservada en la web' : r.origen === 'manual' ? 'apuntada a mano' : 'desde Calendly'}</dd>
-              <dt>Duración</dt><dd>{r.duracionTexto} · {r.tipoDia === 'finde' ? 'fin de semana o festivo' : 'entre semana'}</dd>
-              {r.esPlan && (<><dt>Horas del plan</dt><dd>{r.horasPlanTexto}{r.estado === 'cancelada' ? (r.cuentaComoUsada ? ' · cancelada, pero cuenta como usada' : ' · cancelada, no cuenta') : ''}</dd></>)}
-              <dt>Importe</dt><dd>{r.esPlan && !r.precioCent ? (r.horasExtra > 0 ? `Incluida en la suscripción (${textoDuracion(r.horasExtra, { corto: true })} aparte, de regalo)` : 'Incluida en la suscripción') : <>{r.importe}{r.esPlan ? ' (horas aparte)' : ''} · {r.pagoTexto}{r.metodoPago && r.metodoPago !== 'plan' ? ` (${r.metodoPago})` : ''}{r.reembolso ? ` · devuelto ${r.reembolso}` : ''}</>}</dd>
-              <dt>Correo</dt><dd>{r.email ? <a href={`mailto:${r.email}`}>{r.email}</a> : '—'}</dd>
-              <dt>WhatsApp</dt><dd>{telefono ? <a href={`https://wa.me/${telefono}`} target="_blank" rel="noopener noreferrer">{r.telefono}</a> : '—'}</dd>
-              <dt>Actividad</dt><dd>{r.actividad || '—'}</dd>
-              <dt>Fondos</dt><dd>{r.fondos}</dd>
-              <dt>Equipo</dt><dd>{r.equipo.length ? r.equipo.join(', ') : 'Nada'}</dd>
-              <dt>Datos de factura</dt><dd>{r.factura ? `${r.factura.nombre} · ${r.factura.nif} · ${r.factura.direccion}` : 'No los ha dado (lleva factura simplificada)'}</dd>
-              <dt>Comentarios</dt><dd>{r.comentarios || '—'}</dd>
-              {r.motivoCancelacion && (<><dt>Motivo</dt><dd>{r.motivoCancelacion}</dd></>)}
-              <dt>Página del cliente</dt><dd><a href={enlaceCliente} target="_blank" rel="noopener noreferrer">Abrir</a></dd>
-              <dt>Cobros del día</dt>
-              <dd>
-                {cobrosDia.map((x) => <span key={x.id} style={{ display: 'block' }}>{x.sentido === 'devolucion' ? 'Devolución: ' : ''}{x.concepto} · {(x.totalCent / 100).toFixed(2).replace('.', ',')} € (<Link href={`/admin/movimientos/ingresos/${x.id}`}>ver</Link>)</span>)}
-                <Link href={`/admin/movimientos/ingresos/nuevo?reserva=${r.id}`}>Apuntar un cobro del día (fondos, equipo…)</Link>
-              </dd>
-            </dl>
-          </div>
+      {r.esPlan && sus?.impago && ['pendiente', 'confirmada'].includes(r.estado) && <Aviso tono="mal">{sus.impago}</Aviso>}
+      {r.estado === 'conflicto' && (
+        <Aviso tono="mal" titulo="Pago en revisión.">Ha llegado el pago pero la hora chocaba con otra reserva o el importe no cuadraba. Habla con el cliente y muévela a una hora libre, o cancélala y devuelve el dinero desde el TPV.</Aviso>
+      )}
 
-          <div className="adm-caja">
-            <h2>Notas internas</h2>
-            <textarea value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Solo las ve el estudio" />
+      <div className="rsv-ficha-reserva">
+        <div className="rsv-ficha-reserva__col">
+          <Tarjeta titulo={<span className="rsv-titulo-estado">{r.fechaTexto}, {r.horaInicio} – {r.horaFin} <EtiquetaEstado r={r} /></span>}>
+            <div className="rsv-cliente-linea">
+              <div>
+                <b>{nombre}</b>
+                {cliente && (
+                  <span className="ui-t3">
+                    {cliente.vez ? `Es su ${textoVez(cliente.vez)}` : 'Reserva cancelada'} · {cliente.total} {cliente.total === 1 ? 'reserva' : 'reservas'} en total ·{' '}
+                    <Link href={`/admin/reservas/clientes?c=${encodeURIComponent(cliente.clave)}`}>ver su ficha</Link>
+                  </span>
+                )}
+              </div>
+              <Contacto telefono={r.telefono} email={r.email} nombre={r.nombre} conCorreo />
+            </div>
+            <Datos filas={[
+              ['Reserva', <>{r.codigo} · {origenTexto}{r.esPlan && sus ? <> · <Link href={`/admin/miembros/${sus.id}`}>{sus.planNombre} ({sus.codigo})</Link></> : null}</>],
+              ['Duración', `${r.duracionTexto} · ${r.tipoDia === 'finde' ? 'fin de semana o festivo' : 'entre semana'}`],
+              r.esPlan ? ['Horas del plan', `${r.horasPlanTexto}${r.estado === 'cancelada' ? (r.cuentaComoUsada ? ' · cancelada, pero cuenta como usada' : ' · cancelada, no cuenta') : ''}`] : ['', null],
+              ['Importe', importeTexto],
+              ['Correo', r.email ? <a href={`mailto:${r.email}`}>{r.email}</a> : '—'],
+              ['WhatsApp', r.telefono || '—'],
+              ['Actividad', r.actividad || '—'],
+              ['Fondos', r.fondos],
+              ['Equipo', r.equipo.length ? r.equipo.join(', ') : 'Nada'],
+              ['Datos de factura', r.factura ? `${r.factura.nombre} · ${r.factura.nif} · ${r.factura.direccion}` : 'No los ha dado (lleva factura simplificada)'],
+              ['Comentarios', r.comentarios || '—'],
+              r.motivoCancelacion ? ['Motivo', r.motivoCancelacion] : ['', null],
+              ['Página del cliente', <a key="p" href={enlaceCliente} target="_blank" rel="noopener noreferrer">Abrir</a>],
+            ]} />
+            <div className="rsv-cobros-dia">
+              <h3>Cobros del día</h3>
+              {cobrosDia.length === 0 && <p className="ui-t3 rsv-peq">Ninguno (fondos, equipo…).</p>}
+              {cobrosDia.map((x) => <p key={x.id} className="rsv-peq">{x.sentido === 'devolucion' ? 'Devolución: ' : ''}{x.concepto} · <span className="ui-imp">{(x.totalCent / 100).toFixed(2).replace('.', ',')} €</span> (<Link href={`/admin/movimientos/ingresos/${x.id}`}>ver</Link>)</p>)}
+              <Boton variante="texto" tam="peq" icono="mas" href={`/admin/movimientos/ingresos/nuevo?reserva=${r.id}`}>Apuntar un cobro del día</Boton>
+            </div>
+          </Tarjeta>
+
+          <Tarjeta titulo={<label htmlFor="rsv-notas-reserva">Notas internas</label>} nota="Solo las ve el estudio.">
+            <textarea id="rsv-notas-reserva" className="ui-control rsv-notas" rows={3} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Lo que conviene saber de esta reserva" />
             <Mensaje estado={eNotas} />
-            <p style={{ marginTop: 10 }}>
-              <button type="button" className="adm-boton adm-boton--claro" disabled={eNotas.enviando} onClick={() => accionNotas({ accion: 'notas', notas }, 'Notas guardadas.')}>Guardar notas</button>
-            </p>
-          </div>
+            <div className="rsv-pie-acciones">
+              <Boton variante="secundario" disabled={eNotas.enviando} onClick={() => accionNotas({ accion: 'notas', notas }, 'Notas guardadas.')}>Guardar notas</Boton>
+            </div>
+          </Tarjeta>
 
-          {!r.esPlan && <div className="adm-caja">
-            <h2>Pagos con tarjeta</h2>
-            {pagos.length === 0 ? <p>Ninguno (reserva apuntada a mano o pagada por otra vía).</p> : (
-              <table className="adm-tabla">
-                <thead><tr><th>Pedido</th><th>TPV</th><th>Importe</th><th>Estado</th><th>Fecha</th></tr></thead>
-                <tbody>
-                  {pagos.map((p) => (
-                    <tr key={p.pedido}><td>{p.pedido}</td><td>{p.proveedor}</td><td>{p.importe}</td><td>{p.estado}{p.codigoRespuesta ? ` (${p.codigoRespuesta})` : ''}</td><td>{p.creadoEn}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <p style={{ marginTop: 10, fontSize: '0.85rem' }}>Las devoluciones se hacen desde el portal del TPV con el número de pedido.</p>
-          </div>}
+          {!r.esPlan && (
+            <Tarjeta titulo="Pagos con tarjeta" nota="Las devoluciones se hacen desde el portal del TPV con el número de pedido." tabla={pagos.length > 0}>
+              {pagos.length === 0 ? <p className="ui-t3 rsv-peq">Ninguno (reserva apuntada a mano o pagada por otra vía).</p> : (
+                <div className="ui-tabla-caja">
+                  <table className="ui-tabla">
+                    <thead><tr><th scope="col">Pedido</th><th scope="col">TPV</th><th scope="col" className="der">Importe</th><th scope="col">Estado</th><th scope="col">Fecha</th></tr></thead>
+                    <tbody>
+                      {pagos.map((p) => (
+                        <tr key={p.pedido}><td>{p.pedido}</td><td>{p.proveedor}</td><td className="der ui-imp">{p.importe}</td><td>{p.estado}{p.codigoRespuesta ? ` (${p.codigoRespuesta})` : ''}</td><td>{p.creadoEn}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Tarjeta>
+          )}
 
-          <div className="adm-caja">
-            <h2>Historial</h2>
-            <ul className="adm-historial">
+          <Tarjeta titulo="Historial">
+            <ul className="rsv-historial">
               {eventos.map((e, i) => (
                 <li key={i}><time>{e.cuando}</time><span>{EVENTOS[e.tipo] || e.tipo}{e.texto ? ` · ${e.texto}` : ''}</span></li>
               ))}
             </ul>
-          </div>
+          </Tarjeta>
         </div>
 
-        <div>
-          {r.estado === 'conflicto' && (
-            <div className="adm-caja">
-              <h2>Pago en revisión</h2>
-              <p>Ha llegado el pago pero la hora chocaba con otra reserva o el importe no cuadraba. Habla con el cliente y muévela a una hora libre (abajo), o cancélala y devuelve el dinero desde el TPV.</p>
-            </div>
-          )}
-
-          <div className="adm-caja">
-            <h2>Factura</h2>
+        <div className="rsv-ficha-reserva__col">
+          <Tarjeta titulo="Factura" acciones={factura ? <EtiquetaFactura factura={{ codigo: factura.codigo, tipo: factura.simplificada ? 'simplificada' : 'completa' }} /> : null}>
             {r.origen === 'calendly' ? (
               <p>Se cobró por Calendly: su factura está en Stripe.</p>
             ) : r.esPlan && !r.precioCent && !factura ? (
-              <p>Incluida en la suscripción: no lleva factura propia. Se factura la cuota del mes desde <Link href={sus ? `/admin/miembros/${sus.id}` : '/admin/miembros'} className="adm-enlace">su ficha</Link>.</p>
+              <p>Incluida en la suscripción: no lleva factura propia. Se factura la cuota del mes desde <Link href={sus ? `/admin/miembros/${sus.id}` : '/admin/miembros'}>su ficha</Link>.</p>
             ) : factura ? (
               <>
-                <p>{factura.simplificada ? 'Simplificada ' : ''}{factura.codigo} · {factura.total}{factura.enviadaEn ? ` · enviada a ${factura.enviadaA}` : ' · sin enviar'}</p>
-                {factura.sustituye && <p className="adm-nota">Sustituye a la factura simplificada {factura.sustituye}.</p>}
-                <p style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <a className="adm-boton adm-boton--claro" href={`/api/admin/facturas/${factura.id}`} target="_blank" rel="noopener noreferrer">Ver PDF</a>
-                  {r.email && <button type="button" className="adm-boton adm-boton--claro" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura' }, 'Reenviada.')}>Reenviar al cliente</button>}
-                </p>
+                <p>{factura.simplificada ? 'Factura simplificada (ticket) ' : 'Factura '}{factura.codigo} · <span className="ui-imp">{factura.total}</span>{factura.enviadaEn ? ` · enviada a ${factura.enviadaA}` : ' · sin enviar'}</p>
+                {factura.sustituye && <p className="ui-t3 rsv-peq">Sustituye a la factura simplificada {factura.sustituye}.</p>}
+                <div className="rsv-pie-acciones">
+                  <Boton variante="secundario" href={`/api/admin/facturas/${factura.id}`} externo icono="doc">Ver PDF</Boton>
+                  {r.email && <Boton variante="secundario" disabled={eFactura.enviando} onClick={() => accionFactura({ accion: 'factura' }, 'Reenviada.')} icono="correo">Reenviar al cliente</Boton>}
+                </div>
                 {factura.simplificada && r.pagoEstado === 'pagado' && (
-                  <div style={{ marginTop: 14 }}>
+                  <div className="rsv-separado">
                     {formularioFactura('¿Pide la factura con sus datos? Con nombre, NIF y dirección se hace la completa, que sustituye a esta simplificada.', r.email ? 'Hacer la completa y enviarla' : 'Hacer la completa')}
                   </div>
                 )}
@@ -200,20 +219,18 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
               formularioFactura('Con nombre, NIF y dirección sale la factura completa. Si lo dejas vacío, sale la simplificada.', r.email ? 'Emitir y enviar factura' : 'Emitir factura')
             )}
             <Mensaje estado={eFactura} />
-          </div>
+          </Tarjeta>
 
           {!r.esPlan && r.estado === 'cancelada' && r.pagoEstado === 'pagado' && !r.reembolso && (
-            <div className="adm-caja">
-              <h2>Reactivar</h2>
+            <Tarjeta titulo="Reactivar" tono="aviso">
               <p>Esta reserva está cancelada pero pagada. Si el cliente sigue viniendo, reactívala (se comprueba que la hora siga libre); si no, devuelve el pago desde el TPV.</p>
               <Mensaje estado={eReactivar} />
-              <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eReactivar.enviando} onClick={() => accionReactivar({ accion: 'reactivar' }, 'Reserva reactivada.')}>Reactivar reserva</button></p>
-            </div>
+              <div className="rsv-pie-acciones"><Boton disabled={eReactivar.enviando} onClick={() => accionReactivar({ accion: 'reactivar' }, 'Reserva reactivada.')}>Reactivar reserva</Boton></div>
+            </Tarjeta>
           )}
 
           {puedeCobrarse && (
-            <div className="adm-caja">
-              <h2>{r.esPlan ? 'Marcar las horas aparte como pagadas' : 'Marcar como pagada'}</h2>
+            <Tarjeta titulo={r.esPlan ? 'Marcar las horas aparte como pagadas' : 'Marcar como pagada'}>
               <div className="adm-form">
                 <label className="adm-ancho">Cómo ha pagado
                   <select value={pago.metodo} onChange={(e) => setPago({ ...pago, metodo: e.target.value })}>
@@ -225,17 +242,16 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
                   </select>
                 </label>
                 <label>Cobrada el<input type="date" max={hoy} value={pago.fecha} onChange={(e) => setPago({ ...pago, fecha: e.target.value })} /></label>
-                <p className="adm-nota" style={{ alignSelf: 'end' }}>Vacío = hoy. Cuenta en Finanzas el día del cobro.</p>
+                <p className="adm-nota" style={{ alignSelf: 'end' }}>Vacío = hoy. Cuenta en Movimientos el día del cobro.</p>
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={pago.enviarCorreo} onChange={(e) => setPago({ ...pago, enviarCorreo: e.target.checked })} /> Mandarle el correo de confirmación y la factura</label>}
               </div>
               <Mensaje estado={ePago} />
-              <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={ePago.enviando} onClick={() => accionPago({ accion: 'pagada', ...pago }, 'Marcada como pagada.')}>Marcar pagada</button></p>
-            </div>
+              <div className="rsv-pie-acciones"><Boton disabled={ePago.enviando} onClick={() => accionPago({ accion: 'pagada', ...pago }, 'Marcada como pagada.')} icono="check">Marcar pagada</Boton></div>
+            </Tarjeta>
           )}
 
           {r.esPlan && r.estado === 'confirmada' && sus && (
-            <div className="adm-caja">
-              <h2>Cambiar día u hora</h2>
+            <Tarjeta titulo="Cambiar día u hora">
               {movida && <p className={`adm-mensaje${movida.error ? ' is-error' : ''}`}>{movida.texto}</p>}
               <SesionPlan
                 susId={sus.id}
@@ -252,35 +268,32 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
               >
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={mover.enviarCorreo} onChange={(e) => setMover({ ...mover, enviarCorreo: e.target.checked })} /> Avisarle por correo</label>}
               </SesionPlan>
-            </div>
+            </Tarjeta>
           )}
 
           {!r.esPlan && ['confirmada', 'conflicto'].includes(r.estado) && (
-            <div className="adm-caja">
-              <h2>{r.estado === 'conflicto' ? 'Confirmar en una hora libre' : 'Cambiar día u hora'}</h2>
+            <Tarjeta titulo={r.estado === 'conflicto' ? 'Confirmar en una hora libre' : 'Cambiar día u hora'} nota="El precio no cambia. Se comprueba que no choque con otra reserva ni con un bloqueo.">
               <div className="adm-form">
                 <label>Día<input type="date" value={mover.fecha} onChange={(e) => setMover({ ...mover, fecha: e.target.value })} /></label>
                 <label>Desde<input type="time" step="900" value={mover.desde} onChange={(e) => setMover({ ...mover, desde: e.target.value })} /></label>
                 <label>Hasta<input type="time" step="900" value={mover.hasta} onChange={(e) => setMover({ ...mover, hasta: e.target.value })} /></label>
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={mover.enviarCorreo} onChange={(e) => setMover({ ...mover, enviarCorreo: e.target.checked })} /> Avisar al cliente por correo</label>}
               </div>
-              <p style={{ fontSize: '0.82rem', marginTop: 8 }}>El precio no cambia. Se comprueba que no choque con otra reserva ni con un bloqueo.</p>
               <Mensaje estado={eMover} />
-              <p style={{ marginTop: 12 }}><button type="button" className="adm-boton" disabled={eMover.enviando} onClick={() => accionMover({ accion: 'mover', ...mover }, r.estado === 'conflicto' ? 'Reserva confirmada.' : 'Reserva movida.')}>{r.estado === 'conflicto' ? 'Confirmar reserva' : 'Mover reserva'}</button></p>
-            </div>
+              <div className="rsv-pie-acciones"><Boton disabled={eMover.enviando} onClick={() => accionMover({ accion: 'mover', ...mover }, r.estado === 'conflicto' ? 'Reserva confirmada.' : 'Reserva movida.')}>{r.estado === 'conflicto' ? 'Confirmar reserva' : 'Mover reserva'}</Boton></div>
+            </Tarjeta>
           )}
 
           {r.estado !== 'cancelada' && (
-            <div className="adm-caja">
-              <h2>Cancelar</h2>
-              {factura && <p className="adm-mensaje is-error" style={{ marginTop: 0 }}>Tiene la factura {factura.codigo}: si devuelves dinero, hay que hacer una factura rectificativa (de momento, a mano).</p>}
+            <Tarjeta titulo="Cancelar">
+              {factura && <Aviso tono="aviso">Tiene la factura {factura.codigo}: si devuelves dinero, hay que hacer una factura rectificativa (de momento, a mano).</Aviso>}
               {r.esPlan && (
-                <p style={{ fontSize: '0.85rem', marginBottom: 10 }}>
+                <p className="rsv-peq rsv-texto-bloque">
                   {r.pasada ? 'La sesión ya ha pasado: según las condiciones, cuenta como usada.' : cuentaPorRegla ? `Faltan menos de ${sus.avisoCancelacionH} h: según las condiciones, cuenta como usada.` : `Faltan más de ${sus ? sus.avisoCancelacionH : 48} h: según las condiciones, no cuenta y recupera las horas.`}
                   {r.pagoEstado === 'pagado' && r.precioCent > 0 && ` Tenía ${r.importe} de horas aparte pagadas: ${cuentaPorRegla ? 'con menos de 48 h no se devuelven, salvo que lo acordéis' : 'se le devuelven'} (la devolución se hace aparte, en el banco o el TPV).`}
                 </p>
               )}
-              {!r.esPlan && r.pagoEstado === 'pagado' && <p style={{ fontSize: '0.85rem', marginBottom: 10 }}>Hoy, según las condiciones, le corresponde el {r.reembolsoHoyPct} % ({formatoEuros(Math.round((r.precioCent * r.reembolsoHoyPct) / 100))}). Cambia el importe si acordáis otra cosa. La devolución hay que hacerla después en el TPV.</p>}
+              {!r.esPlan && r.pagoEstado === 'pagado' && <p className="rsv-peq rsv-texto-bloque">Hoy, según las condiciones, le corresponde el {r.reembolsoHoyPct} % ({formatoEuros(Math.round((r.precioCent * r.reembolsoHoyPct) / 100))}). Cambia el importe si acordáis otra cosa. La devolución hay que hacerla después en el TPV.</p>}
               <div className="adm-form">
                 <label className="adm-ancho">Motivo<input value={cancel.motivo} onChange={(e) => setCancel({ ...cancel, motivo: e.target.value })} /></label>
                 {r.esPlan && <label className="adm-check adm-ancho"><input type="checkbox" checked={cancel.cuentaComoUsada ?? cuentaPorRegla} onChange={(e) => setCancel({ ...cancel, cuentaComoUsada: e.target.checked })} /> Cuenta como usada (gasta sus horas del plan)</label>}
@@ -288,10 +301,10 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
                 {r.email && <label className="adm-check adm-ancho"><input type="checkbox" checked={cancel.enviarCorreo} onChange={(e) => setCancel({ ...cancel, enviarCorreo: e.target.checked })} /> Avisar al cliente por correo</label>}
               </div>
               <Mensaje estado={eCancel} />
-              <p style={{ marginTop: 12 }}>
-                <button type="button" className="adm-boton adm-boton--peligro" disabled={eCancel.enviando} onClick={() => { if (window.confirm('¿Cancelar esta reserva? La hora queda libre.')) accionCancel({ accion: 'cancelar', ...cancel }, 'Reserva cancelada.') }}>Cancelar reserva</button>
-              </p>
-            </div>
+              <div className="rsv-pie-acciones">
+                <Boton variante="peligro" disabled={eCancel.enviando} onClick={() => { if (window.confirm('¿Cancelar esta reserva? La hora queda libre.')) accionCancel({ accion: 'cancelar', ...cancel }, 'Reserva cancelada.') }}>Cancelar reserva</Boton>
+              </div>
+            </Tarjeta>
           )}
         </div>
       </div>
@@ -319,7 +332,8 @@ export async function getServerSideProps(ctx) {
   ctx.res.setHeader('Cache-Control', 'no-store')
   const reserva = await reservaPorId(ctx.params.id)
   if (!reserva) return { notFound: true }
-  const [pagos, eventos, factura, sus] = await Promise.all([pagosDeReserva(reserva.id), eventosDeReserva(reserva.id), facturaDeReserva(reserva.id), suscripcionCorta(reserva.suscripcionId)])
+  const [pagos, eventos, factura, sus, veces] = await Promise.all([pagosDeReserva(reserva.id), eventosDeReserva(reserva.id), facturaDeReserva(reserva.id), suscripcionCorta(reserva.suscripcionId), vecesDeReservas([reserva.id])])
+  const vez = veces.get(reserva.id)
   return {
     props: {
       r: vistaAdmin(reserva),
@@ -329,6 +343,7 @@ export async function getServerSideProps(ctx) {
       hoy: fechaMadrid(new Date()),
       factura: factura ? { id: factura.id, codigo: factura.codigo, total: formatoEuros(factura.totalCent), enviadaEn: factura.enviadaEn, enviadaA: factura.enviadaA, simplificada: factura.simplificada, sustituye: factura.sustituye?.codigo || null } : null,
       emisorListo: Boolean(emisor()),
+      cliente: vez ? { clave: vez.clave, vez: vez.vez, total: vez.total } : null,
       enlaceCliente: `${urlBase(ctx.req)}/reserva/${reserva.token}`,
       pagos: pagos.map((p) => ({ pedido: p.pedido, proveedor: p.proveedor, importe: formatoEuros(p.importeCent), estado: p.estado, codigoRespuesta: p.codigoRespuesta, creadoEn: fechaHoraTexto(p.creadoEn) })),
       eventos: eventos.map((e) => ({ tipo: e.tipo, cuando: fechaHoraTexto(e.creadoEn), texto: textoEvento(e) || null })),

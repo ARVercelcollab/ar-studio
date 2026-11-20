@@ -1,3 +1,12 @@
-// Reservas · Lista. PROVISIONAL: de momento enseña la agenda de siempre (lista por días).
-// La tanda de Reservas la sustituye por la lista con buscador, filtros y totales del prototipo.
-export { default, getServerSideProps } from './index'
+// Reservas · Lista (la vista está en components/admin/reservas/VistaLista.jsx)
+import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
+import { cargarLista } from '../../../components/admin/reservas/datos'
+
+export { default } from '../../../components/admin/reservas/VistaLista'
+
+export async function getServerSideProps(ctx) {
+  const redir = redirigirSiNoAdmin(ctx)
+  if (redir) return redir
+  ctx.res.setHeader('Cache-Control', 'no-store')
+  return { props: await cargarLista(ctx.query, ctx.req) }
+}

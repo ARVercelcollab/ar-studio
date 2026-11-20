@@ -1,3 +1,746 @@
-// Panel · pantalla «reservas». La rellena la tanda que rehace esta pantalla.
+// Panel · Reservas (Calendario, Lista, Clientes) y la ficha de una reserva.
 // Todo bajo .adm; usa las variables de _tokens.scss (var(--marron), var(--linea)…).
 @use 'tokens' as *;
+
+.adm {
+  // ---------- Comunes ----------
+  .rsv-peq {
+    font-size: 0.8125rem;
+  }
+
+  .rsv-nota {
+    margin-top: 12px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+
+    a {
+      color: var(--marron);
+      text-decoration: underline;
+    }
+  }
+
+  .rsv-aviso-config {
+    margin-bottom: 14px;
+  }
+
+  .rsv-etiquetas {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
+  }
+
+  // Nombre que abre la ficha: parece texto, se comporta como enlace o botón
+  .rsv-enlace-fila {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--linea-fuerte);
+      text-underline-offset: 3px;
+    }
+  }
+
+  // ---------- Calendario ----------
+  .rsv-barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 18px;
+    margin-bottom: 12px;
+  }
+
+  .rsv-barra__semana {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rsv-leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+  }
+
+  .rsv-muestra {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border-left: 3px solid var(--g-teal);
+    background: #E8F2EF;
+
+    &--plan {
+      border-left-color: var(--marron);
+      background: var(--marron-suave);
+    }
+
+    &--sinpagar {
+      border-left-color: #C48A2C;
+      background: var(--aviso-fondo);
+    }
+
+    &--bloqueo {
+      border-left-color: var(--g-gris);
+      background: repeating-linear-gradient(135deg, #F3EFEA 0 3px, #E2DBD2 3px 6px);
+    }
+  }
+
+  .rsv-semana {
+    display: none;
+  }
+
+  @media (min-width: $ancho-min) {
+    .rsv-semana {
+      display: block;
+      background: var(--superficie);
+      border: 1px solid var(--linea);
+      border-radius: var(--radio);
+      overflow: hidden;
+    }
+
+    .rsv-movil {
+      display: none;
+    }
+  }
+
+  .rsv-semana__cab {
+    display: grid;
+    grid-template-columns: 54px repeat(7, minmax(0, 1fr));
+    border-bottom: 1px solid var(--linea);
+    background: var(--superficie-2);
+  }
+
+  .rsv-semana__esquina {
+    display: block;
+  }
+
+  .rsv-semana__dia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 9px 6px 8px;
+    border-left: 1px solid var(--linea);
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+    line-height: 1.25;
+
+    b {
+      color: var(--texto);
+      font-size: 1.0625rem;
+      font-weight: 500;
+    }
+
+    small {
+      color: var(--aviso);
+      font-size: 0.6875rem;
+    }
+
+    &.es-festivo {
+      background: var(--aviso-fondo);
+    }
+
+    &.es-hoy {
+      background: var(--marron);
+      color: rgba(255, 255, 255, 0.85);
+
+      b,
+      small {
+        color: #fff;
+      }
+    }
+  }
+
+  .rsv-semana__cuerpo {
+    position: relative;
+    display: grid;
+    grid-template-columns: 54px repeat(7, minmax(0, 1fr));
+    height: calc(var(--alto-hora) * var(--horas) + 8px);
+    padding-top: 8px;
+  }
+
+  .rsv-semana__horas {
+    position: relative;
+
+    span {
+      display: block;
+      height: var(--alto-hora);
+      padding-right: 8px;
+      color: var(--texto-3);
+      font-size: 0.6875rem;
+      text-align: right;
+      transform: translateY(-7px);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .rsv-semana__col {
+    position: relative;
+    border-left: 1px solid var(--linea);
+    // Una raya por hora (un degradado del alto de una hora que se repite hacia abajo)
+    background-image: linear-gradient(to bottom, var(--linea) 0, var(--linea) 1px, transparent 1px);
+    background-size: 100% var(--alto-hora);
+    background-repeat: repeat-y;
+
+    &.es-hoy {
+      background-color: #FDFAF6;
+    }
+  }
+
+  .rsv-evento {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    display: block;
+    overflow: hidden;
+    padding: 5px 8px;
+    border-left: 3px solid var(--g-teal);
+    border-radius: 7px;
+    background: #E8F2EF;
+    color: #1F574B;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    text-decoration: none;
+    transition: filter 0.12s;
+
+    &:hover {
+      filter: brightness(0.97);
+    }
+
+    b {
+      display: block;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    span {
+      display: block;
+      opacity: 0.9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &--plan {
+      border-left-color: var(--marron);
+      background: var(--marron-suave);
+      color: var(--marron);
+    }
+
+    &--sinpagar {
+      border-left-color: #C48A2C;
+      background: var(--aviso-fondo);
+      color: #6B4500;
+    }
+
+    &--revisar {
+      border-left-color: var(--mal);
+      background: var(--mal-fondo);
+      color: #7A1A12;
+    }
+
+    &--bloqueo {
+      border-left-color: var(--g-gris);
+      background: repeating-linear-gradient(135deg, #F3EFEA 0 6px, #EAE4DC 6px 12px);
+      color: var(--texto-2);
+    }
+  }
+
+  // Móvil: tira de días y lista del día
+  .rsv-dias {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 12px;
+
+    button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      min-height: 58px;
+      padding: 6px 0;
+      border: 1px solid var(--linea);
+      border-radius: 10px;
+      background: var(--superficie);
+      color: var(--texto-2);
+      font-family: var(--fuente);
+      font-size: 0.75rem;
+      cursor: pointer;
+
+      b {
+        color: var(--texto);
+        font-size: 1rem;
+        font-weight: 500;
+      }
+
+      &[aria-pressed='true'] {
+        background: var(--marron);
+        border-color: var(--marron);
+        color: rgba(255, 255, 255, 0.85);
+
+        b {
+          color: #fff;
+        }
+
+        .rsv-dias__punto {
+          background: #fff;
+        }
+      }
+    }
+  }
+
+  .rsv-dias__punto,
+  .rsv-dias__vacio {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+
+  .rsv-dias__punto {
+    background: var(--marron);
+  }
+
+  .rsv-dia-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rsv-fila-evento {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid var(--linea);
+    border-left: 3px solid var(--g-teal);
+    border-radius: 10px;
+    background: var(--superficie);
+    color: var(--texto);
+    text-decoration: none;
+
+    b {
+      display: block;
+      font-weight: 500;
+    }
+
+    .ui-t3 {
+      display: block;
+      font-size: 0.8125rem;
+    }
+
+    &--plan {
+      border-left-color: var(--marron);
+    }
+
+    &--sinpagar {
+      border-left-color: #C48A2C;
+    }
+
+    &--revisar {
+      border-left-color: var(--mal);
+    }
+
+    &--bloqueo {
+      border-left-color: var(--g-gris);
+      background: var(--superficie-2);
+    }
+  }
+
+  .rsv-fila-evento__hora {
+    color: var(--texto-2);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // ---------- Lista ----------
+  .rsv-ics {
+    margin-top: 18px;
+    padding: 12px 16px;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    font-size: 0.875rem;
+
+    summary {
+      color: var(--texto-2);
+      cursor: pointer;
+    }
+
+    p {
+      margin: 10px 0;
+      color: var(--texto-2);
+    }
+
+    input {
+      width: 100%;
+    }
+  }
+
+  // ---------- Clientes ----------
+  .rsv-tabla-clientes {
+    td.rsv-celda-contacto {
+      width: 92px;
+    }
+
+    .ui-contacto {
+      justify-content: flex-end;
+    }
+  }
+
+  @media (max-width: $movil-max) {
+    .rsv-solo-ancho,
+    .rsv-sin-factura {
+      display: none;
+    }
+
+    .rsv-tabla-clientes {
+      td.rsv-celda-contacto {
+        width: auto;
+        margin-top: 8px;
+      }
+
+      td.m-fila {
+        align-items: center;
+        gap: 6px;
+        margin-right: 14px;
+      }
+
+      // En el móvil basta con «3 reservas»; el detalle del año está en la ficha
+      td.rsv-c-reservas .ui-tabla__sub {
+        display: none;
+      }
+    }
+  }
+
+  .rsv-ficha-etiquetas {
+    margin-bottom: 14px;
+  }
+
+  .rsv-ficha-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .rsv-mini-cifras {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 16px;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    overflow: hidden;
+
+    > div {
+      padding: 10px 12px;
+      border-left: 1px solid var(--linea);
+      border-top: 1px solid var(--linea);
+
+      &:nth-child(3n + 1) {
+        border-left: 0;
+      }
+
+      &:nth-child(-n + 3) {
+        border-top: 0;
+      }
+
+      > span {
+        display: block;
+        color: var(--texto-3);
+        font-size: 0.75rem;
+        line-height: 1.3;
+      }
+    }
+
+    b {
+      display: block;
+      margin-top: 3px;
+      font-size: 1.0625rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    small {
+      display: block;
+      color: var(--texto-3);
+      font-size: 0.6875rem;
+    }
+  }
+
+  .rsv-mini-cifras__fechas {
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 420px) {
+    .rsv-mini-cifras {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+
+      > div {
+        &:nth-child(3n + 1) {
+          border-left: 1px solid var(--linea);
+        }
+
+        &:nth-child(2n + 1) {
+          border-left: 0;
+        }
+
+        &:nth-child(3) {
+          border-top: 1px solid var(--linea);
+        }
+      }
+    }
+  }
+
+  .rsv-barras {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px 64px;
+      gap: 12px;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 0.875rem;
+    }
+
+    b {
+      color: var(--texto-2);
+      font-weight: 500;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .rsv-barras__medidor {
+    display: block;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--superficie-3);
+    overflow: hidden;
+
+    i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--marron);
+    }
+  }
+
+  .rsv-pide {
+    margin-top: 10px;
+  }
+
+  .rsv-lista-res {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rsv-lista-res__fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--linea);
+    font-size: 0.875rem;
+
+    &:first-child {
+      border-top: 0;
+    }
+
+    b {
+      display: block;
+      font-weight: 500;
+    }
+
+    .ui-t3 {
+      display: block;
+      font-size: 0.8125rem;
+    }
+
+    .rsv-etiquetas {
+      margin-top: 5px;
+    }
+  }
+
+  .rsv-lista-res__crece {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .rsv-lista-res__importe {
+    white-space: nowrap;
+  }
+
+  .rsv-notas {
+    width: 100%;
+    min-height: 84px;
+    resize: vertical;
+  }
+
+  .rsv-notas__pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 0.8125rem;
+  }
+
+  // ---------- Ficha de una reserva ----------
+  .rsv-ficha-reserva {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 4px;
+  }
+
+  @media (min-width: $grande-min) {
+    .rsv-ficha-reserva {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .rsv-ficha-reserva__col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .rsv-titulo-estado {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rsv-cliente-linea {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--superficie-2);
+
+    b {
+      display: block;
+      font-weight: 500;
+    }
+
+    .ui-t3 {
+      display: block;
+      font-size: 0.8125rem;
+    }
+
+    a {
+      color: var(--marron);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  .rsv-cobros-dia {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--linea);
+
+    h3 {
+      margin: 0 0 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 0 0 4px;
+    }
+
+    a:not(.ui-boton) {
+      color: var(--marron);
+      text-decoration: underline;
+    }
+  }
+
+  .rsv-pie-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .rsv-separado {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--linea);
+  }
+
+  .rsv-texto-bloque {
+    margin: 0 0 10px;
+    color: var(--texto-2);
+  }
+
+  .rsv-historial {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: 132px minmax(0, 1fr);
+      gap: 10px;
+      padding: 7px 0;
+      border-top: 1px solid var(--linea);
+      font-size: 0.8438rem;
+
+      &:first-child {
+        border-top: 0;
+      }
+    }
+
+    time {
+      color: var(--texto-3);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  @media (max-width: $movil-max) {
+    .rsv-historial li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+  }
+}
