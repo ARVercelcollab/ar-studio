@@ -1,0 +1,44 @@
+// Panel · pantalla «ajustes». La rellena la tanda que rehace esta pantalla.
+// Todo bajo .adm; usa las variables de _tokens.scss (var(--marron), var(--linea)…).
+@use 'tokens' as *;
+
+// Provisional (fase A): tarjetas-enlace de Ajustes y de Añadir
+.adm .adm-ajustes__enlace {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  color: var(--texto);
+  text-decoration: none;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: var(--linea-fuerte);
+  }
+
+  b {
+    display: block;
+    font-weight: 500;
+  }
+
+  span span {
+    display: block;
+    margin-top: 2px;
+    color: var(--texto-3);
+    font-size: 0.8125rem;
+  }
+
+  > .ui-icono {
+    color: var(--texto-3);
+  }
+}
+
+.adm .adm-ajustes__icono {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--superficie-3);
+  color: var(--marron);
+}

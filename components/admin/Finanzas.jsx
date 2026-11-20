@@ -9,10 +9,10 @@ import { GRUPOS, TIPOS_FACTURA, TIPOS_FACTURA_CORTO, RETENCIONES, METODOS_GASTO,
 import { desglose } from '../../lib/facturas/iva'
 
 const PESTANAS = [
-  ['/admin/finanzas', 'Resumen'],
-  ['/admin/finanzas/ingresos', 'Facturación'],
-  ['/admin/finanzas/gastos', 'Gastos'],
-  ['/admin/finanzas/fijos', 'Gastos fijos'],
+  ['/admin/movimientos', 'Resumen'],
+  ['/admin/movimientos/ingresos', 'Facturación'],
+  ['/admin/movimientos/gastos', 'Gastos'],
+  ['/admin/ajustes/fijos', 'Gastos fijos'],
 ]
 
 export function SubmenuFinanzas({ p }) {
@@ -20,8 +20,8 @@ export function SubmenuFinanzas({ p }) {
   return (
     <nav className="adm-filtros adm-fin-submenu" aria-label="Finanzas">
       {PESTANAS.map(([href, t]) => {
-        const activo = href === '/admin/finanzas' ? pathname === href : pathname.startsWith(href)
-        const conP = p && href !== '/admin/finanzas/fijos' ? `${href}?p=${p}` : href
+        const activo = href === '/admin/movimientos' ? pathname === href : pathname.startsWith(href)
+        const conP = p && href !== '/admin/ajustes/fijos' ? `${href}?p=${p}` : href
         return <Link key={href} href={conP} className={activo ? 'is-activo' : ''}>{t}</Link>
       })}
     </nav>
@@ -99,7 +99,7 @@ const ivaTexto = (v) => (v === 'mano' ? 'IVA a mano' : `IVA ${v} %`)
 
 // ---------- Formulario de gasto (alta y edición) ----------
 
-export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo = null, volver = '/admin/finanzas/gastos', categoriaInicial = null }) {
+export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo = null, volver = '/admin/movimientos/gastos', categoriaInicial = null }) {
   const router = useRouter()
   const { categorias, ultimos, proveedores } = datos
   const porId = useMemo(() => Object.fromEntries(categorias.map((c) => [c.id, c])), [categorias])
@@ -163,7 +163,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
         setEstado({ enviando: false, error: null, ok: `Apuntado: ${r.concepto} · ${euros(r.totalCent, { decimales: true })}` })
         return
       }
-      const destino = volver.startsWith('/admin') ? volver : '/admin/finanzas/gastos'
+      const destino = volver.startsWith('/admin') ? volver : '/admin/movimientos/gastos'
       router.push(`${destino}${destino.includes('?') ? '&' : '?'}ok=${gasto ? 'cambiado' : 'gasto'}:${r.id}`)
     } catch (e) {
       setEstado({ enviando: false, error: e.message, ok: null })
@@ -173,7 +173,7 @@ export function FormularioGasto({ datos, hoy, inicial = null, gasto = null, fijo
   return (
     <form className="adm-caja adm-fin-form" onSubmit={(e) => { e.preventDefault(); guardar(false) }}>
       {!fijo && <p className="adm-nota">No apuntes aquí el IVA ni el IRPF que pagáis a Hacienda, ni la cuota de autónomos: no son gastos del estudio.</p>}
-      {fijo && <p className="adm-nota">Este cambio es solo para {textoMes(gasto.mes.slice(0, 7))}. Para cambiarlo todos los meses, ve a <Link href="/admin/finanzas/fijos" className="adm-enlace">Gastos fijos</Link>.</p>}
+      {fijo && <p className="adm-nota">Este cambio es solo para {textoMes(gasto.mes.slice(0, 7))}. Para cambiarlo todos los meses, ve a <Link href="/admin/ajustes/fijos" className="adm-enlace">Gastos fijos</Link>.</p>}
       <h2>¿Qué es?</h2>
       {fijo ? (
         <p><Chip tipo="plan">{cat?.nombre}</Chip></p>
@@ -288,7 +288,7 @@ export function FormularioIngreso({ hoy, reservas, inicial = null, ingreso = nul
       const r = ingreso
         ? await pedirJson(`/api/admin/finanzas/ingresos/${ingreso.id}`, { method: 'POST', body: { ...f, accion: 'editar', version: ingreso.version } })
         : await pedirJson('/api/admin/finanzas/ingresos/nuevo', { method: 'POST', body: { ...f, clave } })
-      router.push(`/admin/finanzas/ingresos?ok=ingreso:${r.id}`)
+      router.push(`/admin/movimientos/ingresos?ok=ingreso:${r.id}`)
     } catch (err) {
       setEstado({ enviando: false, error: err.message })
     }

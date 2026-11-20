@@ -60,7 +60,7 @@ function redondearSumando(valores, totalCent) {
 // Página de cobros del periodo, con el filtro de esa fuente de ingreso (o 'devolucion')
 function cobrosDe(p, fuente) {
   const filtro = Object.entries(FILTROS_INGRESO).find(([, fs]) => fs === fuente || (Array.isArray(fs) && fs.includes(fuente)))?.[0]
-  return `/admin/finanzas/ingresos?p=${p}${filtro ? `&filtro=${filtro}` : ''}`
+  return `/admin/movimientos/ingresos?p=${p}${filtro ? `&filtro=${filtro}` : ''}`
 }
 
 // Marcas: van con mayúscula aunque estén en medio de la frase
@@ -288,7 +288,7 @@ function Bloque({ titulo, total, filas, max, tipo, vacio, pie }) {
 function Detalle({ d, nombre, antes }) {
   const { kpis, periodo } = d
   const p = periodo.clave
-  const enlace = [`/admin/finanzas?p=${p}`, 'Finanzas']
+  const enlace = [`/admin/movimientos?p=${p}`, 'Finanzas']
   if (antes) {
     return <Tarjeta titulo={`Detalle ${nombre.de}`} enlace={enlace}><p className="adm-inicio__vacio">Sin datos {nombre.de}.</p></Tarjeta>
   }
@@ -301,7 +301,7 @@ function Detalle({ d, nombre, antes }) {
   ]
   const sale = d.grupos.filter((g) => g.costeCent).map((g) => ({
     clave: g.grupo, nombre: g.texto, detalle: resumenCategorias(g.categorias), cent: g.costeCent,
-    href: `/admin/finanzas/gastos?p=${p}&grupo=${g.grupo}`,
+    href: `/admin/movimientos/gastos?p=${p}&grupo=${g.grupo}`,
   }))
   const redondeadas = (filas, total) => {
     const r = redondearSumando(filas.map((f) => f.cent), total)
@@ -315,7 +315,7 @@ function Detalle({ d, nombre, antes }) {
         <Bloque titulo="Entra" total={kpis.ingresos.actual} filas={redondeadas(entra, kpis.ingresos.actual)} max={max} tipo="ing" vacio={`Aún no hay cobros ${nombre.en}.`} />
         <Bloque
           titulo="Sale" total={kpis.gastos.actual} filas={redondeadas(sale, kpis.gastos.actual)} max={max} tipo="gas" vacio={`Aún no hay gastos apuntados ${nombre.en}.`}
-          pie={<Link href="/admin/finanzas/gastos/nuevo?volver=/admin" className="adm-inicio__mas">+ Apuntar gasto</Link>}
+          pie={<Link href="/admin/movimientos/gastos/nuevo?volver=/admin" className="adm-inicio__mas">+ Apuntar gasto</Link>}
         />
       </div>
     </Tarjeta>
@@ -354,7 +354,7 @@ function Hoy({ d }) {
   const s = d.suscripciones
   const manana = hb.manana ? `Mañana hay ${hb.manana.n === 1 ? '1 reserva' : `${hb.manana.n} reservas`}` : null
   return (
-    <Tarjeta titulo="Hoy" junto={<small>{textoDiaCorto(d.hoy)}</small>} enlace={['/admin/agenda', 'Agenda']}>
+    <Tarjeta titulo="Hoy" junto={<small>{textoDiaCorto(d.hoy)}</small>} enlace={['/admin/reservas', 'Agenda']}>
       <ul className="adm-inicio__filas">
         {hb.n > 0 ? hb.reservas.map((r) => (
           <Fila
@@ -364,19 +364,19 @@ function Hoy({ d }) {
         )) : (
           <Fila inicio={<Ico nombre="calendario" />} titulo="Hoy no hay reservas" sub={manana || (hb.proxima ? null : 'No hay reservas próximas')} />
         )}
-        {hb.n > 3 && <li className="adm-inicio__fila-mas"><Link href="/admin/agenda">y {hb.n - 3} más</Link></li>}
+        {hb.n > 3 && <li className="adm-inicio__fila-mas"><Link href="/admin/reservas">y {hb.n - 3} más</Link></li>}
         {hb.n === 0 && hb.proxima && (
-          <Fila inicio={<Ico nombre="reloj" />} href="/admin/agenda" titulo={`Próxima: ${textoDiaCorto(hb.proxima.fecha)}, ${hb.proxima.hora}`} sub={`${hb.proxima.nombre} · ${hb.proxima.duracionTexto}`} />
+          <Fila inicio={<Ico nombre="reloj" />} href="/admin/reservas" titulo={`Próxima: ${textoDiaCorto(hb.proxima.fecha)}, ${hb.proxima.hora}`} sub={`${hb.proxima.nombre} · ${hb.proxima.duracionTexto}`} />
         )}
         {s.n > 0 && (
           <Fila
-            separada inicio={<Ico nombre="persona" />} href="/admin/suscripciones"
+            separada inicio={<Ico nombre="persona" />} href="/admin/miembros"
             titulo={s.n === 1 ? '1 miembro activo' : `${s.n} miembros activos`} sub={usoMiembros(s)}
             fin={s.n === 1 && s.lista[0].cuota ? <ChipCuota chip={s.lista[0].cuota.chip} /> : null}
           />
         )}
       </ul>
-      {s.n === 0 && <Link href="/admin/suscripciones/nueva" className="adm-inicio__mas">+ Nueva suscripción</Link>}
+      {s.n === 0 && <Link href="/admin/miembros/nueva" className="adm-inicio__mas">+ Nueva suscripción</Link>}
     </Tarjeta>
   )
 }
@@ -423,13 +423,13 @@ function ProximosPagos({ d }) {
           ))}
           {resto.length > 0 && (
             <Fila
-              inicio={<Ico nombre="calendario" />} href="/admin/finanzas/fijos" titulo={`y ${resto.length} más`}
+              inicio={<Ico nombre="calendario" />} href="/admin/ajustes/fijos" titulo={`y ${resto.length} más`}
               fin={<span className="adm-inicio__importe">{e(cifras[vistos.length])}</span>}
             />
           )}
           {iva && (
             <Fila
-              separada={fijos.length > 0} inicio={<Dia fecha={fin303(iva.trimestre)} />} href={`/admin/finanzas?p=${iva.trimestre}#hacienda`}
+              separada={fijos.length > 0} inicio={<Dia fecha={fin303(iva.trimestre)} />} href={`/admin/movimientos?p=${iva.trimestre}#hacienda`}
               titulo={`IVA del ${trimestreCorto(iva.trimestre)}`}
               sub={`Estimado${iva.netoCent < 0 ? ': sale a compensar' : ''} · modelo 303, del 1 al ${textoFechaCorta(fin303(iva.trimestre))}`}
               fin={<span className="adm-inicio__importe">≈ {e(Math.max(0, iva.netoCent))}</span>}
@@ -437,7 +437,7 @@ function ProximosPagos({ d }) {
           )}
         </ul>
       )}
-      <Link href="/admin/finanzas/fijos" className="adm-inicio__mas">Ver gastos fijos<Icono nombre="flecha" /></Link>
+      <Link href="/admin/ajustes/fijos" className="adm-inicio__mas">Ver gastos fijos<Icono nombre="flecha" /></Link>
     </Tarjeta>
   )
 }
@@ -467,7 +467,6 @@ function Contenido({ d, extra }) {
 
 export default function Inicio(d) {
   const router = useRouter()
-  const [oculto, setOculto] = useState(Boolean(d.oculto))
   const [cargando, setCargando] = useState(false)
   useEffect(() => {
     let t
@@ -484,16 +483,11 @@ export default function Inicio(d) {
   }, [router.events])
   // Si llega ?comparar= en la URL, se mantiene al cambiar de periodo
   const extra = d.comparar !== 'anterior' ? { comparar: d.comparar } : {}
-  // Se recuerda en este navegador (cookie), también al recargar o volver otro día
-  const alternar = () => {
-    const nuevo = !oculto
-    document.cookie = `adm_ocultar=${nuevo ? '1' : '0'}; path=/admin; max-age=31536000; samesite=lax`
-    setOculto(nuevo)
-  }
   return (
     <Panel
       titulo="Inicio"
       clase="adm-inicio"
+      ocultoInicial={Boolean(d.oculto)}
       acciones={(
         <>
           <p className="adm-inicio__sub">
@@ -501,17 +495,13 @@ export default function Inicio(d) {
             <span className="adm-inicio__hora"> · Actualizado a las {d.actualizado} · <button type="button" onClick={() => router.replace(router.asPath, undefined, { scroll: false })}>Recargar</button></span>
           </p>
           <SelectorPeriodo periodo={d.periodo} hoy={d.hoy} ruta="/admin" extra={extra} tipos={['mes', 'anio']} />
-          <button type="button" className="adm-inicio__ojo" onClick={alternar}>
-            <Icono nombre={oculto ? 'ojoNo' : 'ojo'} />{oculto ? 'Mostrar importes' : 'Ocultar importes'}
-          </button>
         </>
       )}
     >
-      <ImportesOcultos.Provider value={oculto}>
-        <div className={`adm-inicio__contenido${cargando ? ' is-cargando' : ''}`}>
-          <Contenido d={d} extra={extra} />
-        </div>
-      </ImportesOcultos.Provider>
+      {/* «Ocultar importes» lo lleva el armazón (Panel) para todo el panel */}
+      <div className={`adm-inicio__contenido${cargando ? ' is-cargando' : ''}`}>
+        <Contenido d={d} extra={extra} />
+      </div>
     </Panel>
   )
 }

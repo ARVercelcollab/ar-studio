@@ -8,8 +8,8 @@ import { urlVuelta, cookieEstado } from '../../../../lib/google/rutas.js'
 export default function handler(req, res) {
   sinCache(res)
   if (req.method !== 'GET') return res.status(405).end()
-  if (!esAdmin(req)) return res.redirect(302, `/admin/login?volver=${encodeURIComponent('/admin/google')}`)
-  if (!googleConfigurado()) return res.redirect(302, `/admin/google?error=${encodeURIComponent('Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en Vercel.')}`)
+  if (!esAdmin(req)) return res.redirect(302, `/admin/login?volver=${encodeURIComponent('/admin/ajustes/google')}`)
+  if (!googleConfigurado()) return res.redirect(302, `/admin/ajustes/google?error=${encodeURIComponent('Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en Vercel.')}`)
   const estado = crypto.randomBytes(24).toString('base64url')
   res.setHeader('Set-Cookie', cookieEstado(estado, 600))
   res.redirect(302, urlAutorizacion({ redirectUri: urlVuelta(req), estado }))

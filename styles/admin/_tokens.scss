@@ -1,0 +1,66 @@
+// Panel del estudio · colores, letra y medidas (los del prototipo de noviembre de 2026).
+// Son variables CSS colgadas de .adm, así sirven también en estilos en línea (style={{ color: 'var(--marron)' }})
+// y no tocan la web pública.
+
+.adm {
+  // Marca
+  --marron: #4b3828;
+  --marron-oscuro: #3a2b1f;
+  --marron-suave: #EFE6DB;
+  --logo: #594538;
+
+  // Menú lateral (beige del estudio)
+  --lateral: #F1E9DF;
+  --lateral-hover: #E7DCCD;
+  --lateral-linea: #E0D3C3;
+  --lateral-texto: #4b3828;
+  --lateral-texto-2: #6B5848;
+
+  // Contenido
+  --fondo: #FBF8F4;
+  --superficie: #FFFFFF;
+  --superficie-2: #F8F3ED;
+  --superficie-3: #F3ECE3;
+  --linea: #E8DFD4;
+  --linea-fuerte: #D9CCBD;
+
+  --texto: #2B211A;
+  --texto-2: #5E4D40;
+  --texto-3: #756354;
+
+  // Significado (verde y rojo SOLO para bien/mal)
+  --bien: #2A7549;
+  --bien-fondo: #E7F3EB;
+  --mal: #B42318;
+  --mal-fondo: #FDECEA;
+  --aviso: #8A5A00;
+  --aviso-fondo: #FFF4D6;
+  --aviso-linea: #F0D48A;
+  --info: #1F4E8C;
+  --info-fondo: #EAF1FB;
+
+  // Gráficos (distinguibles también con daltonismo)
+  --g-ingresos: #4b3828;
+  --g-gastos: #B8895F;
+  --g-teal: #2F7D6D;
+  --g-azul: #5B7FB8;
+  --g-arcilla: #B5654A;
+  --g-gris: #A39A91;
+
+  // Medidas
+  --radio: 12px;
+  --radio-s: 8px;
+  --ancho-lateral: 252px;
+  --alto-cabecera: 58px;
+  --alto-barra: 66px;
+  --sombra-capa: 0 12px 40px rgba(43, 33, 26, 0.16);
+
+  // Letra: Inter 400 (texto), 500 (títulos de tarjeta, menú, botones), 600 (títulos de pantalla y cifras)
+  --fuente: "Inter", "Helvetica Neue", Helvetica, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+// Puntos de corte (los mismos del prototipo)
+$movil-max: 899px;
+$ancho-min: 900px;
+$tablet-min: 640px;
+$grande-min: 1100px;

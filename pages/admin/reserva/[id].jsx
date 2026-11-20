@@ -94,8 +94,8 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
       titulo={`${r.nombre} ${r.apellidos}`}
       acciones={(
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Link href="/admin/agenda" className="adm-boton adm-boton--claro">← Agenda</Link>
-          {sus && <Link href={`/admin/suscripciones/${sus.id}`} className="adm-boton adm-boton--claro">Su suscripción</Link>}
+          <Link href="/admin/reservas" className="adm-boton adm-boton--claro">← Agenda</Link>
+          {sus && <Link href={`/admin/miembros/${sus.id}`} className="adm-boton adm-boton--claro">Su suscripción</Link>}
         </div>
       )}
     >
@@ -105,7 +105,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
           <div className="adm-caja">
             <h2>{r.fechaTexto}, {r.horaInicio} – {r.horaFin} {chipEstado(r)}</h2>
             <dl className="adm-datos">
-              <dt>Reserva</dt><dd>{r.codigo} · {r.esPlan ? <>sesión de la suscripción{sus ? <> <Link href={`/admin/suscripciones/${sus.id}`}>{sus.planNombre} ({sus.codigo})</Link></> : null}</> : r.origen === 'web' ? 'reservada en la web' : r.origen === 'manual' ? 'apuntada a mano' : 'desde Calendly'}</dd>
+              <dt>Reserva</dt><dd>{r.codigo} · {r.esPlan ? <>sesión de la suscripción{sus ? <> <Link href={`/admin/miembros/${sus.id}`}>{sus.planNombre} ({sus.codigo})</Link></> : null}</> : r.origen === 'web' ? 'reservada en la web' : r.origen === 'manual' ? 'apuntada a mano' : 'desde Calendly'}</dd>
               <dt>Duración</dt><dd>{r.duracionTexto} · {r.tipoDia === 'finde' ? 'fin de semana o festivo' : 'entre semana'}</dd>
               {r.esPlan && (<><dt>Horas del plan</dt><dd>{r.horasPlanTexto}{r.estado === 'cancelada' ? (r.cuentaComoUsada ? ' · cancelada, pero cuenta como usada' : ' · cancelada, no cuenta') : ''}</dd></>)}
               <dt>Importe</dt><dd>{r.esPlan && !r.precioCent ? (r.horasExtra > 0 ? `Incluida en la suscripción (${textoDuracion(r.horasExtra, { corto: true })} aparte, de regalo)` : 'Incluida en la suscripción') : <>{r.importe}{r.esPlan ? ' (horas aparte)' : ''} · {r.pagoTexto}{r.metodoPago && r.metodoPago !== 'plan' ? ` (${r.metodoPago})` : ''}{r.reembolso ? ` · devuelto ${r.reembolso}` : ''}</>}</dd>
@@ -120,8 +120,8 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
               <dt>Página del cliente</dt><dd><a href={enlaceCliente} target="_blank" rel="noopener noreferrer">Abrir</a></dd>
               <dt>Cobros del día</dt>
               <dd>
-                {cobrosDia.map((x) => <span key={x.id} style={{ display: 'block' }}>{x.sentido === 'devolucion' ? 'Devolución: ' : ''}{x.concepto} · {(x.totalCent / 100).toFixed(2).replace('.', ',')} € (<Link href={`/admin/finanzas/ingresos/${x.id}`}>ver</Link>)</span>)}
-                <Link href={`/admin/finanzas/ingresos/nuevo?reserva=${r.id}`}>Apuntar un cobro del día (fondos, equipo…)</Link>
+                {cobrosDia.map((x) => <span key={x.id} style={{ display: 'block' }}>{x.sentido === 'devolucion' ? 'Devolución: ' : ''}{x.concepto} · {(x.totalCent / 100).toFixed(2).replace('.', ',')} € (<Link href={`/admin/movimientos/ingresos/${x.id}`}>ver</Link>)</span>)}
+                <Link href={`/admin/movimientos/ingresos/nuevo?reserva=${r.id}`}>Apuntar un cobro del día (fondos, equipo…)</Link>
               </dd>
             </dl>
           </div>
@@ -173,7 +173,7 @@ export default function FichaReserva({ r, sus, cuentaPorRegla, pagos, eventos, e
             {r.origen === 'calendly' ? (
               <p>Se cobró por Calendly: su factura está en Stripe.</p>
             ) : r.esPlan && !r.precioCent && !factura ? (
-              <p>Incluida en la suscripción: no lleva factura propia. Se factura la cuota del mes desde <Link href={sus ? `/admin/suscripciones/${sus.id}` : '/admin/suscripciones'} className="adm-enlace">su ficha</Link>.</p>
+              <p>Incluida en la suscripción: no lleva factura propia. Se factura la cuota del mes desde <Link href={sus ? `/admin/miembros/${sus.id}` : '/admin/miembros'} className="adm-enlace">su ficha</Link>.</p>
             ) : factura ? (
               <>
                 <p>{factura.simplificada ? 'Simplificada ' : ''}{factura.codigo} · {factura.total}{factura.enviadaEn ? ` · enviada a ${factura.enviadaA}` : ' · sin enviar'}</p>

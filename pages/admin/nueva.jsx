@@ -46,7 +46,7 @@ function SesionDeMiembro({ miembros, susInicial }) {
     return (
       <div className="adm-caja">
         <p>Todavía no hay nadie con suscripción activa.</p>
-        <p style={{ marginTop: 12 }}><Link href="/admin/suscripciones/nueva" className="adm-boton">+ Nueva suscripción</Link></p>
+        <p style={{ marginTop: 12 }}><Link href="/admin/miembros/nueva" className="adm-boton">+ Nueva suscripción</Link></p>
       </div>
     )
   }
@@ -67,7 +67,7 @@ function SesionDeMiembro({ miembros, susInicial }) {
         {m && (
           <p className="adm-ancho adm-nota">
             {m.planNombre} · le quedan <strong>{textoDuracion(m.resumen.restantes, { corto: true })}</strong> de {textoDuracion(m.resumen.horas, { corto: true })} hasta el {m.resumen.hastaTexto}.{' '}
-            {m.condiciones.slice(1, 3).join(' · ')}. <Link href={`/admin/suscripciones/${m.id}`} className="adm-enlace">Ver ficha</Link>
+            {m.condiciones.slice(1, 3).join(' · ')}. <Link href={`/admin/miembros/${m.id}`} className="adm-enlace">Ver ficha</Link>
           </p>
         )}
       </div>
@@ -78,7 +78,7 @@ function SesionDeMiembro({ miembros, susInicial }) {
             susId={m.id}
             inicial={inicial}
             datosExtra={{ fondos, notasInternas, enviarCorreo }}
-            onHecho={(r) => router.push(`/admin/suscripciones/${m.id}?ok=${r?.correoFallido ? 'sesion_sin_correo' : 'sesion'}`)}
+            onHecho={(r) => router.push(`/admin/miembros/${m.id}?ok=${r?.correoFallido ? 'sesion_sin_correo' : 'sesion'}`)}
           >
             <label>Fondos
               <select value={fondos} onChange={(e) => setFondos(e.target.value)}>{FONDOS.map((x) => <option key={x.id} value={x.id}>{x.texto}</option>)}</select>

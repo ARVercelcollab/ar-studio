@@ -100,7 +100,7 @@ export function GraficoMeses({ meses, mesPeriodo, hrefMes, hoy }) {
         <div><span className="adm-inicio__etq"><i className="adm-inicio__muestra es-gas" />Gastos</span><strong>{e(visto.gastosCent)}</strong></div>
         <div><span className="adm-inicio__etq">Beneficio</span><strong className={oculto ? '' : b < 0 ? 'es-neg' : b > 0 ? 'es-pos' : ''}>{e(b, { signo: true })}</strong></div>
         {visto.faltaCalendly && (
-          <p className="adm-inicio__lectura-aviso"><Icono nombre="aviso" />Falta apuntar Calendly · <Link href={`/admin/finanzas/calendly?mes=${visto.mes}`}>Apuntarlo</Link></p>
+          <p className="adm-inicio__lectura-aviso"><Icono nombre="aviso" />Falta apuntar Calendly · <Link href={`/admin/ajustes/calendly?mes=${visto.mes}`}>Apuntarlo</Link></p>
         )}
       </div>
 

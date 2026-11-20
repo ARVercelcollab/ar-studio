@@ -5,12 +5,12 @@ import { sinCache, urlBase } from '../../../../lib/http.js'
 import { urlVuelta, cookieEstado, mismoEstado, COOKIE_ESTADO } from '../../../../lib/google/rutas.js'
 
 const volver = (res, error) =>
-  res.redirect(302, error ? `/admin/google?error=${encodeURIComponent(String(error).slice(0, 200))}` : '/admin/google?conectado=1')
+  res.redirect(302, error ? `/admin/ajustes/google?error=${encodeURIComponent(String(error).slice(0, 200))}` : '/admin/ajustes/google?conectado=1')
 
 export default async function handler(req, res) {
   sinCache(res)
   if (req.method !== 'GET') return res.status(405).end()
-  if (!esAdmin(req)) return res.redirect(302, `/admin/login?volver=${encodeURIComponent('/admin/google')}`)
+  if (!esAdmin(req)) return res.redirect(302, `/admin/login?volver=${encodeURIComponent('/admin/ajustes/google')}`)
   const estadoGuardado = req.cookies?.[COOKIE_ESTADO]
   res.setHeader('Set-Cookie', cookieEstado('', 0))
   if (!mismoEstado(String(req.query.state || ''), estadoGuardado)) return volver(res, 'La conexión ha caducado o no viene de este panel. Vuelve a pulsar «Conectar».')
