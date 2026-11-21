@@ -141,7 +141,7 @@ export default function Panel({ titulo, sub, children, acciones, clase, ocultoIn
   return (
     <>
       <Head>
-        <title>{`${titulo} · Panel AR Studio`}</title>
+        <title>{`${titulo} · AR Studio`}</title>
         <meta name="robots" content="noindex, nofollow" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -158,7 +158,6 @@ export default function Panel({ titulo, sub, children, acciones, clase, ocultoIn
             <aside className="adm-lateral" aria-label="Menú del panel">
               <Link href="/admin" className="adm-lateral__marca" aria-label="AR Studio · Inicio del panel">
                 <Logo ancho={132} />
-                <span className="adm-lateral__sub">Panel del estudio</span>
               </Link>
               <Link href="/admin/anadir" className="adm-lateral__anadir" aria-current={pathname === '/admin/anadir' ? 'page' : undefined}>
                 <Icono nombre="mas" />Añadir
