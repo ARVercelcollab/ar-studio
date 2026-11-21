@@ -8,7 +8,7 @@ export default function Gastos() {
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   const q = new URLSearchParams()
   if (typeof ctx.query.p === 'string' && /^\d{4}(-\d{2}|-T[1-4])?$/.test(ctx.query.p)) q.set('p', ctx.query.p)

@@ -140,7 +140,7 @@ export default function Google({ estado, calendarios, errorCalendarios, mensaje,
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   const estado = await estadoGoogle()
   let calendarios = null

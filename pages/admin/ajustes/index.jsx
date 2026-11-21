@@ -2,7 +2,8 @@
 // planes son de solo lectura (se cambian en lib/reservas/config.js); gastos fijos, Google Calendar,
 // Calendly, festivos y bloqueos tienen su apartado para cambiarlos.
 import ResumenAjustes, { euro } from '../../../components/admin/ajustes/Resumen'
-import { redirigirSiNoAdmin } from '../../../lib/admin/auth'
+import { redirigirSiNoAdmin, personaDeLaPeticion } from '../../../lib/admin/auth'
+import { listarPersonas } from '../../../lib/admin/cuentas'
 import { query } from '../../../lib/db/index'
 import { fechaMadrid, horaMadrid, textoFecha } from '../../../lib/reservas/tiempo'
 import { listarFestivos, listarBloqueos } from '../../../lib/reservas/servicio'
@@ -22,7 +23,7 @@ function textoFijo(f) {
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   ctx.res.setHeader('Cache-Control', 'no-store')
   const ahora = new Date()
@@ -35,6 +36,12 @@ export async function getServerSideProps(ctx) {
     ajustesFinanzas(undefined, { hoy }),
     query('SELECT mes::text AS mes, cobrado_cent, devuelto_cent FROM calendly_meses ORDER BY mes DESC LIMIT 5'),
   ])
+  const yo = await personaDeLaPeticion(ctx.req)
+  const ESTADO = { activa: 'activa', invitada: 'invitación enviada', sin_acceso: 'sin acceso' }
+  const personas = yo?.puedeDarAcceso ? await listarPersonas() : []
+  const acceso = yo?.puedeDarAcceso
+    ? { compartida: Boolean(yo.compartida), n: personas.length, lista: personas.filter((p) => p.activa).slice(0, 6).map((p) => ({ nombre: p.nombre, email: p.email, estado: ESTADO[p.estado] })) }
+    : null
   const mesHoy = mesDe(hoy)
   const anterior = sumarMesesMes(mesHoy, -1)
   const apuntados = new Set(cal.rows.map((r) => r.mes.slice(0, 7)))
@@ -60,6 +67,7 @@ export async function getServerSideProps(ctx) {
       },
       festivos: festivos.filter((x) => x.fecha >= hoy).slice(0, 5).map((x) => ({ fecha: x.fecha, nombre: x.nombre, texto: textoFecha(x.fecha) })),
       bloqueos: bloqueos.slice(0, 4).map((b) => ({ id: b.id, desde: textoHora(b.inicio), hasta: textoHora(b.fin), motivo: b.motivo || '' })),
+      acceso,
     })),
   }
 }

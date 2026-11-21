@@ -5,7 +5,7 @@ import { cargarCalendario } from '../../../components/admin/reservas/datos'
 export { default } from '../../../components/admin/reservas/VistaCalendario'
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   ctx.res.setHeader('Cache-Control', 'no-store')
   return { props: await cargarCalendario(ctx.query) }

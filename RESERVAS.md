@@ -95,7 +95,7 @@ producción queda marcada y rechaza cualquier pago hecho con un TPV en modo prue
 | `ADDON_COMERCIO`, `ADDON_CUENTA`, `ADDON_SECRETO`, `ADDON_ENTORNO` | Si es Addon Payments (`ADDON_ENTORNO` = `pruebas` o `real`) |
 | `REDSYS_COMERCIO`, `REDSYS_TERMINAL`, `REDSYS_CLAVE`, `REDSYS_ENTORNO`, `REDSYS_METODOS` | Si es Redsys (`REDSYS_ENTORNO` = `pruebas` o `real`) |
 | `REDSYS_COBRO_RECURRENTE` | `1` = las cuotas de los planes se cobran solas cada mes en la tarjeta del alta. **Solo cuando Comercia haya activado el pago por referencia (COF)**; sin ella, enlace de pago por correo cada mes |
-| `ADMIN_PASSWORD` | Contraseña del panel, de 12 caracteres o más (si es más corta, el panel no deja entrar) |
+| `ADMIN_PASSWORD` | Contraseña compartida del panel, de 12 caracteres o más. **Solo vale hasta que alguien crea su cuenta** (ver «Quién entra en el panel»); después se entra con correo y contraseña |
 | `SESSION_SECRET` | Texto aleatorio de 32 caracteres o más (firma la sesión del panel) |
 | `CRON_SECRET` | Texto aleatorio: Vercel lo usa para lanzar el recordatorio diario |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Del cliente OAuth de Google Cloud, para conectar Google Calendar (ver «Google Calendar») |
@@ -207,6 +207,36 @@ producción no se tocan. En una vista previa hay que conectar aparte, y mejor co
 de pruebas para no llenar el de verdad.
 
 ## El panel del estudio
+
+### Quién entra en el panel
+
+Cada persona entra con **su correo y su contraseña** (desde el 21-11-2026). Se da acceso en
+**Ajustes → Personas con acceso** (solo lo ve quien puede dar acceso):
+
+1. **Dar acceso:** nombre, correo y si puede dar acceso a otras personas. Le llega un correo «Te
+   han dado acceso al panel de AR Studio» con el botón **Crear mi contraseña** (vale 72 horas,
+   un solo uso). Al crearla entra directamente.
+2. **Reenviar invitación** si no le llegó o caducó; **Cerrar sus sesiones** (tendrá que volver a
+   entrar); **Quitar acceso** (sale al momento, aunque tenga la sesión abierta) y **Volver a dar
+   acceso** (tendrá que crear otra contraseña).
+3. **¿Has olvidado la contraseña?** en la entrada: llega un enlace que vale 1 hora. Al poner la
+   nueva se cierran sus demás sesiones.
+
+Nadie se puede quitar el acceso a sí mismo ni quitar a la última persona que puede dar acceso.
+
+**Paso desde la contraseña compartida (sin dejar a nadie fuera):** mientras ninguna persona haya
+creado su contraseña, se entra como antes con `ADMIN_PASSWORD`. Desde ahí, en Ajustes → Personas
+con acceso, da acceso a cada persona empezando por ti. En cuanto la primera crea su contraseña, la
+entrada pide correo y contraseña y `ADMIN_PASSWORD` deja de valer (y cualquier sesión abierta con
+ella se cierra).
+
+Por dentro: contraseñas resumidas con scrypt (nunca en claro), sesión de 7 días en una cookie
+firmada que se comprueba contra la base de datos en cada página (tabla `personas_panel`, migración
+18), y de los enlaces solo se guarda su resumen (`enlaces_panel`). Límites: 8 fallos cada 15 minutos
+por conexión y 5 por correo; 3 enlaces por hora y correo. Las páginas del panel van sin el píxel de
+Meta.
+
+### Las secciones
 
 El panel (`/admin`) tiene el diseño de noviembre de 2026 (calcado a la organización del panel de
 Gartalia): menú lateral beige con el logo, el botón **Añadir** arriba y 7 secciones. En el móvil,

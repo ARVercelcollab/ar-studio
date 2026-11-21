@@ -67,7 +67,7 @@ export default function Festivos({ festivos }) {
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   const hoy = fechaMadrid(new Date())
   const festivos = (await listarFestivos()).filter((x) => x.fecha >= hoy)

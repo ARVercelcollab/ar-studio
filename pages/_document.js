@@ -1,8 +1,10 @@
 import { Html, Head, Main, NextScript } from 'next/document'
 
-// El área de miembros (/miembros/*) va sin el píxel de Meta: el enlace para entrar lleva un
-// código en la dirección y el píxel manda la dirección completa a Facebook.
-const sinPixel = (pagina = '') => pagina === '/miembros' || pagina.startsWith('/miembros/')
+// El área de miembros (/miembros/*) y el panel (/admin/*) van sin el píxel de Meta: sus enlaces
+// para entrar o crear la contraseña llevan un código en la dirección y el píxel manda la
+// dirección completa a Facebook (y el panel no es para medir nada).
+const privada = (base, pagina) => pagina === base || pagina.startsWith(`${base}/`)
+const sinPixel = (pagina = '') => privada('/miembros', pagina) || privada('/admin', pagina)
 
 export default function Document(props) {
   const pixel = !sinPixel(props.__NEXT_DATA__?.page)

@@ -210,6 +210,52 @@
     }
   }
 
+  // Mensajes y enlaces de texto (¿Has olvidado la contraseña?, Volver a entrar)
+  .adm-entrada__bien {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--bien-fondo);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--bien);
+  }
+
+  .adm-entrada__enlaces {
+    margin: 16px 0 0;
+    text-align: center;
+  }
+
+  .adm-entrada__textual {
+    padding: 4px 2px;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--marron);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--marron-oscuro);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--marron);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+  }
+
+  .adm-entrada__enlace-boton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+
   // ---------- Móvil y tableta: la foto arriba ----------
   @media (max-width: 899px) {
     grid-template-columns: 1fr;

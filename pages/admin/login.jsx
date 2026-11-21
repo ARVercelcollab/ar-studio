@@ -1,25 +1,28 @@
 // Entrada al panel (como la de Gartalia): a la izquierda la foto del estudio con el logo y una frase;
-// a la derecha, la contraseña. En el móvil, la foto queda arriba como una franja.
-import Head from 'next/head'
+// a la derecha, el correo y la contraseña. En el móvil, la foto queda arriba como una franja.
+// Mientras nadie tenga su cuenta, se entra solo con la contraseña compartida (lib/admin/auth.js).
 import { useRouter } from 'next/router'
 import { useState } from 'react'
 import { pedirJson } from '../../lib/reservas/navegador'
-import Logo from '../../components/admin/ui/Logo'
 import Icono from '../../components/admin/ui/Icono'
+import MarcaEntrada, { CampoClave } from '../../components/admin/MarcaEntrada'
+import { hayCuentas } from '../../lib/admin/auth'
 
-export default function Login() {
+export default function Login({ cuentas }) {
   const router = useRouter()
+  const [email, setEmail] = useState('')
   const [contrasena, setContrasena] = useState('')
-  const [ver, setVer] = useState(false)
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [olvido, setOlvido] = useState(false)
+  const [aviso, setAviso] = useState(null)
 
   async function entrar(e) {
     e.preventDefault()
     setEnviando(true)
     setError(null)
     try {
-      await pedirJson('/api/admin/login', { method: 'POST', body: { contrasena } })
+      await pedirJson('/api/admin/login', { method: 'POST', body: cuentas ? { email, contrasena } : { contrasena } })
       const volver = typeof router.query.volver === 'string' && router.query.volver.startsWith('/admin') ? router.query.volver : '/admin'
       router.replace(volver)
     } catch (err) {
@@ -28,57 +31,103 @@ export default function Login() {
     }
   }
 
+  async function pedirEnlace(e) {
+    e.preventDefault()
+    setEnviando(true)
+    setError(null)
+    try {
+      const r = await pedirJson('/api/admin/clave/olvidada', { method: 'POST', body: { email } })
+      setAviso(r.mensaje)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  function cambiar(a) {
+    setOlvido(a)
+    setError(null)
+    setAviso(null)
+  }
+
+  const nota = (
+    <p className="adm-entrada__nota">
+      <Icono nombre="info" />
+      <span>{cuentas ? 'Si aún no tienes acceso, pídeselo a Carlos.' : 'Si no recuerdas la contraseña, pídele a Carlos que te ponga una nueva.'}</span>
+    </p>
+  )
+
   return (
-    <div className="adm adm-entrada">
-      <Head>
-        <title>Entrar · AR Studio</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#3a2b1f" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-      </Head>
-
-      <section className="adm-entrada__marca" aria-label="AR Studio">
-        <Logo ancho={176} className="adm-entrada__logo" />
-        <div className="adm-entrada__lema">
-          <p className="adm-entrada__titulo">Todo el estudio,<br />en orden.</p>
-          <p className="adm-entrada__texto">Reservas, miembros y cuentas. Quién viene, qué entra y qué sale, en un solo sitio.</p>
-        </div>
-        <p className="adm-entrada__pie">Estudio de fotografía con luz natural · València</p>
-      </section>
-
-      <main className="adm-entrada__lado">
+    <MarcaEntrada titulo="Entrar · AR Studio">
+      {olvido ? (
+        <form className="adm-entrada__form" onSubmit={pedirEnlace} noValidate>
+          <h1>¿Has olvidado la contraseña?</h1>
+          <p className="adm-entrada__sub">Escribe tu correo y te mandamos un enlace para poner otra.</p>
+          {aviso ? (
+            <p className="adm-entrada__bien" role="status">{aviso}</p>
+          ) : (
+            <>
+              <label htmlFor="email">Correo</label>
+              <div className="adm-entrada__campo">
+                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus autoComplete="email" inputMode="email" />
+              </div>
+              {error && <p className="adm-entrada__error" role="alert">{error}</p>}
+              <button type="submit" className="adm-entrada__boton" disabled={enviando || !email}>{enviando ? 'Enviando…' : 'Mandarme un enlace'}</button>
+            </>
+          )}
+          <p className="adm-entrada__enlaces">
+            <button type="button" className="adm-entrada__textual" onClick={() => cambiar(false)}>Volver a entrar</button>
+          </p>
+        </form>
+      ) : (
         <form className="adm-entrada__form" onSubmit={entrar} noValidate>
           <h1>Hola de nuevo</h1>
-          <p className="adm-entrada__sub">Escribe la contraseña para entrar.</p>
+          <p className="adm-entrada__sub">{cuentas ? 'Entra con tu correo y tu contraseña.' : 'Escribe la contraseña para entrar.'}</p>
+
+          {cuentas && (
+            <>
+              <label htmlFor="email">Correo</label>
+              <div className="adm-entrada__campo">
+                <input
+                  id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus autoComplete="email" inputMode="email"
+                  aria-invalid={error ? 'true' : undefined} aria-describedby={error ? 'entrada-error' : undefined}
+                />
+              </div>
+            </>
+          )}
 
           <label htmlFor="contrasena">Contraseña</label>
-          <div className="adm-entrada__campo">
-            <input
-              id="contrasena" type={ver ? 'text' : 'password'} value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)} autoFocus autoComplete="current-password"
-              aria-invalid={error ? 'true' : undefined} aria-describedby={error ? 'entrada-error' : undefined}
-            />
-            <button type="button" className="adm-entrada__ver" onClick={() => setVer((v) => !v)} aria-label={ver ? 'Ocultar la contraseña' : 'Ver la contraseña'} aria-pressed={ver}>
-              {ver ? 'Ocultar' : 'Ver'}
-            </button>
-          </div>
+          <CampoClave
+            id="contrasena" valor={contrasena} onCambio={setContrasena} autoFocus={!cuentas} autoComplete="current-password"
+            invalido={Boolean(error)} describe={error ? 'entrada-error' : undefined}
+          />
 
           {error && <p className="adm-entrada__error" id="entrada-error" role="alert">{error}</p>}
 
-          <button type="submit" className="adm-entrada__boton" disabled={enviando || !contrasena}>
+          <button type="submit" className="adm-entrada__boton" disabled={enviando || !contrasena || (cuentas && !email)}>
             {enviando ? 'Entrando…' : 'Entrar'}
           </button>
 
-          <p className="adm-entrada__nota">
-            <Icono nombre="info" />
-            <span>Si no recuerdas la contraseña, pídele a Carlos que te ponga una nueva.</span>
-          </p>
+          {cuentas && (
+            <p className="adm-entrada__enlaces">
+              <button type="button" className="adm-entrada__textual" onClick={() => cambiar(true)}>¿Has olvidado la contraseña?</button>
+            </p>
+          )}
+          {nota}
         </form>
-      </main>
-    </div>
+      )}
+    </MarcaEntrada>
   )
+}
+
+export async function getServerSideProps({ res }) {
+  res.setHeader('Cache-Control', 'no-store')
+  let cuentas = false
+  try {
+    cuentas = await hayCuentas()
+  } catch (e) {
+    console.error('[panel] no se pudo saber si hay cuentas', e.message)
+  }
+  return { props: { cuentas } }
 }

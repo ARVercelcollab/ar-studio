@@ -6,7 +6,7 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import Icono from './ui/Icono'
 import Logo from './ui/Logo'
@@ -32,6 +32,12 @@ export function rutaActiva(href, pathname) {
 
 // Contadores del menú: se guardan entre pantallas para que no parpadeen al navegar
 let contadoresGuardados = null
+
+// Quién ha entrado (llega con los contadores): { nombre, email, iniciales, puedeDarAcceso, compartida } | null
+const PersonaPanel = createContext(null)
+export function usePersonaPanel() {
+  return useContext(PersonaPanel)
+}
 
 function useContadores() {
   const [c, setC] = useState(contadoresGuardados)
@@ -114,6 +120,7 @@ function HojaMas({ pathname, oculto, alternar, onCerrar }) {
 export default function Panel({ titulo, sub, children, acciones, clase, ocultoInicial, sinCabecera = false }) {
   const { pathname } = useRouter()
   const contadores = useContadores()
+  const persona = contadores.persona || null
   const [oculto, setOculto] = useState(Boolean(ocultoInicial))
   const [mas, setMas] = useState(false)
 
@@ -149,6 +156,7 @@ export default function Panel({ titulo, sub, children, acciones, clase, ocultoIn
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
+      <PersonaPanel.Provider value={persona}>
       <ControlImportes.Provider value={control}>
         <ImportesOcultos.Provider value={oculto}>
           <div className={['adm', 'adm-app', oculto ? 'is-ocultos' : '', clase].filter(Boolean).join(' ')}>
@@ -172,8 +180,11 @@ export default function Panel({ titulo, sub, children, acciones, clase, ocultoIn
               </nav>
               <div className="adm-lateral__pie">
                 <div className="adm-perfil">
-                  <span className="adm-perfil__avatar" aria-hidden="true">AR</span>
-                  <span className="adm-perfil__texto"><b>Estudio</b><span>Lo ve todo</span></span>
+                  <span className="adm-perfil__avatar" aria-hidden="true">{persona?.iniciales || 'AR'}</span>
+                  <span className="adm-perfil__texto">
+                    <b>{persona ? persona.nombre : '\u00a0'}</b>
+                    <span title={persona?.email || undefined}>{persona ? (persona.compartida ? 'Contraseña compartida' : persona.email) : '\u00a0'}</span>
+                  </span>
                   {ojo('adm-boton-ojo')}
                   <form method="POST" action="/api/admin/logout">
                     <button type="submit" className="adm-boton-ojo" aria-label="Salir del panel" title="Salir del panel"><Icono nombre="salir" /></button>
@@ -220,6 +231,7 @@ export default function Panel({ titulo, sub, children, acciones, clase, ocultoIn
           </div>
         </ImportesOcultos.Provider>
       </ControlImportes.Provider>
+      </PersonaPanel.Provider>
     </>
   )
 }

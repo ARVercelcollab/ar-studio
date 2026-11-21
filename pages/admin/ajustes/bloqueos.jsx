@@ -69,7 +69,7 @@ export default function Bloqueos({ bloqueos }) {
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   const bloqueos = await listarBloqueos({ desde: new Date() })
   const texto = (d) => `${textoFecha(fechaMadrid(d))}, ${horaMadrid(d)}`

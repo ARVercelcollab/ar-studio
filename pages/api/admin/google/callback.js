@@ -10,7 +10,7 @@ const volver = (res, error) =>
 export default async function handler(req, res) {
   sinCache(res)
   if (req.method !== 'GET') return res.status(405).end()
-  if (!esAdmin(req)) return res.redirect(302, `/admin/login?volver=${encodeURIComponent('/admin/ajustes/google')}`)
+  if (!(await esAdmin(req))) return res.redirect(302, `/admin/login?volver=${encodeURIComponent('/admin/ajustes/google')}`)
   const estadoGuardado = req.cookies?.[COOKIE_ESTADO]
   res.setHeader('Set-Cookie', cookieEstado('', 0))
   if (!mismoEstado(String(req.query.state || ''), estadoGuardado)) return volver(res, 'La conexión ha caducado o no viene de este panel. Vuelve a pulsar «Conectar».')

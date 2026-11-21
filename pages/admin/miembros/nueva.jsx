@@ -6,5 +6,5 @@ import { fechaMadrid } from '../../../lib/reservas/tiempo'
 export default AltaMiembro
 
 export async function getServerSideProps(ctx) {
-  return redirigirSiNoAdmin(ctx) || { props: { hoy: fechaMadrid(new Date()) } }
+  return (await redirigirSiNoAdmin(ctx)) || { props: { hoy: fechaMadrid(new Date()) } }
 }

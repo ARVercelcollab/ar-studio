@@ -247,7 +247,7 @@ export default function Movimientos({ periodo, hoy, d, meses, inicial, ok, ocult
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   ctx.res.setHeader('Cache-Control', 'no-store')
   const hoy = fechaMadrid(new Date())

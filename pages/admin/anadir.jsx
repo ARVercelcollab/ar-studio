@@ -21,7 +21,7 @@ export default PantallaAnadir
 const texto = (v, max = 120) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   ctx.res.setHeader('Cache-Control', 'no-store')
   const hoy = fechaMadrid(new Date())

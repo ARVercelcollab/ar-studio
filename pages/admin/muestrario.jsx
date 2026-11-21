@@ -111,7 +111,7 @@ export default function Muestrario() {
 
 export async function getServerSideProps(ctx) {
   if (process.env.NODE_ENV === 'production') {
-    const redir = redirigirSiNoAdmin(ctx)
+    const redir = await redirigirSiNoAdmin(ctx)
     if (redir) return redir
   }
   return { props: {} }

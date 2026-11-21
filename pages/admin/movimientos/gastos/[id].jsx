@@ -61,7 +61,7 @@ export default function FichaGasto({ ficha, datos, hoy }) {
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   ctx.res.setHeader('Cache-Control', 'no-store')
   if (!/^\d+$/.test(String(ctx.params.id))) return { notFound: true }

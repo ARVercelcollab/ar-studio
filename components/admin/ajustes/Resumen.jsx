@@ -27,11 +27,12 @@ function textoSesiones(p) {
   return `sesiones de ${p.sesionMinH} a ${p.sesionMaxH} h`
 }
 
-export default function ResumenAjustes({ fijos, alMesCent, google, calendly, festivos, bloqueos }) {
+export default function ResumenAjustes({ fijos, alMesCent, google, calendly, festivos, bloqueos, acceso = null }) {
   return (
     <Panel titulo="Ajustes" sub="Precios, planes, gastos fijos y conexiones." clase="adm-ajustes">
       <nav className="adm-ajustes__saltos" aria-label="Ir a">
         {SECCIONES.map(([id, t]) => <a key={id} href={`#${id}`} className="adm-ajustes__chip">{t}</a>)}
+        {acceso && <a href="#personas" className="adm-ajustes__chip">Personas con acceso</a>}
       </nav>
 
       <div className="adm-ajustes__rejilla">
@@ -143,6 +144,17 @@ export default function ResumenAjustes({ fijos, alMesCent, google, calendly, fes
               </ul>
             )}
           </Tarjeta>
+
+          {acceso && (
+            <Tarjeta id="personas" titulo="Personas con acceso" nota="Cada persona entra con su correo y su contraseña." pie={<EnlaceFlecha href="/admin/ajustes/personas">{acceso.n ? 'Gestionar el acceso' : 'Dar acceso'}</EnlaceFlecha>}>
+              {acceso.compartida && <Aviso tono="info">Ahora se entra con la contraseña compartida: da acceso a cada persona, empezando por ti.</Aviso>}
+              {acceso.n > 0 && (
+                <ul className="adm-ajustes__lista">
+                  {acceso.lista.map((p) => <li key={p.email}><span><b>{p.nombre}</b><small>{p.email} · {p.estado}</small></span></li>)}
+                </ul>
+              )}
+            </Tarjeta>
+          )}
         </div>
       </div>
     </Panel>

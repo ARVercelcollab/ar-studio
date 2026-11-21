@@ -16,7 +16,7 @@ import CookieConsent from '../components/CookieConsent.jsx';
 function usePixelFueraDelArea(router) {
   useEffect(() => {
     const alCambiar = (url) => {
-      if (window.fbq) window.fbq.disablePushState = String(url).startsWith('/miembros')
+      if (window.fbq) window.fbq.disablePushState = /^\/(miembros|admin)(\/|\?|#|$)/.test(String(url))
     }
     router.events.on('routeChangeStart', alCambiar)
     return () => router.events.off('routeChangeStart', alCambiar)

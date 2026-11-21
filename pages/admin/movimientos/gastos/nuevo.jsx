@@ -15,7 +15,7 @@ export default function NuevoGasto({ datos, hoy, volver, categoria }) {
 }
 
 export async function getServerSideProps(ctx) {
-  const redir = redirigirSiNoAdmin(ctx)
+  const redir = await redirigirSiNoAdmin(ctx)
   if (redir) return redir
   ctx.res.setHeader('Cache-Control', 'no-store')
   const datos = await datosFormularioGasto()
