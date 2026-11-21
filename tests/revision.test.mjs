@@ -80,9 +80,9 @@ const eventos = async (reservaId) => (await query('SELECT tipo FROM eventos WHER
 const eventosSus = async (susId) => (await query('SELECT tipo, detalle FROM eventos WHERE suscripcion_id = $1 ORDER BY id', [susId])).rows
 
 // Llama a una ruta de la API como lo haría el navegador (con la sesión del panel si hace falta)
-const cookieAdmin = (() => {
+const cookieAdmin = await (async () => {
   const h = {}
-  abrirSesion({ setHeader: (k, v) => { h[k] = v } })
+  await abrirSesion({ setHeader: (k, v) => { h[k] = v } })
   const [k, v] = h['Set-Cookie'].split(';')[0].split('=')
   return { [k]: v }
 })()

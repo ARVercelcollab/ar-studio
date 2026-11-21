@@ -222,19 +222,26 @@ Cada persona entra con **su correo y su contraseña** (desde el 21-11-2026). Se 
 3. **¿Has olvidado la contraseña?** en la entrada: llega un enlace que vale 1 hora. Al poner la
    nueva se cierran sus demás sesiones.
 
-Nadie se puede quitar el acceso a sí mismo ni quitar a la última persona que puede dar acceso.
+Nadie se puede quitar el acceso ni el permiso a sí mismo, ni se puede dejar el panel sin ninguna
+persona (activa y con contraseña) que pueda dar acceso. El permiso «Puede dar acceso» se cambia en
+la lista, y al volver a dar acceso se elige otra vez (por defecto, no).
 
-**Paso desde la contraseña compartida (sin dejar a nadie fuera):** mientras ninguna persona haya
-creado su contraseña, se entra como antes con `ADMIN_PASSWORD`. Desde ahí, en Ajustes → Personas
-con acceso, da acceso a cada persona empezando por ti. En cuanto la primera crea su contraseña, la
-entrada pide correo y contraseña y `ADMIN_PASSWORD` deja de valer (y cualquier sesión abierta con
-ella se cierra).
+**Paso desde la contraseña compartida (sin dejar a nadie fuera y sin vuelta atrás):** mientras
+ninguna persona haya creado su contraseña, se entra como antes con `ADMIN_PASSWORD`. Desde ahí, en
+Ajustes → Personas con acceso, da acceso **primero a ti** y crea tu contraseña. En cuanto la
+primera persona la crea, queda una marca permanente («panel_cuentas_activadas»): la entrada pide
+correo y contraseña, `ADMIN_PASSWORD` deja de valer para siempre, se cierran las sesiones abiertas
+con ella y **se anulan todas las demás invitaciones sin usar** (vuelve a mandar las de las demás
+personas desde la lista). Recuperar la contraseña solo vale para quien ya tiene una.
 
-Por dentro: contraseñas resumidas con scrypt (nunca en claro), sesión de 7 días en una cookie
-firmada que se comprueba contra la base de datos en cada página (tabla `personas_panel`, migración
-18), y de los enlaces solo se guarda su resumen (`enlaces_panel`). Límites: 8 fallos cada 15 minutos
-por conexión y 5 por correo; 3 enlaces por hora y correo. Las páginas del panel van sin el píxel de
-Meta.
+Por dentro: contraseñas resumidas con scrypt (N=2^15, nunca en claro). Cada sesión es una fila de
+`sesiones_panel` (migración 19): la cookie lleva un código aleatorio y la base de datos solo su
+resumen; dura 7 días y se comprueba en cada página. Salir, cambiar la contraseña (se cierran todas
+las sesiones de esa persona), cerrar sus sesiones o quitarle el acceso las anulan al momento. De
+los enlaces solo se guarda su resumen (`enlaces_panel`). Límites de fallos al entrar, reservados
+antes de comprobar la contraseña: 8 cada 15 minutos por conexión, 5 por correo y conexión y 30 por
+correo en total; enlaces de recuperar: 10 por hora por conexión, 3 por correo y conexión y 10 por
+correo. Las páginas del panel van sin el píxel de Meta.
 
 ### Las secciones
 

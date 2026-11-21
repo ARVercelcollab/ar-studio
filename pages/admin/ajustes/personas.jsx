@@ -23,6 +23,7 @@ export default function Personas({ permiso, yo, compartida, personas }) {
   const [mensaje, setMensaje] = useState(null)
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [permisoAlVolver, setPermisoAlVolver] = useState({})
 
   async function accion(datos, { confirmar = null, limpiar = false } = {}) {
     if (confirmar && !window.confirm(confirmar)) return
@@ -120,6 +121,14 @@ export default function Personas({ permiso, yo, compartida, personas }) {
                             )}
                             {p.estado !== 'sin_acceso' && !soyYo && (
                               <Boton
+                                variante="secundario" tam="peq" disabled={enviando}
+                                onClick={() => accion({ accion: 'cambiar_permiso', id: p.id, puedeDarAcceso: !p.puedeDarAcceso }, { confirmar: p.puedeDarAcceso ? `¿Quitar a ${p.nombre} el permiso de dar acceso a otras personas?` : `¿Permitir a ${p.nombre} dar acceso a otras personas? Podrá darlo y quitarlo como tú.` })}
+                              >
+                                {p.puedeDarAcceso ? 'Quitar permiso de dar acceso' : 'Permitir dar acceso'}
+                              </Boton>
+                            )}
+                            {p.estado !== 'sin_acceso' && !soyYo && (
+                              <Boton
                                 variante="peligro" tam="peq" disabled={enviando}
                                 onClick={() => accion({ accion: 'quitar', id: p.id }, { confirmar: `¿Quitar el acceso a ${p.nombre}? Saldrá del panel al momento.` })}
                               >
@@ -127,7 +136,12 @@ export default function Personas({ permiso, yo, compartida, personas }) {
                               </Boton>
                             )}
                             {p.estado === 'sin_acceso' && (
-                              <Boton variante="secundario" tam="peq" disabled={enviando} onClick={() => accion({ accion: 'volver', id: p.id })}>Volver a dar acceso</Boton>
+                              <>
+                                <label className="adm-check">
+                                  <input type="checkbox" checked={Boolean(permisoAlVolver[p.id])} onChange={(e) => setPermisoAlVolver({ ...permisoAlVolver, [p.id]: e.target.checked })} /> Puede dar acceso
+                                </label>
+                                <Boton variante="secundario" tam="peq" disabled={enviando} onClick={() => accion({ accion: 'volver', id: p.id, puedeDarAcceso: Boolean(permisoAlVolver[p.id]) })}>Volver a dar acceso</Boton>
+                              </>
                             )}
                           </span>
                         </td>

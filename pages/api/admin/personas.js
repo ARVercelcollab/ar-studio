@@ -1,5 +1,5 @@
 // Personas con acceso al panel (Ajustes): dar acceso, reenviar la invitación, cerrar sus sesiones,
-// quitar el acceso y volver a darlo. Solo quien puede dar acceso (se comprueba en lib/admin/cuentas).
+// cambiar si puede dar acceso, quitar el acceso y volver a darlo. Solo quien puede dar acceso (se comprueba en lib/admin/cuentas).
 import { rutaAdmin } from '../../../lib/admin/api.js'
 import { personaDeLaPeticion } from '../../../lib/admin/auth.js'
 import * as C from '../../../lib/admin/cuentas.js'
@@ -28,8 +28,12 @@ export default rutaAdmin(async (req, res) => {
       const p = await C.quitarAcceso(quien, b.id)
       return res.status(200).json({ ok: true, mensaje: `${p.nombre} ya no tiene acceso.` })
     }
+    case 'cambiar_permiso': {
+      const p = await C.cambiarPermiso(quien, b.id, Boolean(b.puedeDarAcceso))
+      return res.status(200).json({ ok: true, mensaje: p.puedeDarAcceso ? `${p.nombre} ya puede dar acceso a otras personas.` : `${p.nombre} ya no puede dar acceso a otras personas.` })
+    }
     case 'volver': {
-      const r = await C.volverADarAcceso(quien, b.id, base)
+      const r = await C.volverADarAcceso(quien, b.id, base, { puedeDarAcceso: Boolean(b.puedeDarAcceso) })
       return res.status(200).json({ ok: true, mensaje: avisoEnvio(r, `Invitación enviada a ${r.persona.email}: tendrá que crear una contraseña nueva.`) })
     }
     default:

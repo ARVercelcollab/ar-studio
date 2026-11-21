@@ -284,7 +284,7 @@ test('las rutas del panel pasan el cambio a Google antes de contestar', async ()
   await G.completarConexion({ codigo: 'codigo-4', redirectUri: 'http://localhost/api/admin/google/callback' })
   // Cookie de sesión válida
   const cabeceras = {}
-  abrirSesion({ setHeader: (k, v) => { cabeceras[k] = v } })
+  await abrirSesion({ setHeader: (k, v) => { cabeceras[k] = v } })
   const cookie = cabeceras['Set-Cookie'].split(';')[0].split('=')
   let creada = null
   let eventosAlContestar = null
